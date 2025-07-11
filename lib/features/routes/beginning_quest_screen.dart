@@ -71,7 +71,7 @@ class _BeginningQuestScreenState extends ConsumerState<BeginningQuestScreen> {
       String userAnswer = '';
       bool isCorrect = false;
 
-      if (q.type == QuestionType.text) {
+      if (q.type == QuestionTypeOld.text) {
         userAnswer = textControllers[i].text.trim();
         isCorrect = q.correctAnswer.toLowerCase().trim() == userAnswer.toLowerCase();
         if (isCorrect) {
@@ -168,7 +168,7 @@ class _BeginningQuestScreenState extends ConsumerState<BeginningQuestScreen> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            if (q.type == QuestionType.text)
+            if (q.type == QuestionTypeOld.text)
               TextField(
                 controller: textControllers[currentIndex],
                 decoration: const InputDecoration(
@@ -176,7 +176,7 @@ class _BeginningQuestScreenState extends ConsumerState<BeginningQuestScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-            if (q.type != QuestionType.text)
+            if (q.type != QuestionTypeOld.text)
               ...List.generate(q.options.length, (index) {
                 return CheckboxListTile(
                   value: selectedOptions[currentIndex][index],
@@ -185,7 +185,7 @@ class _BeginningQuestScreenState extends ConsumerState<BeginningQuestScreen> {
                       ? null
                       : (val) {
                           setState(() {
-                            if (q.type == QuestionType.single) {
+                            if (q.type == QuestionTypeOld.single) {
                               selectedOptions[currentIndex] = List.generate(q.options.length, (_) => false);
                               selectedOptions[currentIndex][index] = val ?? false;
                             } else {

@@ -1,8 +1,8 @@
-enum QuestionType { single, multiple, text }
+enum QuestionTypeOld { single, multiple, text }
 
 class QuestionOld {
   final String id;
-  final QuestionType type;
+  final QuestionTypeOld type;
   final String text;
   final List<String> options;
   final List<int> correctIndexes; // ✅ добавлено
@@ -39,14 +39,14 @@ class QuestionOld {
     };
   }
 
-  static QuestionType _parseType(String type) {
+  static QuestionTypeOld _parseType(String type) {
     switch (type) {
       case 'multiple':
-        return QuestionType.multiple;
+        return QuestionTypeOld.multiple;
       case 'text':
-        return QuestionType.text;
+        return QuestionTypeOld.text;
       default:
-        return QuestionType.single;
+        return QuestionTypeOld.single;
     }
   }
 }

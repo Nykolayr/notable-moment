@@ -13,7 +13,7 @@ class SingleChoiceQuestion extends Question {
     super.points,
     super.hint,
   }) : super(
-          type: QuestionType.singleChoice,
+          type: QuestionTypeTest.singleChoice,
         );
 
   static SingleChoiceQuestion init() => SingleChoiceQuestion(

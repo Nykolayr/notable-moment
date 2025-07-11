@@ -8,7 +8,7 @@ import 'pair_question.dart';
 abstract class Question {
   final String id;
   final String text;
-  final QuestionType type;
+  final QuestionTypeTest type;
   final int points;
   final String? hint;
 
@@ -29,17 +29,17 @@ abstract class Question {
   });
 
   static Question fromJson(Map<String, dynamic> json) {
-    final type = QuestionType.values.byName(json['type']);
+    final type = QuestionTypeTest.values.byName(json['type']);
     switch (type) {
-      case QuestionType.singleChoice:
+      case QuestionTypeTest.singleChoice:
         return SingleChoiceQuestion.fromJson(json);
-      case QuestionType.multipleChoice:
+      case QuestionTypeTest.multipleChoice:
         return MultipleChoiceQuestion.fromJson(json);
-      case QuestionType.anagram:
+      case QuestionTypeTest.anagram:
         return AnagramQuestion.fromJson(json);
-      case QuestionType.order:
+      case QuestionTypeTest.order:
         return OrderQuestion.fromJson(json);
-      case QuestionType.pair:
+      case QuestionTypeTest.pair:
         return PairQuestion.fromJson(json);
     }
   }

@@ -7,7 +7,6 @@ import 'package:notable_moments/core/helpers/storage_helper.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
-import 'package:flutter_easylogger/flutter_logger.dart';
 
 class RoutesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notable_moments/features/routes/admin/edit_test_screen.dart';
+import 'package:notable_moments/features/routes/edit_test_screen.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/provider/points_provider.dart';
 
@@ -78,7 +78,7 @@ class _EditPointScreenState extends ConsumerState<EditPointScreen> {
                 await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => EditTestScreen(
-                      testId: widget.point.id,
+                      test: widget.point.test,
                     ),
                   ),
                 );

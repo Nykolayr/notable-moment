@@ -1,24 +1,25 @@
 // lib/features/routes/admin/edit_test_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:notable_moments/features/questions/model/question.dart';
 // ignore: depend_on_referenced_packages
 import 'package:uuid/uuid.dart';
 import 'firestore_test_repository.dart';
 import 'models/questions/question.dart';
 
-class EditTestScreen extends StatefulWidget {
-  final String testId;
+class EditTestScreenOld extends StatefulWidget {
+  final Question test;
 
-  const EditTestScreen({
+  const EditTestScreenOld({
     super.key,
-    required this.testId,
+    required this.test,
   });
 
   @override
-  State<EditTestScreen> createState() => _EditTestScreenState();
+  State<EditTestScreenOld> createState() => _EditTestScreenOldState();
 }
 
-class _EditTestScreenState extends State<EditTestScreen> {
+class _EditTestScreenOldState extends State<EditTestScreenOld> {
   final repo = FirestoreTestRepository();
   final uuid = const Uuid();
 
@@ -37,7 +38,6 @@ class _EditTestScreenState extends State<EditTestScreen> {
 
   Future<void> _loadQuestions() async {
     setState(() => isLoading = true);
-    questions = await repo.fetchQuestions(widget.testId);
 
     questionControllers.clear();
     answerControllers.clear();
@@ -73,7 +73,7 @@ class _EditTestScreenState extends State<EditTestScreen> {
       final newId = uuid.v4();
       final newQ = QuestionOld(
         id: newId,
-        type: QuestionType.single,
+        type: QuestionTypeOld.single,
         text: '',
         options: [''],
         correctAnswer: '',
@@ -113,8 +113,6 @@ class _EditTestScreenState extends State<EditTestScreen> {
 
       updatedQuestions.add(updatedQuestion);
     }
-
-    await repo.saveQuestions(widget.testId, updatedQuestions);
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

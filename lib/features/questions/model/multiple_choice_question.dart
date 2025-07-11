@@ -13,7 +13,7 @@ class MultipleChoiceQuestion extends Question {
     super.points,
     super.hint,
   }) : super(
-          type: QuestionType.multipleChoice,
+          type: QuestionTypeTest.multipleChoice,
         );
 
   @override

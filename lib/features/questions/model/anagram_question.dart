@@ -13,7 +13,7 @@ class AnagramQuestion extends Question {
     super.points,
     super.hint,
   }) : super(
-          type: QuestionType.anagram,
+          type: QuestionTypeTest.anagram,
         );
 
   @override

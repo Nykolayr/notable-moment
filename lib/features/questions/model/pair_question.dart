@@ -34,7 +34,7 @@ class PairQuestion extends Question {
     super.points,
     super.hint,
   }) : super(
-          type: QuestionType.pair,
+          type: QuestionTypeTest.pair,
         );
 
   @override

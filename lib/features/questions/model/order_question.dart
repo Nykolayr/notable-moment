@@ -13,7 +13,7 @@ class OrderQuestion extends Question {
     super.points,
     super.hint,
   }) : super(
-          type: QuestionType.order,
+          type: QuestionTypeTest.order,
         );
 
   @override

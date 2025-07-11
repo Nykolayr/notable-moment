@@ -3,6 +3,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/helpers/validator.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
@@ -11,38 +12,39 @@ import 'package:notable_moments/core/widget/app_checkbox.dart';
 import 'package:notable_moments/core/widget/app_input.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/features/routes/constant/app_map_data.dart';
+import 'package:notable_moments/features/routes/edit_test_screen.dart';
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/working_hours_model.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/widget/schedule_editor_widget.dart';
-import 'package:notable_moments/features/routes/admin/edit_test_screen.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
 import 'package:notable_moments/features/questions/model/single_choice_question.dart';
 import 'package:notable_moments/features/questions/model/question.dart';
 
 class EditPointScreen extends StatefulWidget {
-  const EditPointScreen({super.key, required this.point});
-  final PointAdminModel? point;
+  const EditPointScreen({super.key, required this.pointAdmin});
+  final PointAdminModel? pointAdmin;
 
   @override
   State<EditPointScreen> createState() => _EditPointScreenState();
 }
 
 class _EditPointScreenState extends State<EditPointScreen> {
-  late final isNew = widget.point == null;
+  bool isNew = true;
   yandex_map.Point? point;
   final _imagePicker = ImagePicker();
 
-  late final titleController = TextEditingController(text: widget.point?.title);
-  late final descriptionController = TextEditingController(text: widget.point?.description);
-  late final urlController = TextEditingController(text: widget.point?.url);
+  late final titleController = TextEditingController(text: widget.pointAdmin?.title);
+  late final descriptionController = TextEditingController(text: widget.pointAdmin?.description);
+  late final urlController = TextEditingController(text: widget.pointAdmin?.url);
   late final List<TextEditingController> phoneControllers =
-      widget.point?.phones.map((phone) => TextEditingController(text: phone)).toList() ?? [TextEditingController()];
-  late final List<String> photos = List.from(widget.point?.photos ?? []);
-  late WorkingHours schedule = widget.point?.schedule ?? WorkingHours(periods: []);
-  late bool isDraft = widget.point?.isDraft ?? true;
-  Question? test;
+      widget.pointAdmin?.phones.map((phone) => TextEditingController(text: phone)).toList() ??
+          [TextEditingController()];
+  late final List<String> photos = List.from(widget.pointAdmin?.photos ?? []);
+  late WorkingHours schedule = widget.pointAdmin?.schedule ?? WorkingHours(periods: []);
+  late bool isDraft = widget.pointAdmin?.isDraft ?? true;
+  Question test = SingleChoiceQuestion.init();
 
   yandex_map.MapWindow? _mapWindow;
   yandex_map.Map get map => _mapWindow!.map;
@@ -50,8 +52,11 @@ class _EditPointScreenState extends State<EditPointScreen> {
   @override
   void initState() {
     super.initState();
-    point = widget.point?.point;
-    test = widget.point?.test; // инициализация теста
+    isNew = widget.pointAdmin == null;
+    if (!isNew) {
+      point = widget.pointAdmin?.point;
+      test = widget.pointAdmin!.test;
+    }
 
     titleController.addListener(() => setState(() {}));
     descriptionController.addListener(() => setState(() {}));
@@ -123,17 +128,19 @@ class _EditPointScreenState extends State<EditPointScreen> {
   }
 
   bool get hasChanges {
-    if (titleController.text != (widget.point?.title ?? '')) return true;
-    if (descriptionController.text != (widget.point?.description ?? '')) return true;
-    if (urlController.text != (widget.point?.url ?? '')) return true;
-    if (!ListEquality()
-        .equals(phoneControllers.map((e) => e.text).where((e) => e.isNotEmpty).toList(), widget.point?.phones ?? [])) {
+    if (titleController.text != (widget.pointAdmin?.title ?? '')) return true;
+    if (descriptionController.text != (widget.pointAdmin?.description ?? '')) return true;
+    if (urlController.text != (widget.pointAdmin?.url ?? '')) return true;
+    if (!ListEquality().equals(
+      phoneControllers.map((e) => e.text).where((e) => e.isNotEmpty).toList(),
+      widget.pointAdmin?.phones ?? [],
+    )) {
       return true;
     }
-    if (!ListEquality().equals(photos, widget.point?.photos ?? [])) return true;
-    if (schedule != (widget.point?.schedule ?? WorkingHours(periods: []))) return true;
-    if (isDraft != (widget.point?.isDraft ?? true)) return true;
-    if (point != widget.point?.point) return true;
+    if (!ListEquality().equals(photos, widget.pointAdmin?.photos ?? [])) return true;
+    if (schedule != (widget.pointAdmin?.schedule ?? WorkingHours(periods: []))) return true;
+    if (isDraft != (widget.pointAdmin?.isDraft ?? true)) return true;
+    if (point != widget.pointAdmin?.point) return true;
     return false;
   }
 
@@ -147,7 +154,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
     return false;
   }
 
-  bool get canSave => hasChanges && !hasErrors && test != null && test is! SingleChoiceQuestion;
+  bool get canSave => hasChanges && !hasErrors;
 
   void handleBack() {
     if (hasChanges) {
@@ -192,14 +199,12 @@ class _EditPointScreenState extends State<EditPointScreen> {
           ),
           const SizedBox(height: 12),
           AppButton(
-            title: test == null || test?.id == 'empty' ? 'Добавить тест' : 'Редактировать тест',
+            title: test.id == 'empty' ? 'Добавить тест' : 'Редактировать тест',
             onTap: () async {
               // Переход на экран редактирования теста
               final result = await Navigator.of(context).push<Question>(
-                MaterialPageRoute(
-                  builder: (_) => EditTestScreen(
-                    testId: widget.point?.id ?? 'temp-${DateTime.now().millisecondsSinceEpoch}',
-                  ),
+                test = await context.push(
+                  EditTestScreen(test: test),
                 ),
               );
               if (result != null) {
@@ -230,10 +235,10 @@ class _EditPointScreenState extends State<EditPointScreen> {
           const SizedBox(height: 16),
           AppButton(
             title: 'Сохранить',
-            onTap: canSave && point != null && test?.id != 'empty'
+            onTap: canSave && point != null && test.id != 'empty'
                 ? () => Navigator.of(context).pop(
                       PointAdminModel(
-                        id: widget.point?.id ?? 'temp-${DateTime.now().millisecondsSinceEpoch}',
+                        id: widget.pointAdmin?.id ?? 'temp-${DateTime.now().millisecondsSinceEpoch}',
                         point: point!,
                         photos: photos,
                         title: titleController.text,
@@ -241,9 +246,9 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         schedule: schedule,
                         phones: phoneControllers.map((c) => c.text).where((p) => p.isNotEmpty).toList(),
                         url: urlController.text,
-                        order: widget.point?.order ?? -1,
+                        order: widget.pointAdmin?.order ?? -1,
                         isDraft: isDraft,
-                        test: test!,
+                        test: test,
                       ),
                     )
                 : null,
