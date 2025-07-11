@@ -172,7 +172,9 @@ void showPlaceBottomSheet({
                         title: 'Поделиться местом',
                         onTap: () {
                           final text = 'Родные штрихи\n${point.title}\n${point.url}';
-                          Share.share(text);
+                          SharePlus.instance.share(
+                            ShareParams(text: text),
+                          );
                         },
                       ),
                     ],

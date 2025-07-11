@@ -20,7 +20,7 @@ class RouteTooltipCard extends StatelessWidget {
         context.push(
           RouteMapScreen(
             title: route.title,
-            description: route.description ?? '',
+            description: route.description,
           ),
         );
       },

@@ -182,6 +182,7 @@ class RouteMapScreen extends ConsumerWidget {
                   final hasSeenOnboarding = prefs.getBool('hasSeenQuestOnboarding') ?? false;
 
                   if (!hasSeenOnboarding) {
+                    // ignore: use_build_context_synchronously
                     final onboardingResult = await Navigator.of(context).push<bool>(
                           MaterialPageRoute(
                             builder: (context) => const QuestOnboardingScreen(),
@@ -190,7 +191,9 @@ class RouteMapScreen extends ConsumerWidget {
                         false;
 
                     if (!onboardingResult) {
-                      context.showSnack('Онбординг не завершён');
+                      if (context.mounted) {
+                        context.showSnack('Онбординг не завершён');
+                      }
                       return;
                     }
 
@@ -201,6 +204,7 @@ class RouteMapScreen extends ConsumerWidget {
                   final pointId = 'point_$index';
                   final nextPointId = 'point_${index + 1}';
 
+                  // ignore: use_build_context_synchronously
                   final result = await Navigator.of(context).push<bool>(
                         MaterialPageRoute(
                           builder: (context) => BeginningQuestScreen(
@@ -214,9 +218,13 @@ class RouteMapScreen extends ConsumerWidget {
 
                   if (result) {
                     ref.read(progressProvider.notifier).unlockNext(index);
-                    context.showSnack('Квест пройден! Следующая точка разблокирована.');
+                    if (context.mounted) {
+                      context.showSnack('Квест пройден! Следующая точка разблокирована.');
+                    }
                   } else {
-                    context.showSnack('Квест не завершён.');
+                    if (context.mounted) {
+                      context.showSnack('Квест не завершён.');
+                    }
                   }
                 },
           child: Stack(

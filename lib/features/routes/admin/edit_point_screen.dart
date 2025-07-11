@@ -25,8 +25,8 @@ class _EditPointScreenState extends ConsumerState<EditPointScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.point.title ?? '');
-    _descriptionController = TextEditingController(text: widget.point.description ?? '');
+    _titleController = TextEditingController(text: widget.point.title);
+    _descriptionController = TextEditingController(text: widget.point.description);
   }
 
   @override
@@ -42,7 +42,7 @@ class _EditPointScreenState extends ConsumerState<EditPointScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.point.title ?? 'Редактирование точки'),
+        title: Text(widget.point.title),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -82,10 +82,11 @@ class _EditPointScreenState extends ConsumerState<EditPointScreen> {
                     ),
                   ),
                 );
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Квест сохранён')),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Квест сохранён')),
+                  );
+                }
               },
               icon: const Text('🧪', style: TextStyle(fontSize: 20)),
               label: const Text('Добавить / Редактировать квест'),

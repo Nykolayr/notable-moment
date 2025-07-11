@@ -28,10 +28,34 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Можно показать диалог или просто вернуть false, чтобы не закрывать приложение
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool result, PopInvokedWithResultCallback? callback) async {
+        // Показываем диалог подтверждения выхода
+        final shouldPop = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Выход из приложения'),
+                content: const Text('Вы уверены, что хотите выйти из приложения?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Отмена'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Выйти'),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+
+        // Если пользователь подтвердил выход, закрываем приложение
+        if (shouldPop) {
+          // ignore: use_build_context_synchronously
+          Navigator.of(context).pop();
+        }
       },
       child: Scaffold(
         backgroundColor: AppColor.bgText00,
@@ -41,14 +65,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               child: Stack(
                 children: [
                   // Places Screen
-                  if (_currentIndex == 0)
-                    const PlacesScreen(),
+                  if (_currentIndex == 0) const PlacesScreen(),
                   // Routes Screen
-                  if (_currentIndex == 1)
-                    RoutesScreen(isActive: true),
+                  if (_currentIndex == 1) RoutesScreen(isActive: true),
                   // Profile Screen
-                  if (_currentIndex == 2)
-                    const ProfileScreen(),
+                  if (_currentIndex == 2) const ProfileScreen(),
                 ],
               ),
             ),

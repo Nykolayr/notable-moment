@@ -33,7 +33,10 @@ class _BeginningFinalScreenState extends State<BeginningFinalScreen> {
           builder: (_) => const ExcellentFinishScreen(),
         ),
       ).then((_) {
-        Navigator.pop(context, true);
+        if (context.mounted) {
+          // ignore: use_build_context_synchronously
+          Navigator.pop(context, true);
+        }
       });
     }
   }
@@ -119,8 +122,8 @@ class _BeginningFinalScreenState extends State<BeginningFinalScreen> {
                         final bool isCorrect = correctIndexes.contains(index);
                         final Color bgColor = answerSubmitted
                             ? (isCorrect
-                                ? Colors.green.withOpacity(.2)
-                                : (isSelected ? Colors.red.withOpacity(.2) : const Color(0xFFF9FAFC)))
+                                ? Colors.green.withValues(alpha: 0.2)
+                                : (isSelected ? Colors.red.withValues(alpha: 0.2) : const Color(0xFFF9FAFC)))
                             : (isSelected ? const Color(0xFFF0FFD0) : const Color(0xFFF9FAFC));
                         final Color borderColor = answerSubmitted
                             ? (isCorrect ? Colors.green : (isSelected ? Colors.red : Colors.transparent))

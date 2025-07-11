@@ -20,13 +20,13 @@ RouteModel toRouteModel(RouteAdminModel admin) {
   return RouteModel(
     id: admin.id,
     title: admin.title,
-    description: admin.description ?? '',
+    description: admin.description,
     points: admin.points.map((p) {
       return RoutePoint(
         name: '',
         description: '',
-        latitude: p.latitude ?? 0.0,
-        longitude: p.longitude ?? 0.0,
+        latitude: p.latitude,
+        longitude: p.longitude,
       );
     }).toList(),
     taskCount: 0,
@@ -48,7 +48,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   late AnimationController _animationController;
   static const double _collapsedHeightFactor = 0.12;
   static const double _expandedHeightFactor = 0.5;
-  bool _isExpanded = false;
+  bool isExpanded = false;
 
   dynamic mapController; // любой тип, который возвращает твой AppMap
 
@@ -78,12 +78,12 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
 
   void _expandPanel() {
     _animationController.forward();
-    _isExpanded = true;
+    isExpanded = true;
   }
 
   void _collapsePanel() {
     _animationController.reverse();
-    _isExpanded = false;
+    isExpanded = false;
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -198,7 +198,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   Widget _buildBottomPanel(BuildContext context, List<RouteAdminModel> routes) {
     final query = ref.watch(searchQueryProvider);
     final filtered = routes.where((r) {
-      return r.title.toLowerCase().contains(query) || (r.description.toLowerCase() ?? '').contains(query);
+      return r.title.toLowerCase().contains(query) || (r.description.toLowerCase()).contains(query);
     }).toList();
 
     return Container(

@@ -160,7 +160,7 @@ class _BeginningQuestScreenState extends ConsumerState<BeginningQuestScreen> {
             LinearProgressIndicator(
               value: (currentIndex + 1) / questions.length,
               color: Colors.blue,
-              backgroundColor: Colors.blue.withOpacity(0.2),
+              backgroundColor: Colors.blue.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
             Text(

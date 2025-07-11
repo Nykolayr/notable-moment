@@ -99,7 +99,7 @@ class _QuestOnboardingScreenState extends State<QuestOnboardingScreen> {
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: dotIndex == _currentPage ? Colors.white : Colors.white.withOpacity(0.4),
+                                color: dotIndex == _currentPage ? Colors.white : Colors.white.withValues(alpha: 0.4),
                               ),
                             ),
                           ),
