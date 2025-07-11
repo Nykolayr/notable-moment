@@ -13,7 +13,7 @@ class _BeginningFewWordsScreenState extends ConsumerState<BeginningFewWordsScree
   int currentQuestionIndex = 0;
   List<List<bool>> selectedOptions = [];
   List<String> textAnswers = [];
-  List<Question> questions = [];
+  List<QuestionBegin> questions = [];
   bool isLoading = true;
   final repo = FirestoreTestRepository();
 
@@ -41,7 +41,7 @@ class _BeginningFewWordsScreenState extends ConsumerState<BeginningFewWordsScree
     if (questions.isEmpty) {
       return const Scaffold(body: Center(child: Text('Нет доступных вопросов')));
     }
-    final Question question = questions[currentQuestionIndex];
+    final QuestionBegin question = questions[currentQuestionIndex];
 
     if (selectedOptions.length != questions.length) {
       selectedOptions = List.generate(

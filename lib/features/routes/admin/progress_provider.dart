@@ -11,7 +11,7 @@ class ProgressState {
     required this.unlockedIndexes,
   });
 
-  /// Возвращает Set<String> разблокированных pointId в формате routeId-index
+  /// Возвращает Set String разблокированных pointId в формате routeId-index
   Set<String> get unlockedPointIds {
     final ids = <String>{};
     unlockedIndexes.forEach((routeId, lastUnlocked) {

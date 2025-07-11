@@ -1,13 +1,13 @@
 // lib/features/routes/admin/firestore_test_repository.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'models/question.dart';
+import 'models/questions/question.dart';
 
 class FirestoreTestRepository {
   final _firestore = FirebaseFirestore.instance;
 
   /// Загружает список вопросов из саб-коллекции tests/{testId}/questions
-  Future<List<Question>> fetchQuestions(String testId) async {
+  Future<List<QuestionOld>> fetchQuestions(String testId) async {
     final questionsSnapshot = await _firestore
         .collection('tests')
         .doc(testId)
@@ -15,7 +15,7 @@ class FirestoreTestRepository {
         .orderBy('order', descending: false)
         .get();
 
-    return questionsSnapshot.docs.map((doc) => Question.fromJson(doc.data()..['id'] = doc.id)).toList();
+    return questionsSnapshot.docs.map((doc) => QuestionOld.fromJson(doc.data()..['id'] = doc.id)).toList();
   }
 
   /// Загружает мета-данные теста: title, description и др.
@@ -26,7 +26,7 @@ class FirestoreTestRepository {
   }
 
   /// Сохраняет вопросы в саб-коллекцию tests/{testId}/questions
-  Future<void> saveQuestions(String testId, List<Question> questions) async {
+  Future<void> saveQuestions(String testId, List<QuestionOld> questions) async {
     final batch = _firestore.batch();
     final questionsCollection = _firestore.collection('tests').doc(testId).collection('questions');
 

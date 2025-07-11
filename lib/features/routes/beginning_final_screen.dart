@@ -14,7 +14,7 @@ class _BeginningFinalScreenState extends State<BeginningFinalScreen> {
   final Set<int> correctIndexes = {0, 3};
   final Set<int> selectedIndexes = {};
   bool answerSubmitted = false;
-  List<Question> questions = []; // Из test_context.dart
+  List<QuestionBegin> questions = []; // Из test_context.dart
 
   void handleAnswer() {
     if (!answerSubmitted) {

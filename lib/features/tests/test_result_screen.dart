@@ -5,7 +5,7 @@ import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/features/routes/model/question_model.dart';
 
 class TestResultScreen extends ConsumerWidget {
-  final List<Question> questions;
+  final List<Question4> questions;
   final Map<String, dynamic> userAnswers;
   final VoidCallback onRetry;
   final VoidCallback onContinue;

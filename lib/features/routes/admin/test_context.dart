@@ -50,14 +50,14 @@ class PairModel {
 }
 
 /// Модель вопроса
-class Question {
+class QuestionBegin {
   QuestionType type;
   String text;
   List<String> options;
   String correctAnswer; // single, multiple, text
   List<PairModel> pairs; // pair
 
-  Question({
+  QuestionBegin({
     required this.type,
     required this.text,
     required this.options,
@@ -92,9 +92,11 @@ class Question {
         if (userAnswer == null || userAnswer is! List<PairModel>) return false;
         if (userAnswer.length != pairs.length) return false;
         for (final pair in pairs) {
-          final match = userAnswer.any((p) =>
-              p.left.trim().toLowerCase() == pair.left.trim().toLowerCase() &&
-              p.right.trim().toLowerCase() == pair.right.trim().toLowerCase(),);
+          final match = userAnswer.any(
+            (p) =>
+                p.left.trim().toLowerCase() == pair.left.trim().toLowerCase() &&
+                p.right.trim().toLowerCase() == pair.right.trim().toLowerCase(),
+          );
           if (!match) return false;
         }
         return true;
@@ -109,7 +111,7 @@ class Question {
         'pairs': pairs.map((p) => p.toMap()).toList(),
       };
 
-  factory Question.fromMap(Map<String, dynamic> map) => Question(
+  factory QuestionBegin.fromMap(Map<String, dynamic> map) => QuestionBegin(
         type: QuestionTypeLabel.fromName(map['type'] ?? 'text'),
         text: map['text'] ?? '',
         options: List<String>.from(map['options'] ?? []),
@@ -119,7 +121,7 @@ class Question {
             : [],
       );
 
-  Question clone() => Question(
+  QuestionBegin clone() => QuestionBegin(
         type: type,
         text: text,
         options: List<String>.from(options),
@@ -129,18 +131,18 @@ class Question {
 }
 
 /// StateNotifier для управления тестом
-class TestNotifier extends StateNotifier<List<Question>> {
+class TestNotifier extends StateNotifier<List<QuestionBegin>> {
   TestNotifier() : super([]);
 
-  void setQuestions(List<Question> questions) {
+  void setQuestions(List<QuestionBegin> questions) {
     state = questions;
   }
 
-  void addQuestion(Question question) {
+  void addQuestion(QuestionBegin question) {
     state = [...state, question];
   }
 
-  void updateQuestion(int index, Question updated) {
+  void updateQuestion(int index, QuestionBegin updated) {
     final list = [...state];
     list[index] = updated;
     state = list;
@@ -157,7 +159,7 @@ class TestNotifier extends StateNotifier<List<Question>> {
 }
 
 /// Провайдер для использования в UI
-final testProvider = StateNotifierProvider<TestNotifier, List<Question>>(
+final testProvider = StateNotifierProvider<TestNotifier, List<QuestionBegin>>(
   (ref) => TestNotifier(),
 );
 
@@ -165,14 +167,14 @@ final testProvider = StateNotifierProvider<TestNotifier, List<Question>>(
 class FirestoreTestRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<List<Question>> fetchQuestions(String testId) async {
+  Future<List<QuestionBegin>> fetchQuestions(String testId) async {
     final snap = await _db.collection('tests').doc(testId).collection('questions').get();
-    return snap.docs.map((doc) => Question.fromMap(doc.data())).toList();
+    return snap.docs.map((doc) => QuestionBegin.fromMap(doc.data())).toList();
   }
 
   Future<void> saveQuestion(
     String testId,
-    Question question, {
+    QuestionBegin question, {
     String? questionId,
   }) async {
     final ref = _db.collection('tests').doc(testId).collection('questions').doc(questionId);

@@ -7,7 +7,7 @@ enum QuestionType {
   pair,
 }
 
-class Question {
+class Question2 {
   final String id;
   final String text;
   final QuestionType type;
@@ -15,7 +15,7 @@ class Question {
   final List<int> correctIndexes;
   final String correctAnswerText;
 
-  Question({
+  Question2({
     required this.id,
     required this.text,
     required this.type,
@@ -25,8 +25,8 @@ class Question {
   });
 
   /// Десериализация из Firestore
-  factory Question.fromJson(Map<String, dynamic> json) {
-    return Question(
+  factory Question2.fromJson(Map<String, dynamic> json) {
+    return Question2(
       id: json['id'] ?? '',
       text: json['text'] ?? '',
       type: _parseQuestionType(json['type']),

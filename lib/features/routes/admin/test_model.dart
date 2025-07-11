@@ -51,7 +51,7 @@ class Pair {
 }
 
 /// Модель вопроса
-class Question {
+class Question3 {
   final QuestionType type;
   final String text;
   final List<String> options;
@@ -64,7 +64,7 @@ class Question {
   /// Для типа 'pair'
   final List<Pair>? pairs;
 
-  Question({
+  Question3({
     required this.type,
     required this.text,
     required this.options,
@@ -124,8 +124,8 @@ class Question {
   }
 
   /// Десериализация из JSON
-  factory Question.fromJson(Map<String, dynamic> json) {
-    return Question(
+  factory Question3.fromJson(Map<String, dynamic> json) {
+    return Question3(
       type: QuestionTypeLabel.fromName(json['type'] as String),
       text: json['text'] as String,
       options: List<String>.from(json['options'] ?? []),
@@ -139,13 +139,13 @@ class Question {
 class TestModel {
   final String id;
   final String title;
-  final List<Question> questions;
+  final List<Question3> questions;
   final bool isPassed;
 
   TestModel({
     required this.id,
     required this.title,
-    List<Question>? questions,
+    List<Question3>? questions,
     this.isPassed = false,
   }) : questions = questions ?? [];
 
@@ -165,7 +165,7 @@ class TestModel {
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       questions:
-          (json['questions'] as List<dynamic>?)?.map((e) => Question.fromJson(e as Map<String, dynamic>)).toList() ??
+          (json['questions'] as List<dynamic>?)?.map((e) => Question3.fromJson(e as Map<String, dynamic>)).toList() ??
               [],
       isPassed: json['isPassed'] as bool? ?? false,
     );

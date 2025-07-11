@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:uuid/uuid.dart';
 import 'firestore_test_repository.dart';
-import 'models/question.dart';
+import 'models/questions/question.dart';
 
 class EditTestScreen extends StatefulWidget {
   final String testId;
@@ -22,7 +22,7 @@ class _EditTestScreenState extends State<EditTestScreen> {
   final repo = FirestoreTestRepository();
   final uuid = const Uuid();
 
-  List<Question> questions = [];
+  List<QuestionOld> questions = [];
   bool isLoading = true;
 
   final List<TextEditingController> questionControllers = [];
@@ -71,7 +71,7 @@ class _EditTestScreenState extends State<EditTestScreen> {
   void addQuestion() {
     setState(() {
       final newId = uuid.v4();
-      final newQ = Question(
+      final newQ = QuestionOld(
         id: newId,
         type: QuestionType.single,
         text: '',
@@ -87,7 +87,7 @@ class _EditTestScreenState extends State<EditTestScreen> {
   }
 
   void saveTest() async {
-    List<Question> updatedQuestions = [];
+    List<QuestionOld> updatedQuestions = [];
     for (int i = 0; i < questions.length; i++) {
       final q = questions[i];
 
@@ -102,7 +102,7 @@ class _EditTestScreenState extends State<EditTestScreen> {
         }
       }
 
-      final updatedQuestion = Question(
+      final updatedQuestion = QuestionOld(
         id: q.id,
         type: q.type,
         text: questionControllers[i].text.trim(),

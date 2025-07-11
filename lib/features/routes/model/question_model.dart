@@ -6,14 +6,14 @@ enum QuestionType {
   text,
 }
 
-class Question {
+class Question4 {
   final String id;
   final String text;
   final QuestionType type;
   final List<String> options;
   final List<String> correctAnswers;
 
-  Question({
+  Question4({
     required this.id,
     required this.text,
     required this.type,
@@ -21,9 +21,9 @@ class Question {
     required this.correctAnswers,
   });
 
-  factory Question.fromFirestore(DocumentSnapshot doc) {
+  factory Question4.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return Question(
+    return Question4(
       id: doc.id,
       text: data['text'] ?? '',
       type: _typeFromString(data['type'] ?? 'single'),

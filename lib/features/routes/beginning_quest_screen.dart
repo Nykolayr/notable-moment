@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart'; // ✅ Для listEquals
 import 'package:notable_moments/features/routes/admin/firestore_test_repository.dart';
 import 'package:notable_moments/features/routes/admin/firestore_user_test_repository.dart';
-import 'package:notable_moments/features/routes/admin/models/question.dart';
+import 'package:notable_moments/features/routes/admin/models/questions/question.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart'; // для получения userId
 
 class BeginningQuestScreen extends ConsumerStatefulWidget {
@@ -26,7 +26,7 @@ class _BeginningQuestScreenState extends ConsumerState<BeginningQuestScreen> {
   final repo = FirestoreTestRepository();
   final userTestRepo = FirestoreUserTestRepository();
 
-  List<Question> questions = [];
+  List<QuestionOld> questions = [];
   int currentIndex = 0;
   bool isLoading = true;
   bool isFinished = false;

@@ -1,6 +1,6 @@
 enum QuestionType { single, multiple, text }
 
-class Question {
+class QuestionOld {
   final String id;
   final QuestionType type;
   final String text;
@@ -8,7 +8,7 @@ class Question {
   final List<int> correctIndexes; // ✅ добавлено
   final String correctAnswer; // для текстовых
 
-  Question({
+  QuestionOld({
     required this.id,
     required this.type,
     required this.text,
@@ -17,8 +17,8 @@ class Question {
     required this.correctAnswer,
   });
 
-  factory Question.fromJson(Map<String, dynamic> json) {
-    return Question(
+  factory QuestionOld.fromJson(Map<String, dynamic> json) {
+    return QuestionOld(
       id: json['id'] ?? '',
       type: _parseType(json['type'] ?? 'single'),
       text: json['text'] ?? '',

@@ -12,6 +12,8 @@ import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/route_tooltip_card.dart';
 import 'package:notable_moments/features/routes/edit_routes_screen.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
+import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -50,7 +52,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
 
-  dynamic mapController; // любой тип, который возвращает твой AppMap
+  yandex_map.MapWindow? mapController; // MapWindow который возвращает AppMap
 
   @override
   void initState() {
@@ -127,7 +129,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
             onMapCreated: (controller) async {
               mapController = controller;
               await Future.delayed(const Duration(milliseconds: 500));
-              mapController?.animateToKrasnoyarsk(); // через extension из map_extension
+              mapController?.map.animateToKrasnoyarsk(); // используем map из mapWindow
             },
             disableTaps: true,
           ),
@@ -140,17 +142,17 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
                 children: [
                   AppButton.icon(
                     icon: AppIcon.plus,
-                    onTap: () => mapController?.zoomIn(),
+                    onTap: () => mapController?.map.changeZoomWithDelta(1),
                   ),
                   const SizedBox(height: 8),
                   AppButton.icon(
                     icon: AppIcon.minus,
-                    onTap: () => mapController?.zoomOut(),
+                    onTap: () => mapController?.map.changeZoomWithDelta(-1),
                   ),
                   const SizedBox(height: 8),
                   AppButton.icon(
                     icon: AppIcon.location,
-                    onTap: () => mapController?.animateToKrasnoyarsk(),
+                    onTap: () => mapController?.map.animateToKrasnoyarsk(),
                   ),
                   if (profileState.isAdmin) ...[
                     const SizedBox(height: 8),
