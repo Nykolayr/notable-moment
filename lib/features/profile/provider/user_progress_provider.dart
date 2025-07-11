@@ -11,14 +11,16 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
   UserProgressNotifier() : super(_initialProgress());
 
   static UserProgress _initialProgress() => UserProgress(
-    suscoins: 10,
-    energy: 3,
-    daysInARow: 0,
-    lastVisit: DateTime.now(),
-    routes: {},
-    completedQuests: {},
-    boughtHints: {},
-  );
+        suscoins: 10,
+        energy: 3,
+        daysInARow: 0,
+        lastVisit: DateTime.now(),
+        routes: {},
+        completedQuests: {},
+        boughtHints: {},
+        completedTestsV2: {},
+        boughtHintsV2: {},
+      );
 
   final _db = FirebaseFirestore.instance;
 
@@ -93,4 +95,4 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
       'userId': userId,
     });
   }
-} 
+}

@@ -1,3 +1,6 @@
+import 'package:notable_moments/features/questions/question.dart';
+import 'package:notable_moments/features/questions/single_choice_question.dart';
+
 class RouteModel {
   final String id;
   final String title;
@@ -40,6 +43,7 @@ class RoutePoint {
   final double? latitude;
   final double? longitude;
   final bool isUnlocked;
+  final Question test;
 
   RoutePoint({
     required this.name,
@@ -47,6 +51,7 @@ class RoutePoint {
     this.latitude,
     this.longitude,
     this.isUnlocked = true,
+    required this.test,
   });
 
   factory RoutePoint.fromMap(Map<String, dynamic> map) {
@@ -56,6 +61,7 @@ class RoutePoint {
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
       isUnlocked: map['isUnlocked'] ?? true,
+      test: map['test'] != null ? Question.fromJson(map['test']) : SingleChoiceQuestion.init(),
     );
   }
 
@@ -66,6 +72,7 @@ class RoutePoint {
       'latitude': latitude,
       'longitude': longitude,
       'isUnlocked': isUnlocked,
+      'test': test.toJson(),
     };
   }
 }

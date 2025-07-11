@@ -18,6 +18,7 @@ import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/widget/schedule_editor_widget.dart';
 import 'package:notable_moments/features/routes/admin/edit_test_screen.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:notable_moments/features/questions/single_choice_question.dart';
 
 class EditPointScreen extends StatefulWidget {
   const EditPointScreen({super.key, required this.point});
@@ -233,6 +234,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         url: urlController.text,
                         order: widget.point?.order ?? -1,
                         isDraft: isDraft,
+                        test: SingleChoiceQuestion.init(),
                       ),
                     )
                 : null,

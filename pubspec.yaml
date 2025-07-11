@@ -33,6 +33,7 @@ dependencies:
   syncfusion_flutter_pdfviewer: ^29.2.10
   permission_handler: ^11.3.1
   shared_preferences: ^2.2.2   # ✅ Добавлено для локального хранения флагов (онбординг и др.)
+  flutter_easylogger: ^2.3.3 #https://pub.dev/packages/flutter_easylogger
 
 dev_dependencies:
   flutter_test:

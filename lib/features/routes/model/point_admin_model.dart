@@ -2,6 +2,8 @@ import 'package:collection/collection.dart';
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/working_hours_model.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:notable_moments/features/questions/question.dart';
+import 'package:notable_moments/features/questions/single_choice_question.dart';
 
 class PointAdminModel {
   final String id;
@@ -14,6 +16,7 @@ class PointAdminModel {
   final String url;
   final int order;
   final bool isDraft;
+  final Question test;
 
   bool get isActive => !isDraft;
 
@@ -32,6 +35,7 @@ class PointAdminModel {
     required this.url,
     required this.order,
     required this.isDraft,
+    required this.test,
   });
 
   factory PointAdminModel.fromMap(Map<String, dynamic> map, String id) => PointAdminModel(
@@ -45,6 +49,7 @@ class PointAdminModel {
         url: map['url'] as String,
         order: map['order'] as int? ?? 0,
         isDraft: map['isDraft'] as bool? ?? true,
+        test: map['test'] != null ? Question.fromJson(map['test']) : SingleChoiceQuestion.init(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -57,6 +62,7 @@ class PointAdminModel {
         'url': url,
         'order': order,
         'isDraft': isDraft,
+        'test': test.toJson(),
       };
 
   PointAdminModel copyWith({
@@ -70,6 +76,7 @@ class PointAdminModel {
     String? url,
     int? order,
     bool? isDraft,
+    Question? test,
   }) =>
       PointAdminModel(
         id: id ?? this.id,
@@ -82,6 +89,7 @@ class PointAdminModel {
         url: url ?? this.url,
         order: order ?? this.order,
         isDraft: isDraft ?? this.isDraft,
+        test: test ?? this.test,
       );
 
   @override
@@ -101,7 +109,8 @@ class PointAdminModel {
           const ListEquality<String>().equals(phones, other.phones) &&
           url == other.url &&
           order == other.order &&
-          isDraft == other.isDraft;
+          isDraft == other.isDraft &&
+          test == other.test;
 
   @override
   int get hashCode =>
@@ -114,5 +123,6 @@ class PointAdminModel {
       phones.hashCode ^
       url.hashCode ^
       order.hashCode ^
-      isDraft.hashCode;
+      isDraft.hashCode ^
+      test.hashCode;
 }

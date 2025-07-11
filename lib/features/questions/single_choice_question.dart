@@ -16,6 +16,13 @@ class SingleChoiceQuestion extends Question {
           type: QuestionType.singleChoice,
         );
 
+  static SingleChoiceQuestion init() => SingleChoiceQuestion(
+        id: 'empty',
+        text: '',
+        options: const [],
+        correctIndex: 0,
+      );
+
   @override
   Map<String, dynamic> toJson() => {
         'id': id,

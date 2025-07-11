@@ -29,6 +29,7 @@ RouteModel toRouteModel(RouteAdminModel admin) {
         description: '',
         latitude: p.latitude,
         longitude: p.longitude,
+        test: p.test,
       );
     }).toList(),
     taskCount: 0,

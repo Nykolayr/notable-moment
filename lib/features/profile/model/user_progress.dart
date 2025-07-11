@@ -3,9 +3,11 @@ class UserProgress {
   int energy;
   int daysInARow;
   DateTime lastVisit;
-  Map<String, RouteProgress> routes; // routeId -> progress
-  Set<String> completedQuests; // questId
-  Set<String> boughtHints; // questId
+  Map<String, RouteProgress> routes;
+  Set<String> completedTestsV2; // pointId_questionId
+  Set<String> boughtHintsV2; // pointId_questionId
+  Set<String> completedQuests; // legacy
+  Set<String> boughtHints; // legacy
 
   UserProgress({
     required this.suscoins,
@@ -13,6 +15,8 @@ class UserProgress {
     required this.daysInARow,
     required this.lastVisit,
     required this.routes,
+    required this.completedTestsV2,
+    required this.boughtHintsV2,
     required this.completedQuests,
     required this.boughtHints,
   });
@@ -23,6 +27,8 @@ class UserProgress {
     int? daysInARow,
     DateTime? lastVisit,
     Map<String, RouteProgress>? routes,
+    Set<String>? completedTestsV2,
+    Set<String>? boughtHintsV2,
     Set<String>? completedQuests,
     Set<String>? boughtHints,
   }) {
@@ -32,9 +38,25 @@ class UserProgress {
       daysInARow: daysInARow ?? this.daysInARow,
       lastVisit: lastVisit ?? this.lastVisit,
       routes: routes ?? this.routes,
+      completedTestsV2: completedTestsV2 ?? this.completedTestsV2,
+      boughtHintsV2: boughtHintsV2 ?? this.boughtHintsV2,
       completedQuests: completedQuests ?? this.completedQuests,
       boughtHints: boughtHints ?? this.boughtHints,
     );
+  }
+
+  /// Миграция старых полей в новые
+  void migrateLegacyProgress(Map<String, String> pointToQuestionId) {
+    // completedQuests -> completedTestsV2
+    for (final pointId in completedQuests) {
+      final qid = pointToQuestionId[pointId] ?? 'unknown';
+      completedTestsV2.add('${pointId}_$qid');
+    }
+    // boughtHints -> boughtHintsV2
+    for (final pointId in boughtHints) {
+      final qid = pointToQuestionId[pointId] ?? 'unknown';
+      boughtHintsV2.add('${pointId}_$qid');
+    }
   }
 }
 
@@ -67,9 +89,12 @@ extension UserProgressFirestore on UserProgress {
       energy: map['energy'] ?? 0,
       daysInARow: map['daysInARow'] ?? 0,
       lastVisit: DateTime.parse(map['lastVisit'] ?? DateTime.now().toIso8601String()),
-      routes: (map['routes'] as Map<String, dynamic>? ?? {}).map((k, v) => MapEntry(k, RouteProgressFirestore.fromMap(v))),
+      routes:
+          (map['routes'] as Map<String, dynamic>? ?? {}).map((k, v) => MapEntry(k, RouteProgressFirestore.fromMap(v))),
       completedQuests: Set<String>.from(map['completedQuests'] ?? []),
       boughtHints: Set<String>.from(map['boughtHints'] ?? []),
+      completedTestsV2: Set<String>.from(map['completedTestsV2'] ?? []),
+      boughtHintsV2: Set<String>.from(map['boughtHintsV2'] ?? []),
     );
   }
 }
@@ -85,7 +110,8 @@ extension RouteProgressFirestore on RouteProgress {
   static RouteProgress fromMap(Map<String, dynamic> map) {
     return RouteProgress(
       completedPlaces: Set<String>.from(map['completedPlaces'] ?? []),
-      completedQuests: (map['completedQuests'] as Map<String, dynamic>? ?? {}).map((k, v) => MapEntry(k, Set<String>.from(v ?? []))),
+      completedQuests:
+          (map['completedQuests'] as Map<String, dynamic>? ?? {}).map((k, v) => MapEntry(k, Set<String>.from(v ?? []))),
     );
   }
-} 
+}

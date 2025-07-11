@@ -7,6 +7,7 @@ import 'package:notable_moments/core/helpers/storage_helper.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:flutter_easylogger/flutter_logger.dart';
 
 class RoutesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -155,10 +156,12 @@ class RoutesService {
   }
 
   Stream<List<RouteAdminModel>> watchRoutes() {
-    return _routesCollection
-        .orderBy('order', descending: false)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => RouteAdminModel.fromMap(doc.data())).toList());
+    Logger.e('>>>> routesService -- watchRoutes: starting stream');
+    return _routesCollection.orderBy('order', descending: false).snapshots().map((snapshot) {
+      Logger.e('>>>> routesService -- watchRoutes: received ${snapshot.docs.length} routes');
+      Logger.e('>>>> routesService -- watchRoutes: received ${snapshot.docs.first.data()} routes');
+      return snapshot.docs.map((doc) => RouteAdminModel.fromMap(doc.data())).toList();
+    });
   }
 
   Future<List<RouteAdminModel>> getRoutes() async {
