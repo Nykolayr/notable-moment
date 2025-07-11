@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1059134332358",
+    "project_id": "krasnoyarsk-quest",
+    "storage_bucket": "krasnoyarsk-quest.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1059134332358:android:7fbead6b9a32fae0c266c7",
+        "android_client_info": {
+          "package_name": "com.notablemoments.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD06tfYM80ZSZt0SDGud9MTdE0Om1xVlmo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

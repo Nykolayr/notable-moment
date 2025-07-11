@@ -1,0 +1,43 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "krasnoyarsk-quest",
+          "appId": "1:1059134332358:android:7fbead6b9a32fae0c266c7",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "krasnoyarsk-quest",
+          "appId": "1:1059134332358:ios:e099cd3d631347afc266c7",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "krasnoyarsk-quest",
+          "configurations": {
+            "android": "1:1059134332358:android:7fbead6b9a32fae0c266c7",
+            "ios": "1:1059134332358:ios:e099cd3d631347afc266c7"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

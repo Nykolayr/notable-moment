@@ -1,0 +1,1 @@
+enum MapPointType { place, route }
