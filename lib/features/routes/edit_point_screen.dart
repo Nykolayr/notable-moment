@@ -18,7 +18,8 @@ import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/widget/schedule_editor_widget.dart';
 import 'package:notable_moments/features/routes/admin/edit_test_screen.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
-import 'package:notable_moments/features/questions/single_choice_question.dart';
+import 'package:notable_moments/features/questions/model/single_choice_question.dart';
+import 'package:notable_moments/features/questions/model/question.dart';
 
 class EditPointScreen extends StatefulWidget {
   const EditPointScreen({super.key, required this.point});
@@ -41,6 +42,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
   late final List<String> photos = List.from(widget.point?.photos ?? []);
   late WorkingHours schedule = widget.point?.schedule ?? WorkingHours(periods: []);
   late bool isDraft = widget.point?.isDraft ?? true;
+  Question? test;
 
   yandex_map.MapWindow? _mapWindow;
   yandex_map.Map get map => _mapWindow!.map;
@@ -49,6 +51,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
   void initState() {
     super.initState();
     point = widget.point?.point;
+    test = widget.point?.test; // инициализация теста
 
     titleController.addListener(() => setState(() {}));
     descriptionController.addListener(() => setState(() {}));
@@ -144,7 +147,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
     return false;
   }
 
-  bool get canSave => hasChanges && !hasErrors;
+  bool get canSave => hasChanges && !hasErrors && test != null && test is! SingleChoiceQuestion;
 
   void handleBack() {
     if (hasChanges) {
@@ -189,15 +192,21 @@ class _EditPointScreenState extends State<EditPointScreen> {
           ),
           const SizedBox(height: 12),
           AppButton(
-            title: 'Добавить тест',
-            onTap: () {
-              Navigator.of(context).push(
+            title: test == null || test?.id == 'empty' ? 'Добавить тест' : 'Редактировать тест',
+            onTap: () async {
+              // Переход на экран редактирования теста
+              final result = await Navigator.of(context).push<Question>(
                 MaterialPageRoute(
                   builder: (_) => EditTestScreen(
                     testId: widget.point?.id ?? 'temp-${DateTime.now().millisecondsSinceEpoch}',
                   ),
                 ),
               );
+              if (result != null) {
+                setState(() {
+                  test = result;
+                });
+              }
             },
           ),
           const SizedBox(height: 12),
@@ -221,7 +230,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
           const SizedBox(height: 16),
           AppButton(
             title: 'Сохранить',
-            onTap: canSave && point != null
+            onTap: canSave && point != null && test?.id != 'empty'
                 ? () => Navigator.of(context).pop(
                       PointAdminModel(
                         id: widget.point?.id ?? 'temp-${DateTime.now().millisecondsSinceEpoch}',
@@ -234,7 +243,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         url: urlController.text,
                         order: widget.point?.order ?? -1,
                         isDraft: isDraft,
-                        test: SingleChoiceQuestion.init(),
+                        test: test!,
                       ),
                     )
                 : null,

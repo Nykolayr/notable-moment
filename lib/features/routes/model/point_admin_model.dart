@@ -2,8 +2,8 @@ import 'package:collection/collection.dart';
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/working_hours_model.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
-import 'package:notable_moments/features/questions/question.dart';
-import 'package:notable_moments/features/questions/single_choice_question.dart';
+import 'package:notable_moments/features/questions/model/question.dart';
+import 'package:notable_moments/features/questions/model/single_choice_question.dart';
 
 class PointAdminModel {
   final String id;

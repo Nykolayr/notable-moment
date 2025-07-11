@@ -1,5 +1,5 @@
-import 'package:notable_moments/features/questions/question.dart';
-import 'package:notable_moments/features/questions/single_choice_question.dart';
+import 'package:notable_moments/features/questions/model/question.dart';
+import 'package:notable_moments/features/questions/model/single_choice_question.dart';
 
 class RouteModel {
   final String id;

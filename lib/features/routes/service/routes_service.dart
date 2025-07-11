@@ -156,10 +156,7 @@ class RoutesService {
   }
 
   Stream<List<RouteAdminModel>> watchRoutes() {
-    Logger.e('>>>> routesService -- watchRoutes: starting stream');
     return _routesCollection.orderBy('order', descending: false).snapshots().map((snapshot) {
-      Logger.e('>>>> routesService -- watchRoutes: received ${snapshot.docs.length} routes');
-      Logger.e('>>>> routesService -- watchRoutes: received ${snapshot.docs.first.data()} routes');
       return snapshot.docs.map((doc) => RouteAdminModel.fromMap(doc.data())).toList();
     });
   }
