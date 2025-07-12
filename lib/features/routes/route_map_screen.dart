@@ -8,6 +8,7 @@ import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/beginning_quest_screen.dart';
 import 'package:notable_moments/features/Quests/quest_onboarding_screen.dart';
+import 'package:notable_moments/features/routes/model/route_model.dart';
 
 final progressProvider = StateNotifierProvider<RouteProgressNotifier, Set<int>>(
   (_) => RouteProgressNotifier(),
@@ -22,39 +23,20 @@ class RouteProgressNotifier extends StateNotifier<Set<int>> {
 }
 
 class RouteMapScreen extends ConsumerWidget {
-  final String title;
-  final String description;
+  final RouteModel route;
 
-  RouteMapScreen({
-    super.key,
-    required this.title,
-    required this.description,
-  });
-
-  final List<String> routeLabels = [
-    'река Енисей',
-    'Музей-усадьба В.И. Сурикова',
-    'Детская художественная школа №1 имени В.И. Сурикова',
-    'Мурал',
-    'Караульная гора',
-    'Бывшее Кузнецовское подворье',
-    'Красноярский художественный музей имени В. И. Сурикова',
-  ];
-
-  final List<yandex.Point> routePoints = [
-    yandex.Point(latitude: 56.0153, longitude: 92.8932),
-    yandex.Point(latitude: 56.0120, longitude: 92.8800),
-    yandex.Point(latitude: 56.0100, longitude: 92.8700),
-    yandex.Point(latitude: 56.0170, longitude: 92.8920),
-    yandex.Point(latitude: 56.0145, longitude: 92.8855),
-    yandex.Point(latitude: 56.0165, longitude: 92.8811),
-    yandex.Point(latitude: 56.0180, longitude: 92.8830),
-  ];
+  const RouteMapScreen({super.key, required this.route});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unlocked = ref.watch(progressProvider);
-
+    final points = route.points;
+    final title = route.title;
+    final description = route.description;
+    final routePoints = points
+        .where((p) => p.latitude != null && p.longitude != null)
+        .map((p) => yandex.Point(latitude: p.latitude!, longitude: p.longitude!))
+        .toList();
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -73,7 +55,7 @@ class RouteMapScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 4),
                         const Text(
-                          'Карта маршрутов',
+                          'Карта маршрута',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -96,7 +78,7 @@ class RouteMapScreen extends ConsumerWidget {
                   color: const Color(0xFFF2EDFF),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: _buildRouteVisual(context, ref, unlocked),
+                child: _buildRouteVisual(context, ref, unlocked, points),
               ),
             ),
             SliverToBoxAdapter(
@@ -166,114 +148,20 @@ class RouteMapScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRouteVisual(BuildContext context, WidgetRef ref, Set<int> unlocked) {
+  Widget _buildRouteVisual(BuildContext context, WidgetRef ref, Set<int> unlocked, List<RoutePoint> points) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: List.generate(routeLabels.length, (index) {
+      children: List.generate(points.length, (index) {
         final isLocked = !unlocked.contains(index);
         final color = isLocked ? Colors.grey : Colors.blue;
         final icon = isLocked ? '🔒' : '';
-
-        final pointWidget = GestureDetector(
-          onTap: isLocked
-              ? null
-              : () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  final hasSeenOnboarding = prefs.getBool('hasSeenQuestOnboarding') ?? false;
-
-                  if (!hasSeenOnboarding) {
-                    // ignore: use_build_context_synchronously
-                    final onboardingResult = await Navigator.of(context).push<bool>(
-                          MaterialPageRoute(
-                            builder: (context) => const QuestOnboardingScreen(),
-                          ),
-                        ) ??
-                        false;
-
-                    if (!onboardingResult) {
-                      if (context.mounted) {
-                        context.showSnack('Онбординг не завершён');
-                      }
-                      return;
-                    }
-
-                    await prefs.setBool('hasSeenQuestOnboarding', true);
-                  }
-
-                  final testId = 'test_$index';
-                  final pointId = 'point_$index';
-                  final nextPointId = 'point_${index + 1}';
-
-                  // ignore: use_build_context_synchronously
-                  final result = await Navigator.of(context).push<bool>(
-                        MaterialPageRoute(
-                          builder: (context) => BeginningQuestScreen(
-                            testId: testId,
-                            pointId: pointId,
-                            nextPointId: nextPointId,
-                          ),
-                        ),
-                      ) ??
-                      false;
-
-                  if (result) {
-                    ref.read(progressProvider.notifier).unlockNext(index);
-                    if (context.mounted) {
-                      context.showSnack('Квест пройден! Следующая точка разблокирована.');
-                    }
-                  } else {
-                    if (context.mounted) {
-                      context.showSnack('Квест не завершён.');
-                    }
-                  }
-                },
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 35,
-                height: 35,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              if (icon.isNotEmpty)
-                Text(
-                  icon,
-                  style: const TextStyle(fontSize: 16),
-                ),
-            ],
-          ),
-        );
-
+        final point = points[index];
+        final label = point.name;
         return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              children: [
-                pointWidget,
-                if (index != routeLabels.length - 1)
-                  Container(
-                    width: 4,
-                    height: 36,
-                    color: color,
-                  ),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  routeLabels[index],
-                  style: TextStyle(
-                    color: isLocked ? Colors.grey : Colors.black54,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
+            Icon(Icons.location_on, color: color),
+            const SizedBox(width: 8),
+            Text('$label $icon', style: TextStyle(color: color)),
           ],
         );
       }),

@@ -3,6 +3,7 @@ import 'package:notable_moments/features/questions/model/pair_question.dart';
 import 'package:notable_moments/features/add_type_question/app_input_only_text.dart';
 import 'dart:math';
 
+/// Редактор для создания и редактирования вопроса с сопоставлением
 class MatchEditor extends StatefulWidget {
   final PairQuestion initial;
   final void Function(PairQuestion data, bool isValid) onChanged;
