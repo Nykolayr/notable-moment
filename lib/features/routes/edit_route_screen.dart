@@ -285,12 +285,10 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                     );
                     if (!context.mounted) return;
                     if (newPoint == null) return;
-                    if (newPoint is PointAdminModel) {
-                      if (newPoint == point) return;
-                      points[index] = newPoint;
-                      setState(() {});
-                      calculateRoute();
-                    }
+                    if (newPoint == point) return;
+                    points[index] = newPoint;
+                    setState(() {});
+                    calculateRoute();
                   },
                   child: PointWidget(
                     point: point,
@@ -316,10 +314,8 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
               if (!context.mounted) return;
               if (point == null) return;
 
-              if (point is PointAdminModel) {
-                points.add(point.copyWith(order: points.length));
-                setState(() {});
-              }
+              points.add(point.copyWith(order: points.length));
+              setState(() {});
               calculateRoute();
             },
           ),

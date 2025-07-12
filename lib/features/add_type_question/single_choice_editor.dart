@@ -130,7 +130,7 @@ class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
                         ),
                         if (_optionControllers.length > 2)
                           IconButton(
-                            icon: const Icon(Icons.close, size: 20, color: Color(0xFFB0B0B8)),
+                            icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
                             splashRadius: 18,
                             onPressed: () => _removeOption(i),
                           ),
