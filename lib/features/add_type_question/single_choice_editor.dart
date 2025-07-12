@@ -118,7 +118,7 @@ class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
                             });
                             _notify();
                           },
-                          activeColor: const Color(0xFF2563EB),
+                          activeColor: Color(0xFFA3D421),
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         Expanded(
@@ -126,6 +126,7 @@ class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
                             controller: _optionControllers[i],
                             hintText: 'Ответ №${i + 1}',
                             onChanged: (_) => _notify(),
+                            selected: _correctIndex == i,
                           ),
                         ),
                         if (_optionControllers.length > 2)

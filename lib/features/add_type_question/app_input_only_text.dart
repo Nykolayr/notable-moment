@@ -12,6 +12,7 @@ class AppInputOnlyText extends StatelessWidget {
   final TextInputType? keyboardType;
   final int? maxLines;
   final bool enabled;
+  final bool selected;
 
   const AppInputOnlyText({
     super.key,
@@ -21,6 +22,7 @@ class AppInputOnlyText extends StatelessWidget {
     this.keyboardType,
     this.maxLines = 1,
     this.enabled = true,
+    this.selected = false,
   });
 
   @override
@@ -37,18 +39,18 @@ class AppInputOnlyText extends StatelessWidget {
         hintText: hintText,
         hintStyle: const TextStyle(color: Color(0xFFB0B0B8), fontSize: 18),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: selected ? Color(0xFFF1FFCC) : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE0E4EA), width: 1),
+          borderSide: BorderSide(color: selected ? Color(0xFFA3D421) : Color(0xFFE0E4EA), width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE0E4EA), width: 1),
+          borderSide: BorderSide(color: selected ? Color(0xFFA3D421) : Color(0xFFE0E4EA), width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+          borderSide: BorderSide(color: selected ? Color(0xFFA3D421) : Color(0xFF2563EB), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         isDense: true,

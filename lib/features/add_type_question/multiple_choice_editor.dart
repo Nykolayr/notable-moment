@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:notable_moments/features/questions/model/multiple_choice_question.dart';
 import 'package:notable_moments/features/add_type_question/app_input_only_text.dart';
-import 'package:notable_moments/core/theme/app_color.dart';
 
 /// MultipleChoiceEditor
 ///
@@ -128,38 +127,29 @@ class _MultipleChoiceEditorState extends State<MultipleChoiceEditor> {
               final selected = _correctIndexes.contains(i);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: selected ? const Color(0xFFF1FFCC) : const Color(0xFFF7F8FA),
-                    border: Border.all(
-                      color: selected ? const Color(0xFFA3D421) : Colors.transparent,
-                      width: 2,
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: selected,
+                      onChanged: (v) => _onCorrectChanged(i, v),
+                      activeColor: Color(0xFFA3D421),
+                      checkColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: _CustomCheckbox(
-                          value: selected,
-                          onTap: () => _onCorrectChanged(i, !selected),
-                        ),
+                    Expanded(
+                      child: AppInputOnlyText(
+                        controller: _optionControllers[i],
+                        hintText: 'Ответ № ${i + 1}',
+                        onChanged: (v) => _onOptionChanged(i, v),
+                        selected: selected,
                       ),
-                      Expanded(
-                        child: AppInputOnlyText(
-                          controller: _optionControllers[i],
-                          hintText: 'Ответ № ${i + 1}',
-                          onChanged: (v) => _onOptionChanged(i, v),
-                        ),
+                    ),
+                    if (_optionControllers.length > 2)
+                      IconButton(
+                        icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
+                        onPressed: () => _removeOption(i),
                       ),
-                      if (_optionControllers.length > 2)
-                        IconButton(
-                          icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
-                          onPressed: () => _removeOption(i),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
               );
             },
@@ -173,33 +163,6 @@ class _MultipleChoiceEditorState extends State<MultipleChoiceEditor> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CustomCheckbox extends StatelessWidget {
-  final bool value;
-  final VoidCallback onTap;
-  const _CustomCheckbox({required this.value, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: value ? const Color(0xFFF1FFCC) : Colors.white,
-          border: Border.all(
-            color: value ? Color(0xFFA3D421) : AppColor.primary,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: value ? Icon(Icons.check, color: Colors.white, size: 20) : null,
       ),
     );
   }
