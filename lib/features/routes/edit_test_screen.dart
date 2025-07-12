@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/features/questions/model/question.dart';
 import 'package:notable_moments/features/questions/model/question_type.dart';
@@ -10,63 +11,8 @@ import 'package:notable_moments/features/questions/model/pair_question.dart';
 import 'package:notable_moments/features/questions/model/general_question.dart';
 import 'package:notable_moments/features/questions/model/true_false_question.dart';
 import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
-import 'package:notable_moments/features/add_type_question/single_choice_editor.dart';
-import 'package:notable_moments/features/add_type_question/multiple_choice_editor.dart';
-import 'package:notable_moments/features/add_type_question/anagram_editor.dart';
-import 'package:notable_moments/features/add_type_question/order_editor.dart';
-import 'package:notable_moments/features/add_type_question/match_editor.dart';
-import 'package:notable_moments/features/add_type_question/general_editor.dart';
 // ignore: depend_on_referenced_packages
 import 'package:uuid/uuid.dart';
-
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final VoidCallback? onTap;
-
-  const CustomAppBar({super.key, required this.title, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.only(left: 8, right: 16, top: 0, bottom: 0),
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: preferredSize.height,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Color(0xFF222222)),
-                onPressed: onTap ?? () => Navigator.of(context).maybePop(),
-                splashRadius: 20,
-                padding: const EdgeInsets.only(right: 8),
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF222222),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48);
-}
 
 class EditTestScreen extends StatefulWidget {
   final QuestionTest test;
@@ -214,9 +160,9 @@ class _EditTestScreenState extends State<EditTestScreen> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F4F6),
-        appBar: CustomAppBar(
+        appBar: AppAppBar(
           title: widget.test.id == 'empty' ? 'Создание вопроса' : 'Редактирование вопроса',
-          onTap: _onBack, // _onBack возвращает нужный тест
+          backButtonTap: _onBack,
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
@@ -265,43 +211,11 @@ class _EditTestScreenState extends State<EditTestScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Builder(
                     builder: (_) {
-                      if (current is SingleChoiceQuestion) {
-                        return SingleChoiceEditor(
-                          initial: current,
-                          onChanged: (SingleChoiceQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                        );
-                      }
-                      if (current is MultipleChoiceQuestion) {
-                        return MultipleChoiceEditor(
-                          initial: current,
-                          onChanged: (MultipleChoiceQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                        );
-                      }
-                      if (current is AnagramQuestion) {
-                        return AnagramEditor(
-                          initial: current,
-                          onChanged: (AnagramQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                        );
-                      }
-                      if (current is OrderQuestion) {
-                        return OrderEditor(
-                          initial: current,
-                          onChanged: (OrderQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                        );
-                      }
-                      if (current is PairQuestion) {
-                        return MatchEditor(
-                          initial: current,
-                          onChanged: (PairQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                        );
-                      }
-                      if (current is GeneralQuestion) {
-                        return GeneralEditor(
-                          initial: current,
-                          onChanged: (GeneralQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                        );
-                      }
-                      return const SizedBox.shrink();
+                      final editor = _selectedType.buildEditor(
+                        initial: current,
+                        onChanged: (q, valid) => _onQuestionChanged(q, valid),
+                      );
+                      return editor;
                     },
                   ),
                 ),
