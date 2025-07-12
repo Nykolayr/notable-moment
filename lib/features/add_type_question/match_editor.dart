@@ -47,14 +47,16 @@ class _MatchEditorState extends State<MatchEditor> {
 
   void _notifyParent() {
     final pairs = List.generate(
-        _leftControllers.length, (i) => Pair(left: _leftControllers[i].text, right: _rightControllers[i].text));
+      _leftControllers.length,
+      (i) => Pair(left: _leftControllers[i].text, right: _rightControllers[i].text),
+    );
     final data = widget.initial.copyWith(
       text: _questionController.text,
       pairs: pairs,
       correctPairs: pairs,
     );
     final isValid = _questionController.text.trim().isNotEmpty &&
-        pairs.length >= 1 &&
+        pairs.isNotEmpty &&
         pairs.every((p) => p.left.trim().isNotEmpty && p.right.trim().isNotEmpty);
     widget.onChanged(data, isValid);
   }
@@ -112,34 +114,35 @@ class _MatchEditorState extends State<MatchEditor> {
             ],
           ),
           ...List.generate(
-              _leftControllers.length,
-              (i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: AppInputOnlyText(
-                            controller: _leftControllers[i],
-                            hintText: 'Левый элемент',
-                            onChanged: (_) => setState(_notifyParent),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: AppInputOnlyText(
-                            controller: _rightControllers[i],
-                            hintText: 'Правый элемент',
-                            onChanged: (_) => setState(_notifyParent),
-                          ),
-                        ),
-                        if (_leftControllers.length > 1)
-                          IconButton(
-                            icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
-                            onPressed: () => _removePair(i),
-                          ),
-                      ],
+            _leftControllers.length,
+            (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: AppInputOnlyText(
+                      controller: _leftControllers[i],
+                      hintText: 'Левый элемент',
+                      onChanged: (_) => setState(_notifyParent),
                     ),
-                  )),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AppInputOnlyText(
+                      controller: _rightControllers[i],
+                      hintText: 'Правый элемент',
+                      onChanged: (_) => setState(_notifyParent),
+                    ),
+                  ),
+                  if (_leftControllers.length > 1)
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
+                      onPressed: () => _removePair(i),
+                    ),
+                ],
+              ),
+            ),
+          ),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -164,38 +167,38 @@ class _MatchEditorState extends State<MatchEditor> {
               Expanded(
                 child: Column(
                   children: List.generate(
-                      _leftShuffled.length,
-                      (i) => Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF7F8FA),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFE0E4EA)),
-                            ),
-                            alignment: Alignment.center,
-                            child:
-                                Text(_leftShuffled[i], style: const TextStyle(fontSize: 16, color: Color(0xFF222222))),
-                          )),
+                    _leftShuffled.length,
+                    (i) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FA),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE0E4EA)),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(_leftShuffled[i], style: const TextStyle(fontSize: 16, color: Color(0xFF222222))),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   children: List.generate(
-                      _rightShuffled.length,
-                      (i) => Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF7F8FA),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFE0E4EA)),
-                            ),
-                            alignment: Alignment.center,
-                            child:
-                                Text(_rightShuffled[i], style: const TextStyle(fontSize: 16, color: Color(0xFF222222))),
-                          )),
+                    _rightShuffled.length,
+                    (i) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FA),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE0E4EA)),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(_rightShuffled[i], style: const TextStyle(fontSize: 16, color: Color(0xFF222222))),
+                    ),
+                  ),
                 ),
               ),
             ],

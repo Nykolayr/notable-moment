@@ -18,10 +18,7 @@ class RouteTooltipCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         context.push(
-          RouteMapScreen(
-            title: route.title,
-            description: route.description,
-          ),
+          RouteMapScreen(route: route),
         );
       },
       child: Material(

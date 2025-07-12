@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex;
 
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
-import 'package:notable_moments/features/routes/beginning_quest_screen.dart';
-import 'package:notable_moments/features/Quests/quest_onboarding_screen.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 
 final progressProvider = StateNotifierProvider<RouteProgressNotifier, Set<int>>(
