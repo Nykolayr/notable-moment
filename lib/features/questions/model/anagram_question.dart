@@ -1,6 +1,11 @@
 import 'question.dart';
 import 'question_type.dart';
 
+/// AnagramQuestion
+///
+/// Модель для вопроса "Анаграмма".
+/// Используется для тестов, где нужно расставить буквы в правильном порядке для получения ответа.
+/// Наследник QuestionTest.
 class AnagramQuestion extends QuestionTest {
   final String answer;
   final List<String> letters;

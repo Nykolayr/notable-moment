@@ -1,25 +1,25 @@
+
+
 import 'question.dart';
 import 'question_type.dart';
 
-/// OrderQuestion
+/// SentenceOrderQuestion
 ///
-/// Модель для вопроса "Расставь по порядку" (варианты).
-/// Используется для тестов, где нужно расставить элементы в правильном порядке.
+/// Модель для вопроса "Приведи в порядок" (слова в предложении).
+/// Используется для вопросов, где требуется расставить слова в правильном порядке для составления предложения.
 /// Наследник QuestionTest.
-class OrderQuestion extends QuestionTest {
-  final List<String> items;
+class SentenceOrderQuestion extends QuestionTest {
+  final List<String> words;
   final List<int> correctOrder;
 
-  OrderQuestion({
+  SentenceOrderQuestion({
     required super.id,
     required super.text,
-    required this.items,
+    required this.words,
     required this.correctOrder,
     super.points,
     super.hint,
-  }) : super(
-          type: QuestionTypeTest.order,
-        );
+  }) : super(type: QuestionTypeTest.sentenceOrder);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -28,15 +28,15 @@ class OrderQuestion extends QuestionTest {
         'type': type.name,
         'points': points,
         'hint': hint,
-        'items': items,
+        'words': words,
         'correctOrder': correctOrder,
       };
 
-  static OrderQuestion fromJson(Map<String, dynamic> json) {
-    return OrderQuestion(
+  static SentenceOrderQuestion fromJson(Map<String, dynamic> json) {
+    return SentenceOrderQuestion(
       id: json['id'],
       text: json['text'],
-      items: List<String>.from(json['items']),
+      words: List<String>.from(json['words']),
       correctOrder: List<int>.from(json['correctOrder']),
       points: json['points'] ?? 1,
       hint: json['hint'],
@@ -44,18 +44,18 @@ class OrderQuestion extends QuestionTest {
   }
 
   @override
-  OrderQuestion copyWith({
+  SentenceOrderQuestion copyWith({
     String? id,
     String? text,
     int? points,
     String? hint,
-    List<String>? items,
+    List<String>? words,
     List<int>? correctOrder,
   }) {
-    return OrderQuestion(
+    return SentenceOrderQuestion(
       id: id ?? this.id,
       text: text ?? this.text,
-      items: items ?? this.items,
+      words: words ?? this.words,
       correctOrder: correctOrder ?? this.correctOrder,
       points: points ?? this.points,
       hint: hint ?? this.hint,

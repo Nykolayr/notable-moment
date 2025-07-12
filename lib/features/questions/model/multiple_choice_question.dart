@@ -1,6 +1,11 @@
 import 'question.dart';
 import 'question_type.dart';
 
+/// MultipleChoiceQuestion
+///
+/// Модель для вопроса с несколькими правильными вариантами ответа (checkbox).
+/// Используется для тестов, где пользователь может выбрать несколько вариантов из списка.
+/// Наследник QuestionTest.
 class MultipleChoiceQuestion extends QuestionTest {
   final List<String> options;
   final List<int> correctIndexes;

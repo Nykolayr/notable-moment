@@ -4,6 +4,9 @@ import 'package:notable_moments/features/add_type_question/multiple_choice_edito
 import 'package:notable_moments/features/add_type_question/anagram_editor.dart';
 import 'package:notable_moments/features/add_type_question/order_editor.dart';
 import 'package:notable_moments/features/add_type_question/match_editor.dart';
+import 'package:notable_moments/features/add_type_question/general_editor.dart';
+import 'package:notable_moments/features/add_type_question/true_false_editor.dart';
+import 'package:notable_moments/features/add_type_question/sentence_order_editor.dart';
 
 enum QuestionTypeTest {
   singleChoice(
@@ -25,6 +28,18 @@ enum QuestionTypeTest {
   pair(
     title: 'Найди пару',
     icon: Icons.link,
+  ),
+  general(
+    title: 'Общий вопрос',
+    icon: Icons.help_outline,
+  ),
+  trueFalse(
+    title: 'Правда/Ложь',
+    icon: Icons.check,
+  ),
+  sentenceOrder(
+    title: 'Порядок слов',
+    icon: Icons.format_line_spacing,
   );
 
   final String title;
@@ -49,6 +64,12 @@ extension QuestionTypeTestExt on QuestionTypeTest {
         return OrderEditor(initial: initial, onChanged: onChanged);
       case QuestionTypeTest.pair:
         return MatchEditor(initial: initial, onChanged: onChanged);
+      case QuestionTypeTest.general:
+        return GeneralEditor(initial: initial, onChanged: onChanged);
+      case QuestionTypeTest.trueFalse:
+        return TrueFalseEditor(initial: initial, onChanged: onChanged);
+      case QuestionTypeTest.sentenceOrder:
+        return SentenceOrderEditor(initial: initial, onChanged: onChanged);
     }
   }
 }

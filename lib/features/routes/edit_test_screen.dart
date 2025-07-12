@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:notable_moments/core/widget/app_app_bar.dart';
+import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/features/questions/model/question.dart';
 import 'package:notable_moments/features/questions/model/question_type.dart';
 import 'package:notable_moments/features/questions/model/single_choice_question.dart';
@@ -6,6 +8,9 @@ import 'package:notable_moments/features/questions/model/multiple_choice_questio
 import 'package:notable_moments/features/questions/model/anagram_question.dart';
 import 'package:notable_moments/features/questions/model/order_question.dart';
 import 'package:notable_moments/features/questions/model/pair_question.dart';
+import 'package:notable_moments/features/questions/model/general_question.dart';
+import 'package:notable_moments/features/questions/model/true_false_question.dart';
+import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
 import 'package:notable_moments/features/add_type_question/single_choice_editor.dart';
 import 'package:notable_moments/features/add_type_question/multiple_choice_editor.dart';
 import 'package:notable_moments/features/add_type_question/anagram_editor.dart';
@@ -24,14 +29,14 @@ class EditTestScreen extends StatefulWidget {
 class _EditTestScreenState extends State<EditTestScreen> {
   late Map<QuestionTypeTest, QuestionTest> _questionsByType;
   late QuestionTypeTest _selectedType;
-  late QuestionTest _initialQuestion;
+  late QuestionTest initialQuestion;
   bool _isValid = false;
 
   @override
   void initState() {
     super.initState();
     _selectedType = widget.test.type;
-    _initialQuestion = widget.test;
+    initialQuestion = widget.test;
     _questionsByType = {
       for (var type in QuestionTypeTest.values)
         type: _createQuestionOfType(type, initial: type == widget.test.type ? widget.test : null),
@@ -88,6 +93,35 @@ class _EditTestScreenState extends State<EditTestScreen> {
           points: initial?.points ?? 1,
           hint: initial?.hint,
         );
+      case QuestionTypeTest.general:
+        if (initial is GeneralQuestion) return initial;
+        return GeneralQuestion(
+          id: initial?.id ?? '',
+          text: initial?.text ?? '',
+          options: const ['Да', 'Нет'],
+          correctIndex: 0,
+          points: initial?.points ?? 1,
+          hint: initial?.hint,
+        );
+      case QuestionTypeTest.trueFalse:
+        if (initial is TrueFalseQuestion) return initial;
+        return TrueFalseQuestion(
+          id: initial?.id ?? '',
+          text: initial?.text ?? '',
+          correct: true,
+          points: initial?.points ?? 1,
+          hint: initial?.hint,
+        );
+      case QuestionTypeTest.sentenceOrder:
+        if (initial is SentenceOrderQuestion) return initial;
+        return SentenceOrderQuestion(
+          id: initial?.id ?? '',
+          text: initial?.text ?? '',
+          words: const [],
+          correctOrder: const [],
+          points: initial?.points ?? 1,
+          hint: initial?.hint,
+        );
     }
   }
 
@@ -110,76 +144,102 @@ class _EditTestScreenState extends State<EditTestScreen> {
     Navigator.of(context).pop(_questionsByType[_selectedType]);
   }
 
-  void _onBack() {
-    Navigator.of(context).pop(_initialQuestion);
-  }
-
   @override
   Widget build(BuildContext context) {
     final current = _questionsByType[_selectedType];
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _onBack();
-      },
+    return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Создание вопроса'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _onBack,
-          ),
+        backgroundColor: const Color(0xFFF4F4F6),
+        appBar: AppAppBar(
+          title: widget.test.id == 'empty' ? 'Создание вопроса' : 'Редактирование вопроса',
         ),
         body: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DropdownButton<QuestionTypeTest>(
-                value: _selectedType,
-                onChanged: _onTypeChanged,
-                items: QuestionTypeTest.values
-                    .map(
-                      (type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type.title),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E6)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<QuestionTypeTest>(
+                        value: _selectedType,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                        onChanged: _onTypeChanged,
+                        items: QuestionTypeTest.values
+                            .map(
+                              (type) => DropdownMenuItem(
+                                value: type,
+                                child: Row(
+                                  children: [
+                                    Icon(type.icon, color: const Color(0xFF222222)),
+                                    const SizedBox(width: 10),
+                                    Text(type.title, style: const TextStyle(fontSize: 16)),
+                                  ],
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
-                    )
-                    .toList(),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
-              if (current is SingleChoiceQuestion)
-                SingleChoiceEditor(
-                  initial: current,
-                  onChanged: (SingleChoiceQuestion q, bool valid) => _onQuestionChanged(q, valid),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Builder(
+                    builder: (_) {
+                      if (current is SingleChoiceQuestion) {
+                        return SingleChoiceEditor(
+                          initial: current,
+                          onChanged: (SingleChoiceQuestion q, bool valid) => _onQuestionChanged(q, valid),
+                        );
+                      }
+                      if (current is MultipleChoiceQuestion) {
+                        return MultipleChoiceEditor(
+                          initial: current,
+                          onChanged: (MultipleChoiceQuestion q, bool valid) => _onQuestionChanged(q, valid),
+                        );
+                      }
+                      if (current is AnagramQuestion) {
+                        return AnagramEditor(
+                          initial: current,
+                          onChanged: (AnagramQuestion q, bool valid) => _onQuestionChanged(q, valid),
+                        );
+                      }
+                      if (current is OrderQuestion) {
+                        return OrderEditor(
+                          initial: current,
+                          onChanged: (OrderQuestion q, bool valid) => _onQuestionChanged(q, valid),
+                        );
+                      }
+                      if (current is PairQuestion) {
+                        return MatchEditor(
+                          initial: current,
+                          onChanged: (PairQuestion q, bool valid) => _onQuestionChanged(q, valid),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                 ),
-              if (current is MultipleChoiceQuestion)
-                MultipleChoiceEditor(
-                  initial: current,
-                  onChanged: (MultipleChoiceQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                ),
-              if (current is AnagramQuestion)
-                AnagramEditor(
-                  initial: current,
-                  onChanged: (AnagramQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                ),
-              if (current is OrderQuestion)
-                OrderEditor(
-                  initial: current,
-                  onChanged: (OrderQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                ),
-              if (current is PairQuestion)
-                MatchEditor(
-                  initial: current,
-                  onChanged: (PairQuestion q, bool valid) => _onQuestionChanged(q, valid),
-                ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isValid ? _onSave : null,
-                  child: const Text('Сохранить'),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: AppButton(
+                  title: 'Сохранить',
+                  onTap: _isValid ? _onSave : null,
                 ),
               ),
             ],

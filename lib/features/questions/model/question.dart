@@ -1,3 +1,7 @@
+import 'package:notable_moments/features/questions/model/general_question.dart';
+import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
+import 'package:notable_moments/features/questions/model/true_false_question.dart';
+
 import 'question_type.dart';
 import 'single_choice_question.dart';
 import 'multiple_choice_question.dart';
@@ -41,6 +45,12 @@ abstract class QuestionTest {
         return OrderQuestion.fromJson(json);
       case QuestionTypeTest.pair:
         return PairQuestion.fromJson(json);
+      case QuestionTypeTest.general:
+        return GeneralQuestion.fromJson(json);
+      case QuestionTypeTest.trueFalse:
+        return TrueFalseQuestion.fromJson(json);
+      case QuestionTypeTest.sentenceOrder:
+        return SentenceOrderQuestion.fromJson(json);
     }
   }
 }

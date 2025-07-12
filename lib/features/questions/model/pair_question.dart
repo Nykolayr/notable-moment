@@ -1,6 +1,13 @@
 import 'question.dart';
 import 'question_type.dart';
 
+/// PairQuestion
+///
+/// Модель для вопроса "Найди пару" (соответствие).
+/// Используется для тестов, где нужно сопоставить элементы между собой (парные карточки).
+/// Наследник QuestionTest.
+
+/// Класс для ары значений
 class Pair {
   final String left;
   final String right;
