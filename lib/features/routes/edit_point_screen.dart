@@ -2,6 +2,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/helpers/validator.dart';
@@ -203,10 +204,11 @@ class _EditPointScreenState extends State<EditPointScreen> {
             onTap: () async {
               // Переход на экран редактирования теста
               final result = await Navigator.of(context).push<QuestionTest>(
-                test = await context.push(
-                  EditTestScreen(test: test),
+                MaterialPageRoute(
+                  builder: (context) => EditTestScreen(test: test),
                 ),
               );
+              Logger.i('>>>> test: ${result?.toJson()}');
               if (result != null) {
                 setState(() {
                   test = result;

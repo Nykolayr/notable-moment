@@ -278,7 +278,11 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                 padding: EdgeInsets.only(bottom: index == points.length - 1 ? 0 : 8),
                 child: AppGestureDetector(
                   onTap: () async {
-                    final newPoint = await context.push(EditPointScreen(pointAdmin: point));
+                    final newPoint = await Navigator.of(context).push<PointAdminModel?>(
+                      MaterialPageRoute(
+                        builder: (context) => EditPointScreen(pointAdmin: point),
+                      ),
+                    );
                     if (!context.mounted) return;
                     if (newPoint == null) return;
                     if (newPoint is PointAdminModel) {
@@ -304,7 +308,11 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
           AppButton(
             title: 'Добавить место',
             onTap: () async {
-              final point = await context.push(EditPointScreen(pointAdmin: null));
+              final point = await Navigator.of(context).push<PointAdminModel?>(
+                MaterialPageRoute(
+                  builder: (context) => EditPointScreen(pointAdmin: null),
+                ),
+              );
               if (!context.mounted) return;
               if (point == null) return;
 
@@ -319,7 +327,11 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
           AppButton(
             title: 'Предпросмотр маршрута',
             isLoading: isRouteCalculating,
-            onTap: () => context.push(EditRouteMapScreen(route: route)),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => EditRouteMapScreen(route: route),
+              ),
+            ),
           ),
           const SizedBox(height: 20),
           isNew

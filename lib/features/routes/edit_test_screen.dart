@@ -16,6 +16,57 @@ import 'package:notable_moments/features/add_type_question/multiple_choice_edito
 import 'package:notable_moments/features/add_type_question/anagram_editor.dart';
 import 'package:notable_moments/features/add_type_question/order_editor.dart';
 import 'package:notable_moments/features/add_type_question/match_editor.dart';
+// ignore: depend_on_referenced_packages
+import 'package:uuid/uuid.dart';
+
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final VoidCallback? onTap;
+
+  const CustomAppBar({super.key, required this.title, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.only(left: 8, right: 16, top: 0, bottom: 0),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: preferredSize.height,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Color(0xFF222222)),
+                onPressed: onTap ?? () => Navigator.of(context).maybePop(),
+                splashRadius: 20,
+                padding: const EdgeInsets.only(right: 8),
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF222222),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(48);
+}
 
 class EditTestScreen extends StatefulWidget {
   final QuestionTest test;
@@ -31,6 +82,7 @@ class _EditTestScreenState extends State<EditTestScreen> {
   late QuestionTypeTest _selectedType;
   late QuestionTest initialQuestion;
   bool _isValid = false;
+  final _uuid = const Uuid();
 
   @override
   void initState() {
@@ -141,7 +193,19 @@ class _EditTestScreenState extends State<EditTestScreen> {
   }
 
   void _onSave() {
-    Navigator.of(context).pop(_questionsByType[_selectedType]);
+    final currentQuestion = _questionsByType[_selectedType];
+
+    // Если это новый тест (id == 'empty'), генерируем уникальный ID
+    if (currentQuestion?.id == 'empty') {
+      final updatedQuestion = currentQuestion!.copyWith(id: _uuid.v4());
+      Navigator.of(context).pop(updatedQuestion);
+    } else {
+      Navigator.of(context).pop(currentQuestion);
+    }
+  }
+
+  void _onBack() {
+    Navigator.of(context).pop(initialQuestion);
   }
 
   @override
@@ -150,8 +214,9 @@ class _EditTestScreenState extends State<EditTestScreen> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F4F6),
-        appBar: AppAppBar(
+        appBar: CustomAppBar(
           title: widget.test.id == 'empty' ? 'Создание вопроса' : 'Редактирование вопроса',
+          onTap: _onBack, // _onBack возвращает нужный тест
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
