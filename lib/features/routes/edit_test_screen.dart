@@ -15,6 +15,7 @@ import 'package:notable_moments/features/add_type_question/multiple_choice_edito
 import 'package:notable_moments/features/add_type_question/anagram_editor.dart';
 import 'package:notable_moments/features/add_type_question/order_editor.dart';
 import 'package:notable_moments/features/add_type_question/match_editor.dart';
+import 'package:notable_moments/features/add_type_question/general_editor.dart';
 // ignore: depend_on_referenced_packages
 import 'package:uuid/uuid.dart';
 
@@ -292,6 +293,12 @@ class _EditTestScreenState extends State<EditTestScreen> {
                         return MatchEditor(
                           initial: current,
                           onChanged: (PairQuestion q, bool valid) => _onQuestionChanged(q, valid),
+                        );
+                      }
+                      if (current is GeneralQuestion) {
+                        return GeneralEditor(
+                          initial: current,
+                          onChanged: (GeneralQuestion q, bool valid) => _onQuestionChanged(q, valid),
                         );
                       }
                       return const SizedBox.shrink();

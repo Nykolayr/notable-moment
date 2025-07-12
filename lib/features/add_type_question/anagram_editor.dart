@@ -116,8 +116,8 @@ class _AnagramEditorState extends State<AnagramEditor> {
                         border: Border.all(color: const Color(0xFFE0E4EA)),
                       ),
                       child: Text(l.toLowerCase(),
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color(0xFF222222))),
-                    ))
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color(0xFF222222)),),
+                    ),)
                 .toList(),
           ),
         ],
