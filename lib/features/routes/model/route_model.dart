@@ -43,7 +43,7 @@ class RoutePoint {
   final double? latitude;
   final double? longitude;
   final bool isUnlocked;
-  final Question test;
+  final QuestionTest test;
 
   RoutePoint({
     required this.name,
@@ -61,7 +61,7 @@ class RoutePoint {
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
       isUnlocked: map['isUnlocked'] ?? true,
-      test: map['test'] != null ? Question.fromJson(map['test']) : SingleChoiceQuestion.init(),
+      test: map['test'] != null ? QuestionTest.fromJson(map['test']) : SingleChoiceQuestion.init(),
     );
   }
 

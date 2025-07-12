@@ -1,7 +1,7 @@
 import 'question.dart';
 import 'question_type.dart';
 
-class SingleChoiceQuestion extends Question {
+class SingleChoiceQuestion extends QuestionTest {
   final List<String> options;
   final int correctIndex;
 

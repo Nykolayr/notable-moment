@@ -16,7 +16,7 @@ class PointAdminModel {
   final String url;
   final int order;
   final bool isDraft;
-  final Question test;
+  final QuestionTest test;
 
   bool get isActive => !isDraft;
 
@@ -49,7 +49,7 @@ class PointAdminModel {
         url: map['url'] as String,
         order: map['order'] as int? ?? 0,
         isDraft: map['isDraft'] as bool? ?? true,
-        test: map['test'] != null ? Question.fromJson(map['test']) : SingleChoiceQuestion.init(),
+        test: map['test'] != null ? QuestionTest.fromJson(map['test']) : SingleChoiceQuestion.init(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -76,7 +76,7 @@ class PointAdminModel {
     String? url,
     int? order,
     bool? isDraft,
-    Question? test,
+    QuestionTest? test,
   }) =>
       PointAdminModel(
         id: id ?? this.id,

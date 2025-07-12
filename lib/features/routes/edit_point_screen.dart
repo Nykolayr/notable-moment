@@ -44,7 +44,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
   late final List<String> photos = List.from(widget.pointAdmin?.photos ?? []);
   late WorkingHours schedule = widget.pointAdmin?.schedule ?? WorkingHours(periods: []);
   late bool isDraft = widget.pointAdmin?.isDraft ?? true;
-  Question test = SingleChoiceQuestion.init();
+  QuestionTest test = SingleChoiceQuestion.init();
 
   yandex_map.MapWindow? _mapWindow;
   yandex_map.Map get map => _mapWindow!.map;
@@ -202,7 +202,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
             title: test.id == 'empty' ? 'Добавить тест' : 'Редактировать тест',
             onTap: () async {
               // Переход на экран редактирования теста
-              final result = await Navigator.of(context).push<Question>(
+              final result = await Navigator.of(context).push<QuestionTest>(
                 test = await context.push(
                   EditTestScreen(test: test),
                 ),

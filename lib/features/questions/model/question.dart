@@ -5,14 +5,14 @@ import 'anagram_question.dart';
 import 'order_question.dart';
 import 'pair_question.dart';
 
-abstract class Question {
+abstract class QuestionTest {
   final String id;
   final String text;
   final QuestionTypeTest type;
   final int points;
   final String? hint;
 
-  Question({
+  QuestionTest({
     required this.id,
     required this.text,
     required this.type,
@@ -21,14 +21,14 @@ abstract class Question {
   });
 
   Map<String, dynamic> toJson();
-  Question copyWith({
+  QuestionTest copyWith({
     String? id,
     String? text,
     int? points,
     String? hint,
   });
 
-  static Question fromJson(Map<String, dynamic> json) {
+  static QuestionTest fromJson(Map<String, dynamic> json) {
     final type = QuestionTypeTest.values.byName(json['type']);
     switch (type) {
       case QuestionTypeTest.singleChoice:

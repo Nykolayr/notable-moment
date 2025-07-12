@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:notable_moments/features/questions/model/single_choice_question.dart';
 
 class SingleChoiceEditor extends StatefulWidget {
-  final dynamic initial;
-  final void Function(dynamic data, bool isValid) onChanged;
+  final SingleChoiceQuestion initial;
+  final void Function(SingleChoiceQuestion data, bool isValid) onChanged;
 
-  const SingleChoiceEditor({super.key, this.initial, required this.onChanged});
+  const SingleChoiceEditor({super.key, required this.initial, required this.onChanged});
 
   @override
   State<SingleChoiceEditor> createState() => _SingleChoiceEditorState();
 }
 
 class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
-  late dynamic data;
+  late SingleChoiceQuestion data;
 
   @override
   void initState() {
@@ -21,7 +22,6 @@ class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
   }
 
   void _notify() {
-    // Здесь должна быть валидация для SingleChoiceData, если потребуется
     widget.onChanged(data, true);
   }
 

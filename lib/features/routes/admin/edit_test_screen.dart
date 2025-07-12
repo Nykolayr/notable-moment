@@ -8,7 +8,7 @@ import 'firestore_test_repository.dart';
 import 'models/questions/question.dart';
 
 class EditTestScreenOld extends StatefulWidget {
-  final Question test;
+  final QuestionTest test;
 
   const EditTestScreenOld({
     super.key,

@@ -1,7 +1,7 @@
 import 'question.dart';
 import 'question_type.dart';
 
-class OrderQuestion extends Question {
+class OrderQuestion extends QuestionTest {
   final List<String> items;
   final List<int> correctOrder;
 

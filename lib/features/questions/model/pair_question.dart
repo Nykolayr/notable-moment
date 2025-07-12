@@ -22,7 +22,7 @@ class Pair {
       );
 }
 
-class PairQuestion extends Question {
+class PairQuestion extends QuestionTest {
   final List<Pair> pairs;
   final List<Pair> correctPairs;
 

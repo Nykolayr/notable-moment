@@ -1,7 +1,7 @@
 import 'question.dart';
 import 'question_type.dart';
 
-class AnagramQuestion extends Question {
+class AnagramQuestion extends QuestionTest {
   final String answer;
   final List<String> letters;
 

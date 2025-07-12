@@ -1,7 +1,7 @@
 import 'question.dart';
 import 'question_type.dart';
 
-class MultipleChoiceQuestion extends Question {
+class MultipleChoiceQuestion extends QuestionTest {
   final List<String> options;
   final List<int> correctIndexes;
 

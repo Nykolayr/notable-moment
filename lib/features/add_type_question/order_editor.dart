@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:notable_moments/features/questions/model/order_question.dart';
 
 class OrderEditor extends StatelessWidget {
-  final dynamic initial;
-  final void Function(dynamic data, bool isValid) onChanged;
+  final OrderQuestion initial;
+  final void Function(OrderQuestion data, bool isValid) onChanged;
 
-  const OrderEditor({super.key, this.initial, required this.onChanged});
+  const OrderEditor({super.key, required this.initial, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
