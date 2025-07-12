@@ -99,26 +99,27 @@ class _OrderEditorState extends State<OrderEditor> {
           ),
           const SizedBox(height: 16),
           ...List.generate(
-              _optionControllers.length,
-              (i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: AppInputOnlyText(
-                            controller: _optionControllers[i],
-                            hintText: 'Вариант №${i + 1}',
-                            onChanged: (v) => _onOptionChanged(i, v),
-                          ),
-                        ),
-                        if (_optionControllers.length > 2)
-                          IconButton(
-                            icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
-                            onPressed: () => _removeOption(i),
-                          ),
-                      ],
+            _optionControllers.length,
+            (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: AppInputOnlyText(
+                      controller: _optionControllers[i],
+                      hintText: 'Вариант №${i + 1}',
+                      onChanged: (v) => _onOptionChanged(i, v),
                     ),
-                  )),
+                  ),
+                  if (_optionControllers.length > 2)
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
+                      onPressed: () => _removeOption(i),
+                    ),
+                ],
+              ),
+            ),
+          ),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -166,11 +167,12 @@ class _OrderEditorState extends State<OrderEditor> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
-                _order.length,
-                (i) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('${i + 1}', style: const TextStyle(fontSize: 16, color: Color(0xFFB0B0B8))),
-                    )),
+              _order.length,
+              (i) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('${i + 1}', style: const TextStyle(fontSize: 16, color: Color(0xFFB0B0B8))),
+              ),
+            ),
           ),
         ],
       ),
