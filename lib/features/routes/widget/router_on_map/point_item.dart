@@ -8,14 +8,13 @@ class PointItem extends StatelessWidget {
   final int index;
   final int indexFirstLocked;
   final int lastUnlockedIndex;
-  final double width;
+
   const PointItem({
     super.key,
     required this.point,
     required this.index,
     required this.indexFirstLocked,
     required this.lastUnlockedIndex,
-    required this.width,
   });
 
   @override
@@ -23,6 +22,7 @@ class PointItem extends StatelessWidget {
     Logger.i('point: ${point.toJson()}');
     final isUnlocked = index <= lastUnlockedIndex;
     final isFirstLocked = index == indexFirstLocked;
+    final width = (MediaQuery.of(context).size.width / 2) - 30;
     Color borderColor;
     Color fillColor;
     Widget? childIcon;
@@ -50,8 +50,8 @@ class PointItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
               color: fillColor,
               shape: BoxShape.circle,
