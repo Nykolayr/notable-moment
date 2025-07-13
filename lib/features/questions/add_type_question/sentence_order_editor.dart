@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
-import 'package:notable_moments/features/add_type_question/app_input_only_text.dart';
+import 'package:notable_moments/features/questions/add_type_question/app_input_only_text.dart';
 import 'dart:math';
 
 /// SentenceOrderEditor

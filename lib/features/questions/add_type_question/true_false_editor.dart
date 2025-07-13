@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:notable_moments/features/questions/model/general_question.dart';
-import 'package:notable_moments/features/add_type_question/app_input_only_text.dart';
+import 'package:notable_moments/features/questions/model/true_false_question.dart';
+import 'package:notable_moments/features/questions/add_type_question/app_input_only_text.dart';
 
-class GeneralEditor extends StatefulWidget {
-  final GeneralQuestion initial;
-  final void Function(GeneralQuestion data, bool isValid) onChanged;
+class TrueFalseEditor extends StatefulWidget {
+  final TrueFalseQuestion initial;
+  final void Function(TrueFalseQuestion data, bool isValid) onChanged;
 
-  const GeneralEditor({super.key, required this.initial, required this.onChanged});
+  const TrueFalseEditor({super.key, required this.initial, required this.onChanged});
 
   @override
-  State<GeneralEditor> createState() => _GeneralEditorState();
+  State<TrueFalseEditor> createState() => _TrueFalseEditorState();
 }
 
-class _GeneralEditorState extends State<GeneralEditor> {
+class _TrueFalseEditorState extends State<TrueFalseEditor> {
   late TextEditingController _questionController;
-  late int _correctIndex;
-  final List<String> _options = const ['Да', 'Нет'];
+  late bool _correct;
+  final List<String> _options = const ['Правда', 'Ложь'];
 
   @override
   void initState() {
     super.initState();
     _questionController = TextEditingController(text: widget.initial.text);
-    _correctIndex = widget.initial.correctIndex;
+    _correct = widget.initial.correct;
     WidgetsBinding.instance.addPostFrameCallback((_) => _notifyParent());
   }
 
@@ -34,16 +34,15 @@ class _GeneralEditorState extends State<GeneralEditor> {
   void _notifyParent() {
     final data = widget.initial.copyWith(
       text: _questionController.text,
-      options: _options,
-      correctIndex: _correctIndex,
+      correct: _correct,
     );
-    final isValid = _questionController.text.trim().isNotEmpty && _correctIndex >= 0 && _correctIndex < _options.length;
+    final isValid = _questionController.text.trim().isNotEmpty;
     widget.onChanged(data, isValid);
   }
 
   void _onSelect(int idx) {
     setState(() {
-      _correctIndex = idx;
+      _correct = idx == 0;
       _notifyParent();
     });
   }
@@ -65,7 +64,7 @@ class _GeneralEditorState extends State<GeneralEditor> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(_options.length, (i) {
-              final selected = _correctIndex == i;
+              final selected = (_correct && i == 0) || (!_correct && i == 1);
               return Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),

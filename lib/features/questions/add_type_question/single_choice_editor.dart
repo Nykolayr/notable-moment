@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:notable_moments/features/questions/model/single_choice_question.dart';
-import 'package:notable_moments/features/add_type_question/app_input_only_text.dart';
+import 'package:notable_moments/features/questions/add_type_question/app_input_only_text.dart';
 
 /// Виджет для создания и редактирования вопроса с одним правильным вариантом ответа (radio).
 /// Используется на экране создания/редактирования теста.

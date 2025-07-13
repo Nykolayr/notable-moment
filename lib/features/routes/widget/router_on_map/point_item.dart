@@ -7,14 +7,17 @@ class CirclePoint extends StatelessWidget {
   final bool isFirstLocked;
   final bool isLocked;
   final Widget? childIcon;
-  final VoidCallback? onTap;
+  final void Function(int index, bool isLocked, bool isFirstLocked) onTap; // Изменяю тип onTap
+  final int pointIndex; // Добавляю индекс точки
+
   const CirclePoint({
     super.key,
     required this.isUnlocked,
     required this.isFirstLocked,
     required this.isLocked,
     this.childIcon,
-    this.onTap,
+    required this.onTap,
+    required this.pointIndex, // Добавляю в конструктор
   });
 
   @override
@@ -32,7 +35,10 @@ class CirclePoint extends StatelessWidget {
       fillColor = const Color(0xFFE1E9F4);
     }
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        // Используем pointIndex из самого CirclePoint
+        onTap(pointIndex, isLocked, isFirstLocked);
+      },
       child: Container(
         width: 60,
         height: 60,
@@ -52,7 +58,7 @@ class PointItem extends StatelessWidget {
   final int index;
   final int indexFirstLocked;
   final int lastUnlockedIndex;
-  final VoidCallback? onTap;
+  final void Function(int index, bool isLocked, bool isFirstLocked)? onTap; // Изменяю тип
 
   const PointItem({
     super.key,
@@ -84,7 +90,8 @@ class PointItem extends StatelessWidget {
           isFirstLocked: isFirstLocked,
           isLocked: isLocked,
           childIcon: childIcon,
-          onTap: onTap,
+          onTap: onTap ?? (index, isLocked, isFirstLocked) {}, // Добавляю заглушку
+          pointIndex: index, // Передаю index как pointIndex
         ),
         const SizedBox(height: 8),
         Text(

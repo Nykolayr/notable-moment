@@ -12,7 +12,7 @@ import 'package:notable_moments/core/widget/app_checkbox.dart';
 import 'package:notable_moments/core/widget/app_input.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/features/routes/constant/app_map_data.dart';
-import 'package:notable_moments/features/routes/edit_test_screen.dart';
+import 'package:notable_moments/features/questions/edit_test_screen.dart';
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/working_hours_model.dart';

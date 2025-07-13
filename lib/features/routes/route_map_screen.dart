@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
@@ -10,6 +9,7 @@ import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'package:notable_moments/features/questions/page_type_question/page_test_screen.dart';
 
 class RouteMapScreen extends ConsumerWidget {
   final RouteModel route;
@@ -47,7 +47,16 @@ class RouteMapScreen extends ConsumerWidget {
                   points: points,
                   lastUnlockedIndex: lastUnlockedIndex,
                   onPointTap: (index, isLocked) {
-                    Logger.d('isLocked: $isLocked');
+                    if (isLocked) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PageTestScreen(
+                            route: route,
+                            currentIndex: index,
+                          ),
+                        ),
+                      );
+                    }
                   },
                 ),
                 Padding(

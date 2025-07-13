@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:notable_moments/features/add_type_question/single_choice_editor.dart';
-import 'package:notable_moments/features/add_type_question/multiple_choice_editor.dart';
-import 'package:notable_moments/features/add_type_question/anagram_editor.dart';
-import 'package:notable_moments/features/add_type_question/order_editor.dart';
-import 'package:notable_moments/features/add_type_question/match_editor.dart';
-import 'package:notable_moments/features/add_type_question/general_editor.dart';
-import 'package:notable_moments/features/add_type_question/true_false_editor.dart';
-import 'package:notable_moments/features/add_type_question/sentence_order_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/single_choice_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/multiple_choice_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/anagram_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/order_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/match_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/general_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/true_false_editor.dart';
+import 'package:notable_moments/features/questions/add_type_question/sentence_order_editor.dart';
 
 enum QuestionTypeTest {
   singleChoice(
