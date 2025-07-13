@@ -38,7 +38,7 @@ class ProfileState {
         status = Status.initial,
         isAdmin = false,
         suscoins = 0,
-        energy = 0,
+        energy = 3, // energy по умолчанию теперь 3
         streak = 0;
 
   /// Основной конструктор
