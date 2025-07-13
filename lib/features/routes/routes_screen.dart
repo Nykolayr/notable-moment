@@ -25,14 +25,14 @@ RouteModel toRouteModel(RouteAdminModel admin) {
     description: admin.description,
     points: admin.points.map((p) {
       return RoutePoint(
-        name: '',
-        description: '',
+        name: p.title, // ← Исправлено: теперь берём название точки
+        description: p.description,
         latitude: p.latitude,
         longitude: p.longitude,
         test: p.test,
       );
     }).toList(),
-    taskCount: 0,
+    taskCount: admin.points.length,
   );
 }
 

@@ -34,6 +34,8 @@ dependencies:
   permission_handler: ^11.3.1
   shared_preferences: ^2.2.2   # ✅ Добавлено для локального хранения флагов (онбординг и др.)
   flutter_easylogger: ^2.3.3 #https://pub.dev/packages/flutter_easylogger
+  timeline_tile_plus: ^0.0.3 #https://pub.dev/packages/timeline_tile_plus
+  gap: ^3.0.1 #https://pub.dev/packages/gap
 
 dev_dependencies:
   flutter_test:

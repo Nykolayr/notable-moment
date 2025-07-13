@@ -166,9 +166,9 @@ class _EditTestScreenState extends State<EditTestScreen> {
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-          child: Column(
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+                children: [
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -225,11 +225,11 @@ class _EditTestScreenState extends State<EditTestScreen> {
                 child: AppButton(
                   title: 'Сохранить',
                   onTap: _isValid ? _onSave : null,
-                ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
       ),
     );
   }
