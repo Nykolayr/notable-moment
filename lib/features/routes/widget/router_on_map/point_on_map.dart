@@ -1,7 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
-import 'row_for_two.dart';
-import 'row_for_one.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+class CirclePoint extends StatelessWidget {
+  final bool isUnlocked;
+  final bool isFirstLocked;
+  final bool isLocked;
+  final Widget? childIcon;
+
+  const CirclePoint({
+    super.key,
+    required this.isUnlocked,
+    required this.isFirstLocked,
+    required this.isLocked,
+    this.childIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color borderColor;
+    Color fillColor;
+
+    if (isUnlocked) {
+      borderColor = const Color(0xFF466BFF);
+      fillColor = const Color(0xFF466BFF);
+    } else if (isFirstLocked) {
+      borderColor = const Color(0xFF466BFF);
+      fillColor = const Color(0xFF74A5FF);
+    } else {
+      borderColor = const Color(0xFFBCC3CD);
+      fillColor = const Color(0xFFE1E9F4);
+    }
+
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: fillColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 3),
+      ),
+      child: Center(child: childIcon),
+    );
+  }
+}
 
 class PointsOnMap extends StatelessWidget {
   final List<RoutePoint> points;
@@ -15,69 +57,141 @@ class PointsOnMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> rows = [];
+    const double step = 116; // 58 * 2
+    const double circleDiameter = 60;
+    const double horizontalPadding = 75;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double leftX = horizontalPadding;
+    final double rightX = screenWidth - horizontalPadding - circleDiameter;
+    final double centerX = (screenWidth - circleDiameter) / 2;
+
+    List<Widget> stackChildren = [];
     int i = 0;
-    int rowIndex = 0; // Начинаем с 0, чтобы первая строка — 0, вторая — 1 и т.д.
-    final total = points.length;
-    final indexFirstLocked = points.indexWhere((p) => i > lastUnlockedIndex);
-    while (i < total) {
-      // RowForTwo (пара)
-      if (i + 1 < total) {
-        final isFirst = i == 0;
-        final isLast = (i + 2 >= total);
-        final isLeft = rowIndex % 2 == 0; // Чередуем: 0, 1, 2, 3... -> false, true, false, true...
-        final isEvenRow = rowIndex % 2 == 0; // Чётные строки: 2, 4, 6...
-        rows.add(RowForTwo(
-          points: [points[i], points[i + 1]],
-          isFirst: isFirst,
-          isLast: isLast,
-          isLeft: isLeft,
-          indexFirstUnlocked: indexFirstLocked,
-          lastUnlockedIndex: lastUnlockedIndex,
-          index0: i,
-          index1: i + 1,
-          isEvenRow: isEvenRow,
-          rowIndex: rowIndex,
+    int rowIndex = 0;
+
+    while (i < points.length) {
+      // 2-1-2-1 чередование
+      if ((rowIndex % 2 == 0) && (i + 1 < points.length)) {
+        // Два поинта: слева и справа
+        final double y = rowIndex * step;
+
+        // Слева кружок
+        stackChildren.add(Positioned(
+          left: leftX,
+          top: y,
+          child: CirclePoint(
+            isUnlocked: i <= lastUnlockedIndex,
+            isFirstLocked: i == lastUnlockedIndex + 1,
+            isLocked: i > lastUnlockedIndex + 1,
+            childIcon: i > lastUnlockedIndex + 1
+                ? SvgPicture.asset(
+                    'assets/svg/lock.svg',
+                    width: 20,
+                    height: 20,
+                  )
+                : null,
+          ),
         ));
+
+        // Подпись слева в контейнере
+        stackChildren.add(Positioned(
+          left: leftX - ((screenWidth / 2) - 60 - circleDiameter) / 2, // Центрирую относительно кружка
+          top: y + circleDiameter + 8,
+          child: Container(
+            width: (screenWidth / 2) - 60, // Формула для двух кружков
+            child: Text(
+              points[i].name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF9198A1), fontWeight: FontWeight.w500, fontSize: 11),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ));
+
+        // Справа кружок
+        stackChildren.add(Positioned(
+          left: rightX,
+          top: y,
+          child: CirclePoint(
+            isUnlocked: (i + 1) <= lastUnlockedIndex,
+            isFirstLocked: (i + 1) == lastUnlockedIndex + 1,
+            isLocked: (i + 1) > lastUnlockedIndex + 1,
+            childIcon: (i + 1) > lastUnlockedIndex + 1
+                ? SvgPicture.asset(
+                    'assets/svg/lock.svg',
+                    width: 20,
+                    height: 20,
+                  )
+                : null,
+          ),
+        ));
+
+        // Подпись справа в контейнере
+        stackChildren.add(Positioned(
+          left: rightX - ((screenWidth / 2) - 60 - circleDiameter) / 2, // Центрирую относительно кружка
+          top: y + circleDiameter + 8,
+          child: Container(
+            width: (screenWidth / 2) - 60, // Формула для двух кружков
+            child: Text(
+              points[i + 1].name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF9198A1), fontWeight: FontWeight.w500, fontSize: 11),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ));
+
         i += 2;
         rowIndex++;
       } else {
-        // RowForOne (одиночная в конце)
-        final isLast = true;
-        final isLeft = rowIndex % 2 == 0; // Чередуем
-        final isEvenRow = rowIndex % 2 == 0; // Чётные строки
-        rows.add(RowForOne(
-          point: points[i],
-          isLast: isLast,
-          isLeft: isLeft,
-          indexFirstUnlocked: indexFirstLocked,
-          lastUnlockedIndex: lastUnlockedIndex,
-          index: i,
-          isEvenRow: isEvenRow,
-          rowIndex: rowIndex,
+        // Один поинт по центру
+        final double y = rowIndex * step;
+
+        stackChildren.add(Positioned(
+          left: centerX,
+          top: y,
+          child: CirclePoint(
+            isUnlocked: i <= lastUnlockedIndex,
+            isFirstLocked: i == lastUnlockedIndex + 1,
+            isLocked: i > lastUnlockedIndex + 1,
+            childIcon: i > lastUnlockedIndex + 1
+                ? SvgPicture.asset(
+                    'assets/svg/lock.svg',
+                    width: 20,
+                    height: 20,
+                  )
+                : null,
+          ),
         ));
-        i += 1;
-        rowIndex++;
-      }
-      // Если после пары есть ещё одна точка — одиночная в центре
-      if (i < total) {
-        final isLast = (i + 1 >= total);
-        final isLeft = rowIndex % 2 == 0; // Чередуем
-        final isEvenRow = rowIndex % 2 == 0; // Чётные строки
-        rows.add(RowForOne(
-          point: points[i],
-          isLast: isLast,
-          isLeft: isLeft,
-          indexFirstUnlocked: indexFirstLocked,
-          lastUnlockedIndex: lastUnlockedIndex,
-          index: i,
-          isEvenRow: isEvenRow,
-          rowIndex: rowIndex,
+
+        // Подпись по центру в контейнере
+        stackChildren.add(Positioned(
+          left: centerX - (screenWidth - 80 - circleDiameter) / 2, // Центрирую относительно кружка
+          top: y + circleDiameter + 8,
+          child: Container(
+            width: screenWidth - 90, // Формула для одного кружка
+            child: Text(
+              points[i].name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF9198A1), fontWeight: FontWeight.w500, fontSize: 11),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ));
+
         i += 1;
         rowIndex++;
       }
     }
-    return Column(children: rows);
+
+    final double totalHeight = rowIndex * step + circleDiameter;
+    return SizedBox(
+      width: double.infinity,
+      height: totalHeight,
+      child: Stack(children: stackChildren),
+    );
   }
 }

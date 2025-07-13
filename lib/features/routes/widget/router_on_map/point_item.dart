@@ -3,6 +3,46 @@ import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+class CirclePoint extends StatelessWidget {
+  final bool isUnlocked;
+  final bool isFirstLocked;
+  final bool isLocked;
+  final Widget? childIcon;
+  const CirclePoint({
+    super.key,
+    required this.isUnlocked,
+    required this.isFirstLocked,
+    required this.isLocked,
+    this.childIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color borderColor;
+    Color fillColor;
+    if (isUnlocked) {
+      borderColor = const Color(0xFF466BFF);
+      fillColor = const Color(0xFF466BFF);
+    } else if (isFirstLocked) {
+      borderColor = const Color(0xFF466BFF);
+      fillColor = const Color(0xFF74A5FF);
+    } else {
+      borderColor = const Color(0xFFBCC3CD);
+      fillColor = const Color(0xFFE1E9F4);
+    }
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: fillColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 3),
+      ),
+      child: Center(child: childIcon),
+    );
+  }
+}
+
 class PointItem extends StatelessWidget {
   final RoutePoint point;
   final int index;
@@ -19,60 +59,39 @@ class PointItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Logger.i('point: ${point.toJson()}');
     final isUnlocked = index <= lastUnlockedIndex;
     final isFirstLocked = index == indexFirstLocked;
-    final width = (MediaQuery.of(context).size.width / 2) - 0;
-    Color borderColor;
-    Color fillColor;
+    final isLocked = !isUnlocked && !isFirstLocked;
     Widget? childIcon;
-    if (isUnlocked) {
-      borderColor = const Color(0xFF466BFF);
-      fillColor = const Color(0xFF466BFF);
-      childIcon = null; // Можно добавить иконку, если нужно
-    } else if (isFirstLocked) {
-      borderColor = const Color(0xFF466BFF);
-      fillColor = const Color(0xFF74A5FF);
-      childIcon = null;
-    } else {
-      borderColor = const Color(0xFFBCC3CD);
-      fillColor = const Color(0xFFE1E9F4);
+    if (isLocked) {
       childIcon = SvgPicture.asset(
         'assets/svg/lock.svg',
         width: 20,
         height: 20,
       );
     }
-    return Container(
-      width: width,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: fillColor,
-              shape: BoxShape.circle,
-              border: Border.all(color: borderColor, width: 3),
-            ),
-            child: Center(child: childIcon),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CirclePoint(
+          isUnlocked: isUnlocked,
+          isFirstLocked: isFirstLocked,
+          isLocked: isLocked,
+          childIcon: childIcon,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          point.name,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFF9198A1),
+            fontWeight: FontWeight.w500,
+            fontSize: 11,
           ),
-          const SizedBox(height: 8),
-          Text(
-            point.name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF9198A1),
-              fontWeight: FontWeight.w500,
-              fontSize: 11,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }
