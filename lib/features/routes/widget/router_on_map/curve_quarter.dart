@@ -10,11 +10,13 @@ enum QuarterCorner {
 class CurveQuarter extends StatelessWidget {
   final bool isBlue;
   final QuarterCorner corner;
+  final double size;
 
   const CurveQuarter({
     super.key,
     required this.isBlue,
     required this.corner,
+    this.size = 116,
   });
 
   @override
@@ -37,7 +39,7 @@ class CurveQuarter extends StatelessWidget {
     return Transform.rotate(
       angle: angle,
       child: CustomPaint(
-        size: const Size(63, 63),
+        size: Size(size, size),
         painter: CurveQuarterPainter(isBlue: isBlue),
       ),
     );
