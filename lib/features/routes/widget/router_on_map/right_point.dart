@@ -25,7 +25,7 @@ class RightPoint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isFirstRow) {
-      // Первая строка — rightTop
+      // Первая строка — rightTop (через top)
       return Positioned(
         right: 15,
         top: centerY - 15,
@@ -46,7 +46,7 @@ class RightPoint extends StatelessWidget {
         ),
       );
     } else if (rowIndex % 2 == 0) {
-      // Чётная строка (2, 4, ...) — rightTop
+      // Чётная строка (2, 4, ...) — rightTop (через top)
       return Positioned(
         right: 15,
         top: centerY - 15,
@@ -56,10 +56,10 @@ class RightPoint extends StatelessWidget {
         ),
       );
     } else {
-      // Нечётная строка (3, 5, ...) — rightBottom
+      // Нечётная строка (3, 5, ...) — rightBottom (через bottom)
       return Positioned(
         right: 15,
-        top: centerY - 15,
+        bottom: centerY - (curveSize / 2),
         child: CurveQuarter(
           isBlue: isBlue,
           corner: QuarterCorner.rightBottom,

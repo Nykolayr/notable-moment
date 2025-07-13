@@ -22,7 +22,7 @@ class PointItem extends StatelessWidget {
     Logger.i('point: ${point.toJson()}');
     final isUnlocked = index <= lastUnlockedIndex;
     final isFirstLocked = index == indexFirstLocked;
-    final width = (MediaQuery.of(context).size.width / 2) - 30;
+    final width = (MediaQuery.of(context).size.width / 2) - 0;
     Color borderColor;
     Color fillColor;
     Widget? childIcon;

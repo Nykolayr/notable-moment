@@ -47,17 +47,17 @@ class LeftPoint extends StatelessWidget {
         ),
       );
     } else if (rowIndex % 2 == 0) {
-      // Чётная строка (2, 4, ...) — leftBottom
+      // Чётная строка (2, 4, ...) — leftBottom (через bottom)
       return Positioned(
         left: 15,
-        top: centerY - 15,
+        bottom: centerY - (curveSize / 2),
         child: CurveQuarter(
           isBlue: isBlue,
           corner: QuarterCorner.leftBottom,
         ),
       );
     } else {
-      // Нечётная строка (3, 5, ...) — leftTop
+      // Нечётная строка (3, 5, ...) — leftTop (через top)
       return Positioned(
         left: 15,
         top: centerY - 15,
