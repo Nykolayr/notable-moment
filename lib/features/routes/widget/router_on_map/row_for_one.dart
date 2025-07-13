@@ -30,7 +30,6 @@ class RowForOne extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     const double height = 127;
-    const double circleDiameter = 56;
     const double lineHeight = 10;
     const double curveSize = 56;
     final double centerY = height / 2;

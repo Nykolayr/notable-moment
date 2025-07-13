@@ -8,12 +8,14 @@ class CirclePoint extends StatelessWidget {
   final bool isFirstLocked;
   final bool isLocked;
   final Widget? childIcon;
+  final VoidCallback? onTap;
   const CirclePoint({
     super.key,
     required this.isUnlocked,
     required this.isFirstLocked,
     required this.isLocked,
     this.childIcon,
+    this.onTap,
   });
 
   @override
@@ -30,15 +32,18 @@ class CirclePoint extends StatelessWidget {
       borderColor = const Color(0xFFBCC3CD);
       fillColor = const Color(0xFFE1E9F4);
     }
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: fillColor,
-        shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: 3),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: fillColor,
+          shape: BoxShape.circle,
+          border: Border.all(color: borderColor, width: 3),
+        ),
+        child: Center(child: childIcon),
       ),
-      child: Center(child: childIcon),
     );
   }
 }
@@ -48,6 +53,7 @@ class PointItem extends StatelessWidget {
   final int index;
   final int indexFirstLocked;
   final int lastUnlockedIndex;
+  final VoidCallback? onTap;
 
   const PointItem({
     super.key,
@@ -55,6 +61,7 @@ class PointItem extends StatelessWidget {
     required this.index,
     required this.indexFirstLocked,
     required this.lastUnlockedIndex,
+    this.onTap,
   });
 
   @override
@@ -78,6 +85,7 @@ class PointItem extends StatelessWidget {
           isFirstLocked: isFirstLocked,
           isLocked: isLocked,
           childIcon: childIcon,
+          onTap: onTap,
         ),
         const SizedBox(height: 8),
         Text(

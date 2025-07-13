@@ -1,18 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:notable_moments/features/routes/widget/router_on_map/point_item.dart';
 import 'curve_quarter.dart';
 
+enum PointTapType { unlocked, firstLocked, locked }
+
 class PointsOnMap extends StatelessWidget {
   final List<RoutePoint> points;
   final int lastUnlockedIndex;
+  final void Function(int index, bool isLocked) onPointTap;
 
   const PointsOnMap({
     super.key,
     required this.points,
     required this.lastUnlockedIndex,
+    required this.onPointTap,
   });
+
+  void _handlePointTap(BuildContext context, int index, bool isLocked, bool isFirstLocked) {
+    Logger.d('isFirstLocked: $isFirstLocked isLocked: $isLocked index: $index');
+    if (isLocked) {
+      final overlay = Overlay.of(context);
+      final overlayEntry = OverlayEntry(
+        builder: (context) => Positioned(
+          top: MediaQuery.of(context).padding.top + 16,
+          left: 16,
+          right: 16,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF757B83),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'Пройди все места выше, чтобы открыть доступ!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ),
+        ),
+      );
+      overlay.insert(overlayEntry);
+      Future.delayed(const Duration(seconds: 6), () => overlayEntry.remove());
+    } else {
+      onPointTap(index, isFirstLocked);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,21 +87,26 @@ class PointsOnMap extends StatelessWidget {
           ));
         }
 
-        // Слева кружок
+        // Для левого кружка:
+        final isUnlocked = i <= lastUnlockedIndex;
+        final isFirstLocked = i == lastUnlockedIndex + 1;
+        final isLocked = !isUnlocked && !isFirstLocked;
+
         circlesAndLabels.add(Positioned(
           left: leftX,
           top: y,
           child: CirclePoint(
-            isUnlocked: i <= lastUnlockedIndex,
-            isFirstLocked: i == lastUnlockedIndex + 1,
-            isLocked: i > lastUnlockedIndex + 1,
-            childIcon: i > lastUnlockedIndex + 1
+            isUnlocked: isUnlocked,
+            isFirstLocked: isFirstLocked,
+            isLocked: isLocked,
+            childIcon: isLocked
                 ? SvgPicture.asset(
                     'assets/svg/lock.svg',
                     width: 20,
                     height: 20,
                   )
                 : null,
+            onTap: () => _handlePointTap(context, i, isLocked, isFirstLocked),
           ),
         ));
 
@@ -82,21 +126,26 @@ class PointsOnMap extends StatelessWidget {
           ),
         ));
 
-        // Справа кружок
+        // Для правого кружка:
+        final isUnlockedRight = (i + 1) <= lastUnlockedIndex;
+        final isFirstLockedRight = (i + 1) == lastUnlockedIndex + 1;
+        final isLockedRight = !isUnlockedRight && !isFirstLockedRight;
+
         circlesAndLabels.add(Positioned(
           left: rightX,
           top: y,
           child: CirclePoint(
-            isUnlocked: (i + 1) <= lastUnlockedIndex,
-            isFirstLocked: (i + 1) == lastUnlockedIndex + 1,
-            isLocked: (i + 1) > lastUnlockedIndex + 1,
-            childIcon: (i + 1) > lastUnlockedIndex + 1
+            isUnlocked: isUnlockedRight,
+            isFirstLocked: isFirstLockedRight,
+            isLocked: isLockedRight,
+            childIcon: isLockedRight
                 ? SvgPicture.asset(
                     'assets/svg/lock.svg',
                     width: 20,
                     height: 20,
                   )
                 : null,
+            onTap: () => _handlePointTap(context, i + 1, isLockedRight, isFirstLockedRight),
           ),
         ));
 
@@ -114,6 +163,19 @@ class PointsOnMap extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+        ));
+
+        // Линия между двумя кружками на четных row
+        final bool isLeftUnlocked = i <= lastUnlockedIndex;
+        final bool isRightUnlocked = (i + 1) <= lastUnlockedIndex;
+        final Color lineColor = (isLeftUnlocked && isRightUnlocked) ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD);
+
+        lines.add(Positioned(
+          left: leftX + circleDiameter, // От центра левого кружка
+          top: y + (circleDiameter - 10) / 2, // По центру кружка
+          width: rightX - (leftX + circleDiameter), // До центра правого кружка
+          height: 10,
+          child: Container(color: lineColor),
         ));
 
         // rightTop четверть для четных row (начинается от середины правого кружка)
@@ -189,20 +251,26 @@ class PointsOnMap extends StatelessWidget {
         // Один поинт по центру
         final double y = rowIndex * step;
 
+        // Для центрального кружка:
+        final isUnlockedCenter = i <= lastUnlockedIndex;
+        final isFirstLockedCenter = i == lastUnlockedIndex + 1;
+        final isLockedCenter = !isUnlockedCenter && !isFirstLockedCenter;
+
         circlesAndLabels.add(Positioned(
           left: centerX,
           top: y,
           child: CirclePoint(
-            isUnlocked: i <= lastUnlockedIndex,
-            isFirstLocked: i == lastUnlockedIndex + 1,
-            isLocked: i > lastUnlockedIndex + 1,
-            childIcon: i > lastUnlockedIndex + 1
+            isUnlocked: isUnlockedCenter,
+            isFirstLocked: isFirstLockedCenter,
+            isLocked: isLockedCenter,
+            childIcon: isLockedCenter
                 ? SvgPicture.asset(
                     'assets/svg/lock.svg',
                     width: 20,
                     height: 20,
                   )
                 : null,
+            onTap: () => _handlePointTap(context, i, isLockedCenter, isFirstLockedCenter),
           ),
         ));
 
@@ -249,6 +317,24 @@ class PointsOnMap extends StatelessWidget {
               corner: QuarterCorner.leftTop,
             ),
           ));
+
+          // Линия слева от четверти до кружка
+          lines.add(Positioned(
+            left: 15 + 58, // От четверти (15 + размер четверти)
+            top: y + (circleDiameter - 10) / 2, // По центру кружка
+            width: centerX - (15 + 58), // До центра кружка
+            height: 10,
+            child: Container(color: isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD)),
+          ));
+
+          // Линия справа от кружка до четверти
+          lines.add(Positioned(
+            left: centerX + circleDiameter / 2, // От центра кружка
+            top: y + (circleDiameter - 10) / 2, // По центру кружка
+            width: screenWidth - 15 - 58 - (centerX + circleDiameter / 2), // До четверти справа
+            height: 10,
+            child: Container(color: isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD)),
+          ));
         }
 
         // Линия для последнего нечетного row (слева от края до центра кружка)
@@ -275,7 +361,8 @@ class PointsOnMap extends StatelessWidget {
     stackChildren.addAll(lines);
     stackChildren.addAll(circlesAndLabels);
 
-    final double totalHeight = rowIndex * step + circleDiameter;
+    // Правильный расчет высоты: последний row + высота кружка + отступ для подписи
+    final double totalHeight = (rowIndex - 1) * step + circleDiameter + 40; // 40px для подписи
     return SizedBox(
       width: double.infinity,
       height: totalHeight,
