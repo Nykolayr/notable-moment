@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 

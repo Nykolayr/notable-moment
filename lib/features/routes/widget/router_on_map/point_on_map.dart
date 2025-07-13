@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:notable_moments/features/routes/widget/router_on_map/point_item.dart';
 import 'curve_quarter.dart';
-
-enum PointTapType { unlocked, firstLocked, locked }
 
 class PointsOnMap extends StatelessWidget {
   final List<RoutePoint> points;
@@ -20,7 +17,6 @@ class PointsOnMap extends StatelessWidget {
   });
 
   void _handlePointTap(BuildContext context, int index, bool isLocked, bool isFirstLocked) {
-    Logger.d('isFirstLocked: $isFirstLocked isLocked: $isLocked index: $index');
     if (isLocked) {
       final overlay = Overlay.of(context);
       final overlayEntry = OverlayEntry(

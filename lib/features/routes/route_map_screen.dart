@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
@@ -46,34 +47,7 @@ class RouteMapScreen extends ConsumerWidget {
                   points: points,
                   lastUnlockedIndex: lastUnlockedIndex,
                   onPointTap: (index, isLocked) {
-                    if (isLocked) {
-                      final overlay = Overlay.of(context);
-                      final overlayEntry = OverlayEntry(
-                        builder: (context) => Positioned(
-                          top: MediaQuery.of(context).padding.top + 16,
-                          left: 16,
-                          right: 16,
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF757B83),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Text(
-                                'Пройди все места выше, чтобы открыть доступ!',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                      overlay.insert(overlayEntry);
-                      Future.delayed(const Duration(seconds: 6), () => overlayEntry.remove());
-                    }
+                    Logger.d('isLocked: $isLocked');
                   },
                 ),
                 Padding(
