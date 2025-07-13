@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -6,18 +7,21 @@ class PointItem extends StatelessWidget {
   final RoutePoint point;
   final int index;
   final int indexFirstLocked;
+  final int lastUnlockedIndex;
   final double width;
   const PointItem({
     super.key,
     required this.point,
     required this.index,
     required this.indexFirstLocked,
+    required this.lastUnlockedIndex,
     required this.width,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isUnlocked = point.isUnlocked;
+    Logger.i('point: ${point.toJson()}');
+    final isUnlocked = index <= lastUnlockedIndex;
     final isFirstLocked = index == indexFirstLocked;
     Color borderColor;
     Color fillColor;
@@ -62,9 +66,9 @@ class PointItem extends StatelessWidget {
             style: const TextStyle(
               color: Color(0xFF9198A1),
               fontWeight: FontWeight.w500,
-              fontSize: 14,
+              fontSize: 11,
             ),
-            maxLines: 2,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
         ],

@@ -8,6 +8,9 @@ class RowForTwo extends StatelessWidget {
   final bool isFirst;
   final bool isLeft;
   final int indexFirstUnlocked;
+  final int lastUnlockedIndex;
+  final int index0;
+  final int index1;
 
   const RowForTwo({
     super.key,
@@ -16,6 +19,9 @@ class RowForTwo extends StatelessWidget {
     required this.isFirst,
     required this.isLeft,
     required this.indexFirstUnlocked,
+    required this.lastUnlockedIndex,
+    required this.index0,
+    required this.index1,
   });
 
   @override
@@ -26,14 +32,16 @@ class RowForTwo extends StatelessWidget {
       children: [
         PointItem(
           point: points[0],
-          index: 0,
+          index: index0,
           indexFirstLocked: indexFirstUnlocked,
+          lastUnlockedIndex: lastUnlockedIndex,
           width: width,
         ),
         PointItem(
           point: points[1],
-          index: 1,
+          index: index1,
           indexFirstLocked: indexFirstUnlocked,
+          lastUnlockedIndex: lastUnlockedIndex,
           width: width,
         ),
       ],

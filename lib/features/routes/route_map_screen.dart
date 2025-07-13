@@ -30,6 +30,7 @@ class RouteMapScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unlocked = ref.watch(progressProvider);
+    final lastUnlockedIndex = unlocked.unlockedIndexes[route.id] ?? -1;
     final points = route.points;
     final title = route.title;
     final description = route.description;
@@ -37,40 +38,26 @@ class RouteMapScreen extends ConsumerWidget {
         .where((p) => p.latitude != null && p.longitude != null)
         .map((p) => yandex.Point(latitude: p.latitude!, longitude: p.longitude!))
         .toList();
-    return Scaffold(
-      appBar: AppAppBar(title: 'Карта маршрута'),
-      body: SafeArea(
-        child: SingleChildScrollView(
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppAppBar(title: 'Карта маршрута'),
+        body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.only(bottom: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Карта маршрута',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    const Gap(12),
-                    Text(
-                      title,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
                 ),
-                PointsOnMap(points: points),
+                PointsOnMap(
+                  points: points,
+                  lastUnlockedIndex: lastUnlockedIndex,
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
                   child: Column(

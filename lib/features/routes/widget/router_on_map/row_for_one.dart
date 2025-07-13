@@ -7,12 +7,16 @@ class RowForOne extends StatelessWidget {
   final bool isLast;
   final bool isLeft;
   final int indexFirstUnlocked;
+  final int lastUnlockedIndex;
+  final int index;
   const RowForOne({
     super.key,
     required this.point,
     required this.isLast,
     required this.isLeft,
     required this.indexFirstUnlocked,
+    required this.lastUnlockedIndex,
+    required this.index,
   });
 
   @override
@@ -21,8 +25,9 @@ class RowForOne extends StatelessWidget {
     return Center(
       child: PointItem(
         point: point,
-        index: 0,
+        index: index,
         indexFirstLocked: indexFirstUnlocked,
+        lastUnlockedIndex: lastUnlockedIndex,
         width: width,
       ),
     );

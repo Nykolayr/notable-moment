@@ -32,7 +32,7 @@ class RouteModel {
       'title': title,
       'description': description,
       'taskCount': taskCount,
-      'points': points.map((p) => p.toMap()).toList(),
+      'points': points.map((p) => p.toJson()).toList(),
     };
   }
 }
@@ -65,7 +65,7 @@ class RoutePoint {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
       'name': name,
       'description': description,
