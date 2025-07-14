@@ -74,18 +74,12 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
 
   Future<void> updateRoute(RouteAdminModel route) async {
     try {
-      print('RoutesProvider: обновляем маршрут ${route.id} с ${route.points.length} точками');
-      for (int i = 0; i < route.points.length; i++) {
-        print('Точка $i: ${route.points[i].title}, тестов: ${route.points[i].tests.length}');
-      }
       await _routesService.updateRoute(route);
       // Обновляем маршрут в локальном состоянии
       final updatedRoutes = state.allRoutes.map((r) => r.id == route.id ? route : r).toList();
       state = state.copyWith(allRoutes: updatedRoutes);
-      print('RoutesProvider: маршрут успешно обновлен');
     } catch (e) {
       debugPrint('routesProvider updateRoute error: $e');
-      print('RoutesProvider: ошибка обновления маршрута: $e');
       // Можно добавить уведомление пользователя об ошибке
     }
   }

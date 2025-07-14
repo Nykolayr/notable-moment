@@ -63,6 +63,7 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
 
   Widget _buildOptionItem(int index, bool showResult, bool? isCorrect) {
     final isSelected = (widget.selectedIndexes ?? []).contains(index);
+    final isRight = showResult && widget.question.correctIndexes.contains(index);
     final isWrong =
         (showResult && isSelected && isCorrect == false && !widget.question.correctIndexes.contains(index)) ||
             (widget.wrongIndexes != null &&
@@ -70,7 +71,10 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
                 !widget.question.correctIndexes.contains(index));
     Color borderColor = const Color(0xFFE0E0E0);
     Color? fillColor;
-    if (isWrong) {
+    if (isRight) {
+      borderColor = const Color(0xFF97CB06);
+      fillColor = const Color(0xFFEFFFC3);
+    } else if (isWrong) {
       borderColor = const Color(0xFFFF3B30);
       fillColor = const Color(0xFFFFE6E6);
     } else if (isSelected && !showResult) {
@@ -103,7 +107,7 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
             CustomCheckbox(
               selected: isSelected,
               showResult: showResult,
-              isRight: false, // Always false for incorrect options
+              isRight: isRight,
               isWrong: isWrong,
             ),
             const SizedBox(width: 12),
@@ -113,7 +117,11 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                  color: isWrong ? const Color(0xFFFF3B30) : const Color(0xFF222222),
+                  color: isWrong
+                      ? const Color(0xFFFF3B30)
+                      : isRight
+                          ? const Color(0xFF97CB06)
+                          : const Color(0xFF222222),
                 ),
               ),
             ),

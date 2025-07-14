@@ -84,6 +84,32 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
     // TODO: реализовать логику обновления маршрутов при изменениях
   }
 
+  void initializeRoute(String routeId) {
+    final routeProgress = state.routes[routeId];
+    if (routeProgress == null) {
+      final newRouteProgress = RouteProgress(
+        completedPlaces: {},
+        completedQuests: {},
+        hintsLeft: 3,
+      );
+      final newRoutes = Map<String, RouteProgress>.from(state.routes);
+      newRoutes[routeId] = newRouteProgress;
+      state = state.copyWith(routes: newRoutes);
+    }
+  }
+
+  void spendSuscoinAndUpdateHints(String routeId, int newHintsLeft) {
+    final routeProgress = state.routes[routeId];
+    final updatedRouteProgress = routeProgress?.copyWith(hintsLeft: newHintsLeft) ??
+        RouteProgress(completedPlaces: {}, completedQuests: {}, hintsLeft: newHintsLeft);
+    final newRoutes = Map<String, RouteProgress>.from(state.routes);
+    newRoutes[routeId] = updatedRouteProgress;
+    state = state.copyWith(
+      suscoins: state.suscoins - 1,
+      routes: newRoutes,
+    );
+  }
+
   Future<List<Achievement>> fetchAchievements(String userId) async {
     final snap = await _db.collection('achievements').where('userId', isEqualTo: userId).get();
     return snap.docs.map((doc) => Achievement.fromMap(doc.data())).toList();

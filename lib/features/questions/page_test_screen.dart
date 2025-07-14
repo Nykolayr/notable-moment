@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -16,8 +18,6 @@ import 'package:notable_moments/features/questions/widgets/route_finish_widget.d
 import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
 import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/features/questions/widgets/modals.dart';
-
-import 'package:notable_moments/features/profile/model/user_progress.dart';
 import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
@@ -84,17 +84,8 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     final routeProgress = userProgress.routes[routeId];
     if (routeProgress == null) {
       Future.microtask(() {
-        final userProgress = ref.read(userProgressProvider);
         final userProgressNotifier = ref.read(userProgressProvider.notifier);
-        final routeProgress = userProgress.routes[routeId];
-        final newRouteProgress = RouteProgress(
-          completedPlaces: routeProgress?.completedPlaces ?? {},
-          completedQuests: routeProgress?.completedQuests ?? {},
-          hintsLeft: 3,
-        );
-        final newRoutes = Map<String, RouteProgress>.from(userProgress.routes);
-        newRoutes[routeId] = newRouteProgress;
-        userProgressNotifier.state = userProgress.copyWith(routes: newRoutes);
+        userProgressNotifier.initializeRoute(routeId);
       });
     }
   }
@@ -149,7 +140,6 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
       final userProgress = ref.read(userProgressProvider);
       if (userProgress.energy == 0) {
         Future.microtask(() async {
-          // ignore: use_build_context_synchronously
           await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => EnergyRechargePage(routeId: widget.route.id),
@@ -160,34 +150,75 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     }
   }
 
-  void _onNext(List<QuestionTest> tests) {
+  void _onNext(List<QuestionTest> tests) async {
     setState(() {
       showChip = false;
       wrongIndex = null;
       wrongIndexes = [];
     });
-    if (currentTestIndex == tests.length - 1) {
-      final userProgress = ref.read(userProgressProvider);
-      setState(() {
-        answered = false;
-        isCorrect = null;
-        selectedIndex = null;
-        selectedIndexes = [];
-        showRecharge = false;
-      });
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: RouteFinishWidget(
-              correctCount: results.where((e) => e).length,
-              total: tests.length,
-              suscoins: userProgress.suscoins,
-              energy: userProgress.energy,
-              onClose: () => Navigator.of(context).pop(),
+    final points = widget.route.points;
+    final isLastTestInPoint = currentTestIndex == tests.length - 1;
+    final isLastPoint = widget.currentIndex == points.length - 1;
+    final userProgressNotifier = ref.read(userProgressProvider.notifier);
+    final userProgress = ref.read(userProgressProvider);
+    final routeId = widget.route.id;
+    final placeId = points[widget.currentIndex].name;
+    final suslikAsset = 'assets/image/sus_good.png'; // Можно сделать выбор по количеству правильных
+
+    if (isLastTestInPoint) {
+      // Сохраняем прогресс точки и начисляем сускоины
+      userProgressNotifier.completePlace(routeId, placeId);
+      userProgressNotifier.addSuscoins(tests.length);
+      if (isLastPoint) {
+        // Это последняя точка маршрута — показываем итог маршрута
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => Scaffold(
+              body: RouteFinishWidget(
+                correctCount: results.where((e) => e).length,
+                total: tests.length,
+                suscoins: tests.length,
+                energy: userProgress.energy,
+                routeTitle: widget.route.title,
+                onClose: () {
+                  int count = 0;
+                  Navigator.of(context).popUntil((_) => count++ >= 3);
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
+      } else {
+        // Итог точки (квеста)
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => Scaffold(
+              body: QuestFinishWidget(
+                correctCount: results.where((e) => e).length,
+                total: tests.length,
+                suscoins: tests.length,
+                suslikAsset: suslikAsset,
+                onFinish: () {
+                  Future.microtask(() {
+                    int count = 0;
+                    if (context.mounted) {
+                      Navigator.of(context).popUntil((_) => count++ >= 3);
+                    }
+                  });
+                },
+                onNext: () {
+                  Future.microtask(() {
+                    int count = 0;
+                    if (context.mounted) {
+                      Navigator.of(context).popUntil((_) => count++ >= 2);
+                    }
+                  });
+                },
+              ),
+            ),
+          ),
+        );
+      }
     } else {
       setState(() {
         currentTestIndex++;
@@ -267,14 +298,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                         onBuy: () {
                           // Списываем сускоин и уменьшаем количество подсказок
                           final userProgressNotifier = ref.read(userProgressProvider.notifier);
-                          final updatedRouteProgress = routeProgress?.copyWith(hintsLeft: hintsLeft - 1) ??
-                              RouteProgress(completedPlaces: {}, completedQuests: {}, hintsLeft: hintsLeft - 1);
-                          final newRoutes = Map<String, RouteProgress>.from(userProgress.routes);
-                          newRoutes[routeId] = updatedRouteProgress;
-                          userProgressNotifier.state = userProgress.copyWith(
-                            suscoins: suscoins - 1,
-                            routes: newRoutes,
-                          );
+                          userProgressNotifier.spendSuscoinAndUpdateHints(routeId, hintsLeft - 1);
                           _useHint(routeId);
                         },
                       );
@@ -338,9 +362,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                     child: AppButton(
-                      title: isCorrect == true
-                          ? (currentTestIndex == tests.length - 1 ? 'Завершить' : 'Далее')
-                          : 'Ответить',
+                      title: isCorrect == true ? 'Далее' : 'Ответить',
                       onTap: getButtonAction(currentTest, type, tests),
                     ),
                   ),
