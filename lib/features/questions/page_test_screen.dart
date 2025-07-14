@@ -17,6 +17,10 @@ import 'package:notable_moments/features/questions/widgets/test_answer_widget.da
 import 'package:notable_moments/features/questions/widgets/energy_recharge_widget.dart';
 import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
 import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
+import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
+import 'package:notable_moments/features/questions/widgets/modals.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:notable_moments/features/profile/model/user_progress.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -43,6 +47,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   bool showChip = false; // Показывать ли чип результата
   int? wrongIndex; // Индекс неправильного выбора для single
   List<int> wrongIndexes = []; // Индексы неправильных для multiple
+  bool hintUsedThisTest = false;
 
   void _showResultChip() {
     setState(() {
@@ -56,12 +61,49 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     });
   }
 
+  void _useHint(String routeId) {
+    setState(() {
+      hintUsedThisTest = true;
+      final points = widget.route.points;
+      final tests = points[widget.currentIndex].tests;
+      final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
+      final type = currentTest?.type ?? QuestionTypeTest.singleChoice;
+      if (type == QuestionTypeTest.singleChoice) {
+        selectedIndex = (currentTest as SingleChoiceQuestion).correctIndex;
+      } else if (type == QuestionTypeTest.multipleChoice) {
+        selectedIndexes = List<int>.from((currentTest as MultipleChoiceQuestion).correctIndexes);
+      }
+      isCorrect = true; // сразу показываем кнопку "Далее"
+      answered = true;
+      showChip = false;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     final profile = ref.read(profileProvider);
     localEnergy = profile.energy;
     localSuscoins = profile.suscoins;
+    // --- Инициализация подсказок на маршрут ---
+    final routeId = widget.route.id;
+    final userProgress = ref.read(userProgressProvider);
+    final routeProgress = userProgress.routes[routeId];
+    if (routeProgress == null || routeProgress.hintsLeft == null) {
+      Future.microtask(() {
+        final userProgress = ref.read(userProgressProvider);
+        final userProgressNotifier = ref.read(userProgressProvider.notifier);
+        final routeProgress = userProgress.routes[routeId];
+        final newRouteProgress = RouteProgress(
+          completedPlaces: routeProgress?.completedPlaces ?? {},
+          completedQuests: routeProgress?.completedQuests ?? {},
+          hintsLeft: 3,
+        );
+        final newRoutes = Map<String, RouteProgress>.from(userProgress.routes);
+        newRoutes[routeId] = newRouteProgress;
+        userProgressNotifier.state = userProgress.copyWith(routes: newRoutes);
+      });
+    }
   }
 
   void _onSelectSingle(int idx) {
@@ -83,6 +125,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   }
 
   void _onAnswer(QuestionTest currentTest, QuestionTypeTest type, List<QuestionTest> tests) {
+    if (hintUsedThisTest) return; // если была подсказка — ничего не делаем
     if (!answered) return;
     bool correct = false;
     if (type == QuestionTypeTest.singleChoice) {
@@ -96,7 +139,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     setState(() {
       isCorrect = correct;
       results.add(correct);
-      showChip = true;
+      showChip = !hintUsedThisTest; // Не показывать чип при подсказке
       if (!correct) {
         if (type == QuestionTypeTest.singleChoice) {
           wrongIndex = selectedIndex;
@@ -104,9 +147,9 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
           wrongIndexes = List<int>.from(selectedIndexes);
         }
       }
-      if (correct) {
+      if (correct && !hintUsedThisTest) {
         localSuscoins += 1;
-      } else {
+      } else if (!correct) {
         localEnergy = (localEnergy - 1).clamp(0, 3);
         if (localEnergy == 0) {
           showRecharge = true;
@@ -194,6 +237,12 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     final tests = points[widget.currentIndex].tests;
     final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
     final type = currentTest?.type ?? QuestionTypeTest.singleChoice;
+    final routeId = widget.route.id;
+    final userProgress = ref.watch(userProgressProvider);
+    final routeProgress = userProgress.routes[routeId];
+    final hintsLeft = routeProgress?.hintsLeft ?? 3;
+    final suscoins = userProgress.suscoins;
+    final userProgressNotifier = ref.read(userProgressProvider.notifier);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F6),
@@ -214,22 +263,29 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                   child: ProfileStatsBar(
-                    suscoins: localSuscoins,
+                    suscoins: suscoins,
                     energy: localEnergy,
                     onAddSuscoin: () {},
                     onAddEnergy: () {},
-                  ),
-                ),
-                const Gap(12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Text(
-                    type.text,
-                    style: const TextStyle(
-                      color: Color(0xFF8F99A8),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
+                    onHintPressed: () async {
+                      await showBuyHintModal(
+                        context,
+                        hintsLeft: hintsLeft,
+                        onBuy: () {
+                          // НЕ уменьшаем hintsLeft для теста!
+                          // final updatedRouteProgress = routeProgress?.copyWith(hintsLeft: hintsLeft - 1) ?? RouteProgress(completedPlaces: {}, completedQuests: {}, hintsLeft: hintsLeft - 1);
+                          // final newRoutes = Map<String, RouteProgress>.from(userProgress.routes);
+                          // newRoutes[routeId] = updatedRouteProgress;
+                          // userProgressNotifier.state = userProgress.copyWith(
+                          //   suscoins: suscoins - 1,
+                          //   routes: newRoutes,
+                          // );
+                          _useHint(routeId);
+                        },
+                      );
+                    },
+                    hintsLeft: hintsLeft,
+                    hintUsedThisTest: hintUsedThisTest,
                   ),
                 ),
                 const Gap(4),

@@ -63,11 +63,25 @@ class UserProgress {
 class RouteProgress {
   Set<String> completedPlaces; // placeId
   Map<String, Set<String>> completedQuests; // placeId -> Set<questId>
+  int hintsLeft;
 
   RouteProgress({
     required this.completedPlaces,
     required this.completedQuests,
+    this.hintsLeft = 3,
   });
+
+  RouteProgress copyWith({
+    Set<String>? completedPlaces,
+    Map<String, Set<String>>? completedQuests,
+    int? hintsLeft,
+  }) {
+    return RouteProgress(
+      completedPlaces: completedPlaces ?? this.completedPlaces,
+      completedQuests: completedQuests ?? this.completedQuests,
+      hintsLeft: hintsLeft ?? this.hintsLeft,
+    );
+  }
 }
 
 extension UserProgressFirestore on UserProgress {
@@ -104,6 +118,7 @@ extension RouteProgressFirestore on RouteProgress {
     return {
       'completedPlaces': completedPlaces.toList(),
       'completedQuests': completedQuests.map((k, v) => MapEntry(k, v.toList())),
+      'hintsLeft': hintsLeft,
     };
   }
 
@@ -112,6 +127,7 @@ extension RouteProgressFirestore on RouteProgress {
       completedPlaces: Set<String>.from(map['completedPlaces'] ?? []),
       completedQuests:
           (map['completedQuests'] as Map<String, dynamic>? ?? {}).map((k, v) => MapEntry(k, Set<String>.from(v ?? []))),
+      hintsLeft: map['hintsLeft'] ?? 3,
     );
   }
 }

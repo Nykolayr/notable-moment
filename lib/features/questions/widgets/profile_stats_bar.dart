@@ -8,16 +8,23 @@ class ProfileStatsBar extends ConsumerWidget {
   final int energy;
   final VoidCallback onAddSuscoin;
   final VoidCallback? onAddEnergy;
+  final VoidCallback? onHintPressed;
+  final int hintsLeft;
+  final bool hintUsedThisTest;
   const ProfileStatsBar({
     super.key,
     required this.suscoins,
     required this.energy,
     required this.onAddSuscoin,
     required this.onAddEnergy,
+    this.onHintPressed,
+    this.hintsLeft = 3,
+    this.hintUsedThisTest = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bool lampActive = hintsLeft > 0 && suscoins > 0 && !hintUsedThisTest && onHintPressed != null;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -60,18 +67,21 @@ class ProfileStatsBar extends ConsumerWidget {
           onPressed: onAddEnergy,
         ),
         const SizedBox(width: 8),
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          alignment: Alignment.center,
-          child: SvgPicture.asset(
-            'assets/svg/lamp.svg',
-            width: 40,
-            height: 40,
+        GestureDetector(
+          onTap: onHintPressed,
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Color(0xFFF7F8FA),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.center,
+            child: SvgPicture.asset(
+              'assets/svg/lamp.svg',
+              width: 40,
+              height: 40,
+            ),
           ),
         ),
       ],
