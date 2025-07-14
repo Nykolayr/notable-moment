@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/features/questions/model/question.dart';
+import 'package:notable_moments/features/questions/model/single_choice_question.dart';
+import 'package:notable_moments/features/questions/model/multiple_choice_question.dart';
 import 'package:notable_moments/features/questions/model/question_type.dart';
+import 'package:notable_moments/features/questions/page_type_question/single_choice_test_widget.dart';
+import 'package:notable_moments/features/questions/page_type_question/multiple_choice_test_widget.dart';
 import 'package:notable_moments/features/questions/widgets/profile_stats_bar.dart';
-import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
-import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
-import 'package:notable_moments/features/questions/widgets/modals.dart';
+import 'package:collection/collection.dart';
+import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
+import 'package:notable_moments/features/questions/widgets/test_answer_widget.dart';
+import 'package:notable_moments/features/questions/widgets/energy_recharge_widget.dart';
+import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -22,137 +27,234 @@ class PageTestScreen extends ConsumerStatefulWidget {
   ConsumerState<PageTestScreen> createState() => _PageTestScreenState();
 }
 
+enum TestStep { question, result, finish }
+
 class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   int currentTestIndex = 0;
+  List<bool> results = [];
+  int? selectedIndex;
+  List<int> selectedIndexes = [];
+  bool? isCorrect;
+  int localEnergy = 3;
+  int localSuscoins = 10;
+  bool answered = false; // Был ли выбран ответ (для смены кнопки)
+  bool showRecharge = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = ref.read(profileProvider);
+    localEnergy = profile.energy;
+    localSuscoins = profile.suscoins;
+  }
+
+  void _onSelectSingle(int idx) {
+    setState(() {
+      selectedIndex = idx;
+      answered = true;
+    });
+  }
+
+  void _onSelectMultiple(List<int> idxs) {
+    setState(() {
+      selectedIndexes = idxs;
+      answered = idxs.isNotEmpty;
+    });
+  }
+
+  void _onAnswer(QuestionTest currentTest, QuestionTypeTest type, List<QuestionTest> tests) {
+    if (!answered) return;
+    bool correct = false;
+    if (type == QuestionTypeTest.singleChoice) {
+      correct = selectedIndex == (currentTest as SingleChoiceQuestion).correctIndex;
+    } else if (type == QuestionTypeTest.multipleChoice) {
+      final correctIndexes = (currentTest as MultipleChoiceQuestion).correctIndexes;
+      final sortedSelected = List<int>.from(selectedIndexes)..sort();
+      final sortedCorrect = List<int>.from(correctIndexes)..sort();
+      correct = const ListEquality().equals(sortedSelected, sortedCorrect);
+    }
+    setState(() {
+      isCorrect = correct;
+      results.add(correct);
+      if (correct) {
+        localSuscoins += 1;
+      } else {
+        localEnergy = (localEnergy - 1).clamp(0, 3);
+        if (localEnergy == 0) {
+          showRecharge = true;
+        }
+      }
+    });
+  }
+
+  void _onNext(List<QuestionTest> tests) {
+    if (currentTestIndex == tests.length - 1) {
+      setState(() {
+        answered = false;
+        isCorrect = null;
+        selectedIndex = null;
+        selectedIndexes = [];
+        showRecharge = false;
+      });
+      // Переход к финалу
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => Scaffold(
+            body: RouteFinishWidget(
+              correctCount: results.where((e) => e).length,
+              total: tests.length,
+              suscoins: localSuscoins,
+              energy: localEnergy,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+      );
+    } else {
+      setState(() {
+        currentTestIndex++;
+        answered = false;
+        isCorrect = null;
+        selectedIndex = null;
+        selectedIndexes = [];
+        showRecharge = false;
+      });
+    }
+  }
+
+  void _onBuyEnergy() {
+    setState(() {
+      if (localSuscoins > 0) {
+        localSuscoins -= 1;
+        localEnergy = 1;
+        showRecharge = false;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Прогресс по маршруту
-    final progressState = ref.watch(progressProvider);
     final points = widget.route.points;
-    final totalCount = points.length;
-    final lastUnlockedIndex = progressState.unlockedIndexes[widget.route.id] ?? -1;
-    final passedCount = lastUnlockedIndex + 1;
-
     final tests = points[widget.currentIndex].tests;
     final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
-    final double progress = totalCount == 0 ? 0 : (passedCount) / totalCount;
-
-    // Сускоины и энергия из профиля
-    final profile = ref.watch(profileProvider);
-    Logger.i('progressState: ${progressState.toMap()}');
-    Logger.i('profile: ${profile.energy} == ${profile.suscoins}');
+    final type = currentTest?.type ?? QuestionTypeTest.singleChoice;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F6),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TopProgressBar(
-                    progress: progress,
-                    onExit: () {
-                      showExitConfirmModal(
-                        context,
-                        onExit: () => Navigator.of(context).pop(),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  ProfileStatsBar(
-                    suscoins: profile.suscoins,
-                    energy: profile.energy,
-                    onAddSuscoin: () async {
-                      await ref.read(profileProvider.notifier).addSuscoins(1);
-                    },
-                    onAddEnergy: profile.energy < 3
-                        ? () async {
-                            await ref.read(profileProvider.notifier).addEnergy(1);
-                          }
-                        : null,
-                  ),
-                ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: TopProgressBar(
+                current: currentTestIndex + 1,
+                total: tests.length,
+                onExit: () => Navigator.of(context).pop(),
               ),
-              if (tests.length > 1) ...[
-                const Gap(16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    tests.length,
-                    (index) => _buildTestIndicator(index),
-                  ),
-                ),
-              ],
-              const Gap(24),
-              if (currentTest != null)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Center(child: currentTest.type.buildTestWidget(currentTest)),
-                  ),
-                )
-              else
-                const Expanded(
-                  child: Center(
-                    child: Text('Нет доступных тестов'),
-                  ),
-                ),
-              const Gap(24),
-              AppButton(
-                title: 'Ответить',
-                onTap: currentTest != null
-                    ? () {
-                        // Если это последний тест, то завершаем
-                        if (currentTestIndex == tests.length - 1) {
-                          // TODO: Обработка завершения всех тестов
-                        } else {
-                          // Переходим к следующему тесту
-                          setState(() {
-                            currentTestIndex++;
-                          });
-                        }
-                      }
-                    : null,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+              child: ProfileStatsBar(
+                suscoins: localSuscoins,
+                energy: localEnergy,
+                onAddSuscoin: () {},
+                onAddEnergy: () {},
               ),
-            ],
-          ),
+            ),
+            const Gap(12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Text(
+                type.text,
+                style: const TextStyle(
+                  color: Color(0xFF8F99A8),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            const Gap(4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Text(
+                currentTest?.text ?? '',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF222222),
+                ),
+              ),
+            ),
+            const Gap(18),
+            if (showRecharge)
+              Expanded(
+                child: EnergyRechargeWidget(
+                  suscoins: localSuscoins,
+                  energy: localEnergy,
+                  onBuy: _onBuyEnergy,
+                  onClose: () => Navigator.of(context).pop(),
+                ),
+              )
+            else if (currentTest != null)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: type == QuestionTypeTest.singleChoice
+                      ? SingleChoiceTestWidget(
+                          question: currentTest as SingleChoiceQuestion,
+                          selectedIndex: selectedIndex,
+                          showResult: isCorrect != null,
+                          isCorrect: isCorrect,
+                          onAnswered: (_, idx) {
+                            setState(() {
+                              selectedIndex = idx;
+                              answered = true;
+                            });
+                          },
+                        )
+                      : MultipleChoiceTestWidget(
+                          question: currentTest as MultipleChoiceQuestion,
+                          selectedIndexes: selectedIndexes,
+                          showResult: isCorrect != null,
+                          isCorrect: isCorrect,
+                          onAnswered: (_, idxs) {
+                            setState(() {
+                              selectedIndexes = List<int>.from(idxs);
+                              answered = selectedIndexes.isNotEmpty;
+                            });
+                          },
+                        ),
+                ),
+              )
+            else
+              const Expanded(
+                child: Center(child: Text('Нет доступных тестов')),
+              ),
+            const Gap(12),
+            // --- Кнопка ---
+            if (!showRecharge && currentTest != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                child: AppButton(
+                  title:
+                      (selectedIndex != null || (selectedIndexes.isNotEmpty && type == QuestionTypeTest.multipleChoice))
+                          ? (currentTestIndex == tests.length - 1 ? 'Завершить' : 'Далее')
+                          : 'Ответить',
+                  onTap:
+                      (selectedIndex != null || (selectedIndexes.isNotEmpty && type == QuestionTypeTest.multipleChoice))
+                          ? () {
+                              if (isCorrect == null) {
+                                _onAnswer(currentTest, type, tests);
+                              } else {
+                                _onNext(tests);
+                              }
+                            }
+                          : null,
+                ),
+              ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTestIndicator(int index) {
-    final isActive = index == currentTestIndex;
-    final isCompleted = index < currentTestIndex;
-
-    return Container(
-      width: 24,
-      height: 24,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isActive
-            ? const Color(0xFF2F80ED)
-            : isCompleted
-                ? const Color(0xFF4CAF50)
-                : const Color(0xFFE0E0E0),
-      ),
-      child: Center(
-        child: isCompleted
-            ? const Icon(Icons.check, size: 16, color: Colors.white)
-            : Text(
-                '${index + 1}',
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.black54,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
       ),
     );
   }

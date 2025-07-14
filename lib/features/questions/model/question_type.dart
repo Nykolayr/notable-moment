@@ -99,12 +99,21 @@ extension QuestionTypeTestExt on QuestionTypeTest {
     }
   }
 
-  Widget buildTestWidget(QuestionTest test) {
+  Widget buildTestWidget(
+    QuestionTest test, {
+    required Function onAnswered,
+  }) {
     switch (this) {
       case QuestionTypeTest.singleChoice:
-        return SingleChoiceTestWidget(question: test as SingleChoiceQuestion);
+        return SingleChoiceTestWidget(
+          question: test as SingleChoiceQuestion,
+          onAnswered: onAnswered as void Function(bool, int?),
+        );
       case QuestionTypeTest.multipleChoice:
-        return MultipleChoiceTestWidget(question: test as MultipleChoiceQuestion);
+        return MultipleChoiceTestWidget(
+          question: test as MultipleChoiceQuestion,
+          onAnswered: onAnswered as void Function(bool, List<int>),
+        );
       case QuestionTypeTest.anagram:
         return AnagramTestWidget(question: test as AnagramQuestion);
       case QuestionTypeTest.order:

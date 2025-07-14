@@ -15,6 +15,8 @@ class RouteTooltipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final points = route.points;
+    final taskCount = points.fold(0, (sum, point) => sum + point.tests.length);
     return GestureDetector(
       onTap: () {
         context.push(
@@ -40,7 +42,7 @@ class RouteTooltipCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Локаций: ${route.points.length}  Заданий: ${route.taskCount}',
+                'Локаций: ${route.points.length}  Заданий: $taskCount',
                 style: const TextStyle(fontSize: 14),
               ),
             ],

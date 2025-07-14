@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
 class TopProgressBar extends StatelessWidget {
-  final double progress;
+  final int current;
+  final int total;
   final VoidCallback onExit;
-  const TopProgressBar({super.key, required this.progress, required this.onExit});
+  const TopProgressBar({super.key, required this.current, required this.total, required this.onExit});
 
   @override
   Widget build(BuildContext context) {
+    print('current: $current, total: $total');
+    final double progress = current / total;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
