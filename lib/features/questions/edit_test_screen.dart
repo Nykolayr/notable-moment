@@ -15,9 +15,9 @@ import 'package:notable_moments/features/questions/model/sentence_order_question
 import 'package:uuid/uuid.dart';
 
 class EditTestScreen extends StatefulWidget {
-  final QuestionTest test;
+  final QuestionTest? test;
 
-  const EditTestScreen({super.key, required this.test});
+  const EditTestScreen({super.key, this.test});
 
   @override
   State<EditTestScreen> createState() => _EditTestScreenState();
@@ -33,11 +33,11 @@ class _EditTestScreenState extends State<EditTestScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedType = widget.test.type;
-    initialQuestion = widget.test;
+    initialQuestion = widget.test ?? SingleChoiceQuestion.init();
+    _selectedType = initialQuestion.type;
     _questionsByType = {
       for (var type in QuestionTypeTest.values)
-        type: _createQuestionOfType(type, initial: type == widget.test.type ? widget.test : null),
+        type: _createQuestionOfType(type, initial: type == initialQuestion.type ? initialQuestion : null),
     };
   }
 
@@ -161,14 +161,14 @@ class _EditTestScreenState extends State<EditTestScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F4F6),
         appBar: AppAppBar(
-          title: widget.test.id == 'empty' ? 'Создание вопроса' : 'Редактирование вопроса',
+          title: initialQuestion.id == 'empty' ? 'Создание вопроса' : 'Редактирование вопроса',
           backButtonTap: _onBack,
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-              child: Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+            children: [
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -225,11 +225,11 @@ class _EditTestScreenState extends State<EditTestScreen> {
                 child: AppButton(
                   title: 'Сохранить',
                   onTap: _isValid ? _onSave : null,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
+          ),
+        ),
       ),
     );
   }

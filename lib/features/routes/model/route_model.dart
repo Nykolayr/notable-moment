@@ -43,7 +43,7 @@ class RoutePoint {
   final double? latitude;
   final double? longitude;
   final bool isUnlocked;
-  final QuestionTest test;
+  final List<QuestionTest> tests;
 
   RoutePoint({
     required this.name,
@@ -51,17 +51,33 @@ class RoutePoint {
     this.latitude,
     this.longitude,
     this.isUnlocked = true,
-    required this.test,
+    required this.tests,
   });
 
   factory RoutePoint.fromMap(Map<String, dynamic> map) {
+    // Обработка старого формата с одним тестом
+    if (map['test'] != null && map['tests'] == null) {
+      final test = QuestionTest.fromJson(map['test']);
+      return RoutePoint(
+        name: map['name'] ?? '',
+        description: map['description'],
+        latitude: (map['latitude'] as num?)?.toDouble(),
+        longitude: (map['longitude'] as num?)?.toDouble(),
+        isUnlocked: map['isUnlocked'] ?? true,
+        tests: [test],
+      );
+    }
+
+    // Обработка нового формата с массивом тестов
     return RoutePoint(
       name: map['name'] ?? '',
       description: map['description'],
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
       isUnlocked: map['isUnlocked'] ?? true,
-      test: map['test'] != null ? QuestionTest.fromJson(map['test']) : SingleChoiceQuestion.init(),
+      tests: map['tests'] != null
+          ? (map['tests'] as List<dynamic>).map((e) => QuestionTest.fromJson(e)).toList()
+          : [SingleChoiceQuestion.init()],
     );
   }
 
@@ -72,7 +88,7 @@ class RoutePoint {
       'latitude': latitude,
       'longitude': longitude,
       'isUnlocked': isUnlocked,
-      'test': test.toJson(),
+      'tests': tests.map((test) => test.toJson()).toList(),
     };
   }
 }

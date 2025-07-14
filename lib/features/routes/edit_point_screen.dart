@@ -19,7 +19,7 @@ import 'package:notable_moments/features/routes/model/working_hours_model.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/widget/schedule_editor_widget.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
-import 'package:notable_moments/features/questions/model/single_choice_question.dart';
+
 import 'package:notable_moments/features/questions/model/question.dart';
 
 class EditPointScreen extends StatefulWidget {
@@ -44,7 +44,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
   late final List<String> photos = List.from(widget.pointAdmin?.photos ?? []);
   late WorkingHours schedule = widget.pointAdmin?.schedule ?? WorkingHours(periods: []);
   late bool isDraft = widget.pointAdmin?.isDraft ?? true;
-  QuestionTest test = SingleChoiceQuestion.init();
+  late List<QuestionTest> tests = widget.pointAdmin?.tests ?? [];
 
   yandex_map.MapWindow? _mapWindow;
   yandex_map.Map get map => _mapWindow!.map;
@@ -55,7 +55,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
     isNew = widget.pointAdmin == null;
     if (!isNew) {
       point = widget.pointAdmin?.point;
-      test = widget.pointAdmin!.test;
+      tests = widget.pointAdmin!.tests;
     }
 
     titleController.addListener(() => setState(() {}));
@@ -154,7 +154,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
     return false;
   }
 
-  bool get canSave => hasChanges && !hasErrors;
+  bool get canSavePoint => titleController.text.isNotEmpty && point != null && tests.isNotEmpty;
 
   void handleBack() {
     if (hasChanges) {
@@ -198,19 +198,80 @@ class _EditPointScreenState extends State<EditPointScreen> {
             onScheduleChanged: (s) => setState(() => schedule = s),
           ),
           const SizedBox(height: 12),
+          // --- Список тестов ---
+          if (tests.isNotEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Тесты',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: tests.length,
+                  itemBuilder: (context, index) {
+                    final test = tests[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () async {
+                          final result = await Navigator.of(context).push<QuestionTest>(
+                            MaterialPageRoute(
+                              builder: (_) => EditTestScreen(test: test),
+                            ),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              tests[index] = result;
+                            });
+                          }
+                        },
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.deepPurple.shade100,
+                            child: Icon(test.type.icon, color: Colors.deepPurple),
+                          ),
+                          title: Text(
+                            test.text.isEmpty ? 'Без названия' : test.text,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, size: 20),
+                            onPressed: () {
+                              setState(() {
+                                tests.removeAt(index);
+                              });
+                            },
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
           AppButton(
-            title: test.id == 'empty' ? 'Добавить тест' : 'Редактировать тест',
+            title: 'Добавить тест',
             onTap: () async {
-              // Переход на экран редактирования теста
               final result = await Navigator.of(context).push<QuestionTest>(
                 MaterialPageRoute(
-                  builder: (context) => EditTestScreen(test: test),
+                  builder: (context) => EditTestScreen(test: null),
                 ),
               );
               Logger.i('>>>> test: ${result?.toJson()}');
               if (result != null) {
                 setState(() {
-                  test = result;
+                  tests.add(result);
                 });
               }
             },
@@ -236,10 +297,10 @@ class _EditPointScreenState extends State<EditPointScreen> {
           const SizedBox(height: 16),
           AppButton(
             title: 'Сохранить',
-            onTap: canSave && point != null && test.id != 'empty'
+            onTap: canSavePoint
                 ? () => Navigator.of(context).pop(
                       PointAdminModel(
-                        id: widget.pointAdmin?.id ?? 'temp-${DateTime.now().millisecondsSinceEpoch}',
+                        id: widget.pointAdmin?.id ?? 'temp-2${DateTime.now().millisecondsSinceEpoch}',
                         point: point!,
                         photos: photos,
                         title: titleController.text,
@@ -249,7 +310,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         url: urlController.text,
                         order: widget.pointAdmin?.order ?? -1,
                         isDraft: isDraft,
-                        test: test,
+                        tests: tests,
                       ),
                     )
                 : null,

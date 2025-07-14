@@ -108,9 +108,8 @@ extension RouteAdminMapper on RouteAdminModel {
           description: p.description,
           latitude: p.point.latitude,
           longitude: p.point.longitude,
-          test: p.test,
+          tests: p.tests,
         );
-        
       }).toList(),
       taskCount: points.length, // При необходимости можешь заменить на сумму заданий
     );

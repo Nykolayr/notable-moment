@@ -6,19 +6,19 @@ import 'package:notable_moments/features/questions/edit_test_screen.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/provider/points_provider.dart';
 
-class EditPointScreen extends ConsumerStatefulWidget {
+class EditPointScreenOld extends ConsumerStatefulWidget {
   final PointAdminModel point;
 
-  const EditPointScreen({
+  const EditPointScreenOld({
     super.key,
     required this.point,
   });
 
   @override
-  ConsumerState<EditPointScreen> createState() => _EditPointScreenState();
+  ConsumerState<EditPointScreenOld> createState() => _EditPointScreenState();
 }
 
-class _EditPointScreenState extends ConsumerState<EditPointScreen> {
+class _EditPointScreenState extends ConsumerState<EditPointScreenOld> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
 
@@ -78,7 +78,7 @@ class _EditPointScreenState extends ConsumerState<EditPointScreen> {
                 await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => EditTestScreen(
-                      test: widget.point.test,
+                      test: widget.point.tests.first,
                     ),
                   ),
                 );

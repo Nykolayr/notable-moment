@@ -16,7 +16,7 @@ class PointAdminModel {
   final String url;
   final int order;
   final bool isDraft;
-  final QuestionTest test;
+  final List<QuestionTest> tests;
 
   bool get isActive => !isDraft;
 
@@ -35,10 +35,14 @@ class PointAdminModel {
     required this.url,
     required this.order,
     required this.isDraft,
-    required this.test,
+    required this.tests,
   });
 
-  factory PointAdminModel.fromMap(Map<String, dynamic> map, String id) => PointAdminModel(
+  factory PointAdminModel.fromMap(Map<String, dynamic> map, String id) {
+    // Обработка старого формата с одним тестом
+    if (map['test'] != null && map['tests'] == null) {
+      final test = QuestionTest.fromJson(map['test']);
+      return PointAdminModel(
         id: id,
         point: PointExtension.fromMap(map['point'] as Map<String, dynamic>),
         photos: List<String>.from(map['photos'] as List<dynamic>),
@@ -49,8 +53,27 @@ class PointAdminModel {
         url: map['url'] as String,
         order: map['order'] as int? ?? 0,
         isDraft: map['isDraft'] as bool? ?? true,
-        test: map['test'] != null ? QuestionTest.fromJson(map['test']) : SingleChoiceQuestion.init(),
+        tests: [test],
       );
+    }
+
+    // Обработка нового формата с массивом тестов
+    return PointAdminModel(
+      id: id,
+      point: PointExtension.fromMap(map['point'] as Map<String, dynamic>),
+      photos: List<String>.from(map['photos'] as List<dynamic>),
+      title: map['title'] as String,
+      description: map['description'] as String,
+      schedule: WorkingHours.fromMap(map['schedule'] as Map<String, dynamic>),
+      phones: map['phones'] == null ? [] : List<String>.from(map['phones'] as List<dynamic>),
+      url: map['url'] as String,
+      order: map['order'] as int? ?? 0,
+      isDraft: map['isDraft'] as bool? ?? true,
+      tests: map['tests'] != null
+          ? (map['tests'] as List<dynamic>).map((e) => QuestionTest.fromJson(e)).toList()
+          : [SingleChoiceQuestion.init()],
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         'point': point.toMap(),
@@ -62,7 +85,7 @@ class PointAdminModel {
         'url': url,
         'order': order,
         'isDraft': isDraft,
-        'test': test.toJson(),
+        'tests': tests.map((test) => test.toJson()).toList(),
       };
 
   PointAdminModel copyWith({
@@ -76,7 +99,7 @@ class PointAdminModel {
     String? url,
     int? order,
     bool? isDraft,
-    QuestionTest? test,
+    List<QuestionTest>? tests,
   }) =>
       PointAdminModel(
         id: id ?? this.id,
@@ -89,7 +112,7 @@ class PointAdminModel {
         url: url ?? this.url,
         order: order ?? this.order,
         isDraft: isDraft ?? this.isDraft,
-        test: test ?? this.test,
+        tests: tests ?? this.tests,
       );
 
   @override
@@ -110,7 +133,7 @@ class PointAdminModel {
           url == other.url &&
           order == other.order &&
           isDraft == other.isDraft &&
-          test == other.test;
+          const ListEquality<QuestionTest>().equals(tests, other.tests);
 
   @override
   int get hashCode =>
@@ -124,5 +147,5 @@ class PointAdminModel {
       url.hashCode ^
       order.hashCode ^
       isDraft.hashCode ^
-      test.hashCode;
+      tests.hashCode;
 }
