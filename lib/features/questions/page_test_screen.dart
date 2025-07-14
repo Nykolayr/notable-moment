@@ -8,8 +8,6 @@ import 'package:notable_moments/features/questions/model/question.dart';
 import 'package:notable_moments/features/questions/model/single_choice_question.dart';
 import 'package:notable_moments/features/questions/model/multiple_choice_question.dart';
 import 'package:notable_moments/features/questions/model/question_type.dart';
-import 'package:notable_moments/features/questions/page_type_question/single_choice_test_widget.dart';
-import 'package:notable_moments/features/questions/page_type_question/multiple_choice_test_widget.dart';
 import 'package:notable_moments/features/questions/widgets/profile_stats_bar.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:collection/collection.dart';
@@ -19,6 +17,8 @@ import 'package:notable_moments/features/questions/widgets/answer_result_chip.da
 import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/features/questions/widgets/modals.dart';
 import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
+import 'package:notable_moments/features/questions/model/general_question.dart';
+import 'package:notable_moments/features/questions/model/true_false_question.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -78,9 +78,18 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   @override
   void initState() {
     super.initState();
+    final userProgress = ref.read(userProgressProvider);
+    if (userProgress.energy == 0) {
+      Future.microtask(() async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EnergyRechargePage(routeId: widget.route.id),
+          ),
+        );
+      });
+    }
     // --- Инициализация подсказок на маршрут ---
     final routeId = widget.route.id;
-    final userProgress = ref.read(userProgressProvider);
     final routeProgress = userProgress.routes[routeId];
     if (routeProgress == null) {
       Future.microtask(() {
@@ -112,8 +121,15 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     if (hintUsedThisTest) return; // если была подсказка — ничего не делаем
     if (!answered) return;
     bool correct = false;
-    if (type == QuestionTypeTest.singleChoice) {
-      correct = selectedIndex == (currentTest as SingleChoiceQuestion).correctIndex;
+    if (type == QuestionTypeTest.singleChoice ||
+        type == QuestionTypeTest.general ||
+        type == QuestionTypeTest.trueFalse) {
+      final correctIndex = (type == QuestionTypeTest.singleChoice)
+          ? (currentTest as SingleChoiceQuestion).correctIndex
+          : (type == QuestionTypeTest.general)
+              ? (currentTest as GeneralQuestion).correctIndex
+              : ((currentTest as TrueFalseQuestion).correct ? 0 : 1);
+      correct = const ListEquality().equals(selectedIndexes, [correctIndex]);
     } else if (type == QuestionTypeTest.multipleChoice) {
       final correctIndexes = (currentTest as MultipleChoiceQuestion).correctIndexes;
       final sortedSelected = List<int>.from(selectedIndexes)..sort();
@@ -232,7 +248,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   }
 
   VoidCallback? getButtonAction(QuestionTest? currentTest, QuestionTypeTest type, List<QuestionTest> tests) {
-    if (!(selectedIndex != null || (selectedIndexes.isNotEmpty && type == QuestionTypeTest.multipleChoice))) {
+    if (selectedIndexes.isEmpty) {
       return null;
     }
 
@@ -289,8 +305,14 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                   child: ProfileStatsBar(
                     suscoins: suscoins,
                     energy: energy,
-                    onAddSuscoin: () {},
-                    onAddEnergy: () {},
+                    onAddSuscoin: () {
+                      ref.read(userProgressProvider.notifier).addSuscoins(1);
+                    },
+                    onAddEnergy: () {
+                      final notifier = ref.read(userProgressProvider.notifier);
+                      final currentEnergy = ref.read(userProgressProvider).energy;
+                      if (currentEnergy < 3) notifier.addEnergy(1);
+                    },
                     onHintPressed: () async {
                       await showBuyHintModal(
                         context,
@@ -307,58 +329,36 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                     hintUsedThisTest: hintUsedThisTest,
                   ),
                 ),
-                const Gap(4),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Text(
-                    currentTest?.text ?? '',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF222222),
-                    ),
-                  ),
-                ),
                 const Gap(18),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: type == QuestionTypeTest.singleChoice
-                        ? SingleChoiceTestWidget(
-                            question: currentTest as SingleChoiceQuestion,
-                            selectedIndex: selectedIndex,
-                            showResult: isCorrect == true,
-                            isCorrect: isCorrect,
-                            wrongIndex: wrongIndex,
-                            onAnswered: (_, idx) {
-                              setState(() {
-                                selectedIndex = idx;
-                                answered = true;
-                                wrongIndex = null;
-                                isCorrect = null; // Сбрасываем результат при новом выборе
-                              });
-                            },
-                          )
-                        : MultipleChoiceTestWidget(
-                            question: currentTest as MultipleChoiceQuestion,
-                            selectedIndexes: selectedIndexes,
-                            showResult: isCorrect == true,
-                            isCorrect: isCorrect,
-                            wrongIndexes: wrongIndexes,
-                            onAnswered: (_, idxs) {
-                              setState(() {
-                                selectedIndexes = List<int>.from(idxs);
-                                answered = selectedIndexes.isNotEmpty;
-                                wrongIndexes = [];
-                                isCorrect = null; // Сбрасываем результат при новом выборе
-                              });
-                            },
-                          ),
+                    child: type.buildTestWidget(
+                      currentTest!,
+                      onAnswered: (isCorrect, selected) {
+                        setState(() {
+                          selectedIndexes = List<int>.from(selected);
+                          this.isCorrect = isCorrect;
+                          answered = selectedIndexes.isNotEmpty;
+                          wrongIndex = null;
+                        });
+                      },
+                      selectedIndexes: selectedIndexes,
+                      showResult: isCorrect == true,
+                      isCorrect: isCorrect,
+                      wrongIndexes: wrongIndexes,
+                      onSelectionChanged: (newList) {
+                        setState(() {
+                          selectedIndexes = List<int>.from(newList);
+                          answered = selectedIndexes.isNotEmpty;
+                        });
+                      },
+                    ),
                   ),
                 ),
                 const Gap(12),
                 // --- Кнопка ---
-                if (!showRecharge && currentTest != null)
+                if (!showRecharge)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                     child: AppButton(

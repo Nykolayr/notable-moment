@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:notable_moments/features/questions/model/general_question.dart';
 import 'package:notable_moments/features/questions/add_type_question/app_input_only_text.dart';
 
+/// GeneralEditor
+///
+/// Виджет для создания и редактирования вопроса "Общий".
+/// Используется на экране создания/редактирования теста.
+/// Принимает и возвращает только GeneralQuestion.
+
 class GeneralEditor extends StatefulWidget {
   final GeneralQuestion initial;
   final void Function(GeneralQuestion data, bool isValid) onChanged;

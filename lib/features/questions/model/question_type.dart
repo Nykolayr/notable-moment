@@ -54,12 +54,12 @@ enum QuestionTypeTest {
   general(
     title: 'Общий вопрос',
     icon: Icons.help_outline,
-    text: 'Ответь на вопрос.',
+    text: 'Выбери правильный вариант ответа.',
   ),
   trueFalse(
     title: 'Правда/Ложь',
     icon: Icons.check,
-    text: 'Выбери правильный ответ.',
+    text: 'Выбери правильный вариант ответа.',
   ),
   sentenceOrder(
     title: 'Порядок слов',
@@ -101,18 +101,32 @@ extension QuestionTypeTestExt on QuestionTypeTest {
 
   Widget buildTestWidget(
     QuestionTest test, {
-    required Function onAnswered,
+    required void Function(bool, List<int>) onAnswered,
+    List<int> selectedIndexes = const [],
+    bool showResult = false,
+    bool? isCorrect,
+    List<int>? wrongIndexes,
+    void Function(List<int>)? onSelectionChanged,
   }) {
     switch (this) {
       case QuestionTypeTest.singleChoice:
         return SingleChoiceTestWidget(
           question: test as SingleChoiceQuestion,
-          onAnswered: onAnswered as void Function(bool, int?),
+          onAnswered: onAnswered,
+          selectedIndexes: selectedIndexes,
+          showResult: showResult,
+          isCorrect: isCorrect,
+          wrongIndexes: wrongIndexes,
         );
       case QuestionTypeTest.multipleChoice:
         return MultipleChoiceTestWidget(
           question: test as MultipleChoiceQuestion,
-          onAnswered: onAnswered as void Function(bool, List<int>),
+          onAnswered: onAnswered,
+          selectedIndexes: selectedIndexes,
+          showResult: showResult,
+          isCorrect: isCorrect,
+          wrongIndexes: wrongIndexes,
+          onSelectionChanged: onSelectionChanged,
         );
       case QuestionTypeTest.anagram:
         return AnagramTestWidget(question: test as AnagramQuestion);
@@ -121,9 +135,25 @@ extension QuestionTypeTestExt on QuestionTypeTest {
       case QuestionTypeTest.pair:
         return PairTestWidget(question: test as PairQuestion);
       case QuestionTypeTest.general:
-        return GeneralTestWidget(question: test as GeneralQuestion);
+        return GeneralTestWidget(
+          question: test as GeneralQuestion,
+          onAnswered: onAnswered,
+          onSelectionChanged: onSelectionChanged,
+          selectedIndexes: selectedIndexes,
+          showResult: showResult,
+          isCorrect: isCorrect,
+          wrongIndexes: wrongIndexes,
+        );
       case QuestionTypeTest.trueFalse:
-        return TrueFalseTestWidget(question: test as TrueFalseQuestion);
+        return TrueFalseTestWidget(
+          question: test as TrueFalseQuestion,
+          onAnswered: onAnswered,
+          onSelectionChanged: onSelectionChanged,
+          selectedIndexes: selectedIndexes,
+          showResult: showResult,
+          isCorrect: isCorrect,
+          wrongIndexes: wrongIndexes,
+        );
       case QuestionTypeTest.sentenceOrder:
         return SentenceOrderTestWidget(question: test as SentenceOrderQuestion);
     }

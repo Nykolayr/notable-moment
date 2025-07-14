@@ -5,6 +5,7 @@ import 'widgets/custom_checkbox.dart';
 class MultipleChoiceTestWidget extends StatefulWidget {
   final MultipleChoiceQuestion question;
   final void Function(bool isCorrect, List<int> selected) onAnswered;
+  final void Function(List<int> selected)? onSelectionChanged;
   final bool showResult;
   final bool? isCorrect;
   final List<int>? selectedIndexes;
@@ -13,6 +14,7 @@ class MultipleChoiceTestWidget extends StatefulWidget {
     super.key,
     required this.question,
     required this.onAnswered,
+    this.onSelectionChanged,
     this.showResult = false,
     this.isCorrect,
     this.selectedIndexes,
@@ -29,9 +31,24 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
   Widget build(BuildContext context) {
     final showResult = widget.showResult;
     final isCorrect = widget.isCorrect;
+    final questionTypeText = widget.question.type.text;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          questionTypeText,
+          style: const TextStyle(
+            color: Color(0xFFB0B4BB),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          widget.question.text,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF222222)),
+        ),
+        const SizedBox(height: 16),
         ...List.generate(
           widget.question.options.length,
           (index) => _buildOptionItem(index, showResult, isCorrect),
@@ -85,14 +102,15 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
       onTap: showResult
           ? null
           : () {
-              // Только через внешний selectedIndexes
               final newList = List<int>.from(widget.selectedIndexes ?? []);
               if (isSelected) {
                 newList.remove(index);
               } else {
                 newList.add(index);
               }
-              widget.onAnswered(false, newList);
+              if (widget.onSelectionChanged != null) {
+                widget.onSelectionChanged!(newList);
+              }
             },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
