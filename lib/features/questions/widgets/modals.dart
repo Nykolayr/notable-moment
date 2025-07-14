@@ -51,7 +51,7 @@ class AppModal extends StatelessWidget {
                 for (int i = 0; i < actions.length; i++) ...[
                   if (i > 0) const Gap(8),
                   Expanded(child: actions[i]),
-                ]
+                ],
               ],
             ),
             if (footer != null) ...[

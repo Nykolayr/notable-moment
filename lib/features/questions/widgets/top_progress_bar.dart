@@ -9,7 +9,6 @@ class TopProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('current: $current, total: $total');
     final double progress = current / total;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,

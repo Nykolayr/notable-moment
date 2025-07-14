@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:collection/collection.dart';
 import 'package:notable_moments/features/questions/model/multiple_choice_question.dart';
 import 'widgets/custom_checkbox.dart';
 
@@ -10,14 +9,15 @@ class MultipleChoiceTestWidget extends StatefulWidget {
   final bool? isCorrect;
   final List<int>? selectedIndexes;
   final List<int>? wrongIndexes;
-  const MultipleChoiceTestWidget(
-      {super.key,
-      required this.question,
-      required this.onAnswered,
-      this.showResult = false,
-      this.isCorrect,
-      this.selectedIndexes,
-      this.wrongIndexes});
+  const MultipleChoiceTestWidget({
+    super.key,
+    required this.question,
+    required this.onAnswered,
+    this.showResult = false,
+    this.isCorrect,
+    this.selectedIndexes,
+    this.wrongIndexes,
+  });
   @override
   State<MultipleChoiceTestWidget> createState() => _MultipleChoiceTestWidgetState();
 }

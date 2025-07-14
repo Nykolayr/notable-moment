@@ -10,17 +10,15 @@ import 'package:notable_moments/features/questions/page_type_question/single_cho
 import 'package:notable_moments/features/questions/page_type_question/multiple_choice_test_widget.dart';
 import 'package:notable_moments/features/questions/widgets/profile_stats_bar.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
-import 'package:notable_moments/features/profile/provider/profile_provider.dart';
 import 'package:collection/collection.dart';
 import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
-import 'package:notable_moments/features/questions/widgets/test_answer_widget.dart';
-import 'package:notable_moments/features/questions/widgets/energy_recharge_widget.dart';
 import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
 import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
 import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/features/questions/widgets/modals.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:notable_moments/features/profile/model/user_progress.dart';
+import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -40,8 +38,6 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   int? selectedIndex;
   List<int> selectedIndexes = [];
   bool? isCorrect;
-  int localEnergy = 3;
-  int localSuscoins = 10;
   bool answered = false; // Был ли выбран ответ (для смены кнопки)
   bool showRecharge = false;
   bool showChip = false; // Показывать ли чип результата
@@ -82,14 +78,11 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   @override
   void initState() {
     super.initState();
-    final profile = ref.read(profileProvider);
-    localEnergy = profile.energy;
-    localSuscoins = profile.suscoins;
     // --- Инициализация подсказок на маршрут ---
     final routeId = widget.route.id;
     final userProgress = ref.read(userProgressProvider);
     final routeProgress = userProgress.routes[routeId];
-    if (routeProgress == null || routeProgress.hintsLeft == null) {
+    if (routeProgress == null) {
       Future.microtask(() {
         final userProgress = ref.read(userProgressProvider);
         final userProgressNotifier = ref.read(userProgressProvider.notifier);
@@ -106,7 +99,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     }
   }
 
-  void _onSelectSingle(int idx) {
+  void onSelectSingle(int idx) {
     setState(() {
       selectedIndex = idx;
       answered = true;
@@ -115,7 +108,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     });
   }
 
-  void _onSelectMultiple(List<int> idxs) {
+  void onSelectMultiple(List<int> idxs) {
     setState(() {
       selectedIndexes = idxs;
       answered = idxs.isNotEmpty;
@@ -136,6 +129,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
       final sortedCorrect = List<int>.from(correctIndexes)..sort();
       correct = const ListEquality().equals(sortedSelected, sortedCorrect);
     }
+    final userProgressNotifier = ref.read(userProgressProvider.notifier);
     setState(() {
       isCorrect = correct;
       results.add(correct);
@@ -147,15 +141,23 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
           wrongIndexes = List<int>.from(selectedIndexes);
         }
       }
-      if (correct && !hintUsedThisTest) {
-        localSuscoins += 1;
-      } else if (!correct) {
-        localEnergy = (localEnergy - 1).clamp(0, 3);
-        if (localEnergy == 0) {
-          showRecharge = true;
-        }
-      }
     });
+    if (correct && !hintUsedThisTest) {
+      userProgressNotifier.addSuscoins(1);
+    } else if (!correct) {
+      userProgressNotifier.spendEnergy(1);
+      final userProgress = ref.read(userProgressProvider);
+      if (userProgress.energy == 0) {
+        Future.microtask(() async {
+          // ignore: use_build_context_synchronously
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => EnergyRechargePage(routeId: widget.route.id),
+            ),
+          );
+        });
+      }
+    }
   }
 
   void _onNext(List<QuestionTest> tests) {
@@ -165,6 +167,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
       wrongIndexes = [];
     });
     if (currentTestIndex == tests.length - 1) {
+      final userProgress = ref.read(userProgressProvider);
       setState(() {
         answered = false;
         isCorrect = null;
@@ -178,8 +181,8 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
             body: RouteFinishWidget(
               correctCount: results.where((e) => e).length,
               total: tests.length,
-              suscoins: localSuscoins,
-              energy: localEnergy,
+              suscoins: userProgress.suscoins,
+              energy: userProgress.energy,
               onClose: () => Navigator.of(context).pop(),
             ),
           ),
@@ -195,16 +198,6 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
         showRecharge = false;
       });
     }
-  }
-
-  void _onBuyEnergy() {
-    setState(() {
-      if (localSuscoins > 0) {
-        localSuscoins -= 1;
-        localEnergy = 1;
-        showRecharge = false;
-      }
-    });
   }
 
   VoidCallback? getButtonAction(QuestionTest? currentTest, QuestionTypeTest type, List<QuestionTest> tests) {
@@ -242,7 +235,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     final routeProgress = userProgress.routes[routeId];
     final hintsLeft = routeProgress?.hintsLeft ?? 3;
     final suscoins = userProgress.suscoins;
-    final userProgressNotifier = ref.read(userProgressProvider.notifier);
+    final energy = userProgress.energy;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F6),
@@ -264,7 +257,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                   child: ProfileStatsBar(
                     suscoins: suscoins,
-                    energy: localEnergy,
+                    energy: energy,
                     onAddSuscoin: () {},
                     onAddEnergy: () {},
                     onHintPressed: () async {
@@ -272,14 +265,16 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                         context,
                         hintsLeft: hintsLeft,
                         onBuy: () {
-                          // НЕ уменьшаем hintsLeft для теста!
-                          // final updatedRouteProgress = routeProgress?.copyWith(hintsLeft: hintsLeft - 1) ?? RouteProgress(completedPlaces: {}, completedQuests: {}, hintsLeft: hintsLeft - 1);
-                          // final newRoutes = Map<String, RouteProgress>.from(userProgress.routes);
-                          // newRoutes[routeId] = updatedRouteProgress;
-                          // userProgressNotifier.state = userProgress.copyWith(
-                          //   suscoins: suscoins - 1,
-                          //   routes: newRoutes,
-                          // );
+                          // Списываем сускоин и уменьшаем количество подсказок
+                          final userProgressNotifier = ref.read(userProgressProvider.notifier);
+                          final updatedRouteProgress = routeProgress?.copyWith(hintsLeft: hintsLeft - 1) ??
+                              RouteProgress(completedPlaces: {}, completedQuests: {}, hintsLeft: hintsLeft - 1);
+                          final newRoutes = Map<String, RouteProgress>.from(userProgress.routes);
+                          newRoutes[routeId] = updatedRouteProgress;
+                          userProgressNotifier.state = userProgress.copyWith(
+                            suscoins: suscoins - 1,
+                            routes: newRoutes,
+                          );
                           _useHint(routeId);
                         },
                       );
@@ -301,56 +296,42 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                   ),
                 ),
                 const Gap(18),
-                if (showRecharge)
-                  Expanded(
-                    child: EnergyRechargeWidget(
-                      suscoins: localSuscoins,
-                      energy: localEnergy,
-                      onBuy: _onBuyEnergy,
-                      onClose: () => Navigator.of(context).pop(),
-                    ),
-                  )
-                else if (currentTest != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      child: type == QuestionTypeTest.singleChoice
-                          ? SingleChoiceTestWidget(
-                              question: currentTest as SingleChoiceQuestion,
-                              selectedIndex: selectedIndex,
-                              showResult: isCorrect == true,
-                              isCorrect: isCorrect,
-                              wrongIndex: wrongIndex,
-                              onAnswered: (_, idx) {
-                                setState(() {
-                                  selectedIndex = idx;
-                                  answered = true;
-                                  wrongIndex = null;
-                                  isCorrect = null; // Сбрасываем результат при новом выборе
-                                });
-                              },
-                            )
-                          : MultipleChoiceTestWidget(
-                              question: currentTest as MultipleChoiceQuestion,
-                              selectedIndexes: selectedIndexes,
-                              showResult: isCorrect == true,
-                              isCorrect: isCorrect,
-                              wrongIndexes: wrongIndexes,
-                              onAnswered: (_, idxs) {
-                                setState(() {
-                                  selectedIndexes = List<int>.from(idxs);
-                                  answered = selectedIndexes.isNotEmpty;
-                                  wrongIndexes = [];
-                                  isCorrect = null; // Сбрасываем результат при новом выборе
-                                });
-                              },
-                            ),
-                    ),
-                  )
-                else
-                  const Expanded(
-                    child: Center(child: Text('Нет доступных тестов')),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: type == QuestionTypeTest.singleChoice
+                        ? SingleChoiceTestWidget(
+                            question: currentTest as SingleChoiceQuestion,
+                            selectedIndex: selectedIndex,
+                            showResult: isCorrect == true,
+                            isCorrect: isCorrect,
+                            wrongIndex: wrongIndex,
+                            onAnswered: (_, idx) {
+                              setState(() {
+                                selectedIndex = idx;
+                                answered = true;
+                                wrongIndex = null;
+                                isCorrect = null; // Сбрасываем результат при новом выборе
+                              });
+                            },
+                          )
+                        : MultipleChoiceTestWidget(
+                            question: currentTest as MultipleChoiceQuestion,
+                            selectedIndexes: selectedIndexes,
+                            showResult: isCorrect == true,
+                            isCorrect: isCorrect,
+                            wrongIndexes: wrongIndexes,
+                            onAnswered: (_, idxs) {
+                              setState(() {
+                                selectedIndexes = List<int>.from(idxs);
+                                answered = selectedIndexes.isNotEmpty;
+                                wrongIndexes = [];
+                                isCorrect = null; // Сбрасываем результат при новом выборе
+                              });
+                            },
+                          ),
                   ),
+                ),
                 const Gap(12),
                 // --- Кнопка ---
                 if (!showRecharge && currentTest != null)

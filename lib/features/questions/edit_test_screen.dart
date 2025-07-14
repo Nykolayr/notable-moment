@@ -140,12 +140,15 @@ class _EditTestScreenState extends State<EditTestScreen> {
 
   void _onSave() {
     final currentQuestion = _questionsByType[_selectedType];
+    print('Сохраняем тест: ${currentQuestion?.text}');
 
     // Если это новый тест (id == 'empty'), генерируем уникальный ID
     if (currentQuestion?.id == 'empty') {
       final updatedQuestion = currentQuestion!.copyWith(id: _uuid.v4());
+      print('Новый тест с ID: ${updatedQuestion.id}');
       Navigator.of(context).pop(updatedQuestion);
     } else {
+      print('Обновляем существующий тест с ID: ${currentQuestion?.id}');
       Navigator.of(context).pop(currentQuestion);
     }
   }

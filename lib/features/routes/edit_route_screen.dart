@@ -278,6 +278,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                 padding: EdgeInsets.only(bottom: index == points.length - 1 ? 0 : 8),
                 child: AppGestureDetector(
                   onTap: () async {
+                    print('Открываем редактирование точки: ${point.title}');
                     final newPoint = await Navigator.of(context).push<PointAdminModel?>(
                       MaterialPageRoute(
                         builder: (context) => EditPointScreen(pointAdmin: point),
@@ -285,10 +286,17 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                     );
                     if (!context.mounted) return;
                     if (newPoint == null) return;
-                    if (newPoint == point) return;
+                    print('Получили обновленную точку: ${newPoint.title}, тестов: ${newPoint.tests.length}');
                     points[index] = newPoint;
                     setState(() {});
                     calculateRoute();
+
+                    // Автоматически сохраняем маршрут после редактирования точки
+                    if (!isNew) {
+                      print('Сохранение маршрута после редактирования точки');
+                      await ref.read(routesProvider.notifier).updateRoute(route);
+                      print('Маршрут сохранен');
+                    }
                   },
                   child: PointWidget(
                     point: point,
@@ -317,6 +325,11 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
               points.add(point.copyWith(order: points.length));
               setState(() {});
               calculateRoute();
+
+              // Автоматически сохраняем маршрут после добавления новой точки
+              if (!isNew) {
+                await ref.read(routesProvider.notifier).updateRoute(route);
+              }
             },
           ),
           const SizedBox(height: 16),

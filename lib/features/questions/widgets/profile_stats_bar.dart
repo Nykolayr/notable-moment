@@ -24,7 +24,6 @@ class ProfileStatsBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bool lampActive = hintsLeft > 0 && suscoins > 0 && !hintUsedThisTest && onHintPressed != null;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [

@@ -298,7 +298,12 @@ class _EditPointScreenState extends State<EditPointScreen> {
           AppButton(
             title: 'Сохранить',
             onTap: canSavePoint
-                ? () => Navigator.of(context).pop(
+                ? () {
+                    print('Сохраняем точку с ${tests.length} тестами');
+                    for (int i = 0; i < tests.length; i++) {
+                      print('Тест $i: ${tests[i].text}');
+                    }
+                    return Navigator.of(context).pop(
                       PointAdminModel(
                         id: widget.pointAdmin?.id ?? 'temp-2${DateTime.now().millisecondsSinceEpoch}',
                         point: point!,
@@ -312,7 +317,8 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         isDraft: isDraft,
                         tests: tests,
                       ),
-                    )
+                    );
+                  }
                 : null,
           ),
           const SizedBox(height: 20),

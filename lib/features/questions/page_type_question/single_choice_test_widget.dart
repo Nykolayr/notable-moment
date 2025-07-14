@@ -64,7 +64,6 @@ class _SingleChoiceTestWidgetState extends State<SingleChoiceTestWidget> {
 
   Widget _buildOptionItem(int index, bool showResult, bool? isCorrect) {
     final isSelected = widget.selectedIndex == index;
-    print('SingleChoiceTestWidget: option $index, isSelected: $isSelected, showResult: $showResult');
     final isWrong =
         (showResult && isSelected && isCorrect == false) || (widget.wrongIndex != null && widget.wrongIndex == index);
     Color? fillColor = const Color(0xFFF7F9FC);
@@ -85,7 +84,6 @@ class _SingleChoiceTestWidgetState extends State<SingleChoiceTestWidget> {
       onTap: showResult
           ? null
           : () {
-              print('SingleChoiceTestWidget: onTap $index');
               widget.onAnswered(false, index);
             },
       child: Container(

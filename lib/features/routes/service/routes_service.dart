@@ -107,7 +107,9 @@ class RoutesService {
       // Process and upload new photos
       final updatedPoints = await _processPointPhotos(route.points);
       final updatedRoute = route.copyWith(points: updatedPoints);
+      print('RoutesService: сохраняем маршрут в Firestore');
       await _routesCollection.doc(route.id).update(updatedRoute.toMap());
+      print('RoutesService: маршрут успешно сохранен в Firestore');
     } catch (e) {
       debugPrint('routesService -- updateRoute error: $e');
       rethrow;

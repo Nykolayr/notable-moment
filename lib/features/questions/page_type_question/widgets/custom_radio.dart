@@ -5,8 +5,13 @@ class CustomRadio extends StatelessWidget {
   final bool showResult;
   final bool isRight;
   final bool isWrong;
-  const CustomRadio(
-      {required this.selected, required this.showResult, required this.isRight, required this.isWrong, super.key});
+  const CustomRadio({
+    required this.selected,
+    required this.showResult,
+    required this.isRight,
+    required this.isWrong,
+    super.key,
+  });
   @override
   Widget build(BuildContext context) {
     Color borderColor = const Color(0xFF466BFF);

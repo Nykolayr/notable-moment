@@ -5,8 +5,13 @@ class CustomCheckbox extends StatelessWidget {
   final bool showResult;
   final bool isRight;
   final bool isWrong;
-  const CustomCheckbox(
-      {required this.selected, required this.showResult, required this.isRight, required this.isWrong, super.key});
+  const CustomCheckbox({
+    required this.selected,
+    required this.showResult,
+    required this.isRight,
+    required this.isWrong,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
