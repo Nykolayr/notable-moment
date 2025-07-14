@@ -8,34 +8,23 @@ class SingleChoiceTestWidget extends StatefulWidget {
   final bool showResult;
   final bool? isCorrect;
   final int? selectedIndex;
-  const SingleChoiceTestWidget(
-      {super.key,
-      required this.question,
-      required this.onAnswered,
-      this.showResult = false,
-      this.isCorrect,
-      this.selectedIndex});
+  final int? wrongIndex;
+  const SingleChoiceTestWidget({
+    super.key,
+    required this.question,
+    required this.onAnswered,
+    this.showResult = false,
+    this.isCorrect,
+    this.selectedIndex,
+    this.wrongIndex,
+  });
 
   @override
   State<SingleChoiceTestWidget> createState() => _SingleChoiceTestWidgetState();
 }
 
 class _SingleChoiceTestWidgetState extends State<SingleChoiceTestWidget> {
-  int? selectedIndexLocal;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedIndexLocal = widget.selectedIndex;
-  }
-
-  @override
-  void didUpdateWidget(covariant SingleChoiceTestWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selectedIndex != oldWidget.selectedIndex) {
-      selectedIndexLocal = widget.selectedIndex;
-    }
-  }
+  // Убираю локальное состояние выбора
 
   @override
   Widget build(BuildContext context) {
@@ -49,53 +38,54 @@ class _SingleChoiceTestWidgetState extends State<SingleChoiceTestWidget> {
           (index) => _buildOptionItem(index, showResult, isCorrect),
         ),
         const SizedBox(height: 20),
-        if (showResult && isCorrect != null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isCorrect ? const Color(0xFFE6F9E2) : const Color(0xFFFFE6E6),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                isCorrect ? 'Верно!' : 'Неверно! -1 ⚡',
-                style: TextStyle(
-                  color: isCorrect ? const Color(0xFF4CD964) : const Color(0xFFFF3B30),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
+        // Удаляю чип 'Неверно!' из блока
+        // if (showResult && isCorrect == false)
+        //   Align(
+        //     alignment: Alignment.centerLeft,
+        //     child: Container(
+        //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        //       decoration: BoxDecoration(
+        //         color: const Color(0xFFFFE6E6),
+        //         borderRadius: BorderRadius.circular(16),
+        //       ),
+        //       child: const Text(
+        //         'Неверно! -1 ⚡',
+        //         style: TextStyle(
+        //           color: Color(0xFFFF3B30),
+        //           fontWeight: FontWeight.bold,
+        //           fontSize: 16,
+        //         ),
+        //       ),
+        //     ),
+        //   ),
       ],
     );
   }
 
   Widget _buildOptionItem(int index, bool showResult, bool? isCorrect) {
-    final isSelected = (widget.selectedIndex ?? selectedIndexLocal) == index;
-    final isRight = showResult && widget.question.correctIndex == index;
-    final isWrong = showResult && isSelected && !isRight;
+    final isSelected = widget.selectedIndex == index;
+    print('SingleChoiceTestWidget: option $index, isSelected: $isSelected, showResult: $showResult');
+    final isWrong =
+        (showResult && isSelected && isCorrect == false) || (widget.wrongIndex != null && widget.wrongIndex == index);
     Color? fillColor = const Color(0xFFF7F9FC);
     BoxBorder? border;
     if (isSelected && !showResult) {
       fillColor = const Color(0xFFEFFFC3);
       border = Border.all(color: const Color(0xFF97CB06), width: 1.5);
     }
-    if (isRight) {
-      fillColor = const Color(0xFFE6F9E2);
-      border = Border.all(color: const Color(0xFF97CB06), width: 1.5);
-    } else if (isWrong) {
+    if (isWrong) {
       fillColor = const Color(0xFFFFE6E6);
       border = Border.all(color: const Color(0xFFFF3B30), width: 1.5);
+    }
+    if (showResult && isSelected && isCorrect == true) {
+      fillColor = const Color(0xFFEFFFC3); // фон как при выборе
+      border = Border.all(color: const Color(0xFF97CB06), width: 1.5);
     }
     return GestureDetector(
       onTap: showResult
           ? null
           : () {
-              setState(() {
-                selectedIndexLocal = index;
-              });
+              print('SingleChoiceTestWidget: onTap $index');
               widget.onAnswered(false, index);
             },
       child: Container(
@@ -111,7 +101,7 @@ class _SingleChoiceTestWidgetState extends State<SingleChoiceTestWidget> {
             CustomRadio(
               selected: isSelected,
               showResult: showResult,
-              isRight: isRight,
+              isRight: showResult && isSelected && isCorrect == true,
               isWrong: isWrong,
             ),
             const SizedBox(width: 12),
@@ -121,11 +111,7 @@ class _SingleChoiceTestWidgetState extends State<SingleChoiceTestWidget> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                  color: isWrong
-                      ? const Color(0xFFFF3B30)
-                      : isRight
-                          ? const Color(0xFF4CD964)
-                          : const Color(0xFF222222),
+                  color: isWrong ? const Color(0xFFFF3B30) : const Color(0xFF222222),
                 ),
               ),
             ),

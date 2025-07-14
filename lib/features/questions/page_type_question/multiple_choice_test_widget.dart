@@ -9,33 +9,21 @@ class MultipleChoiceTestWidget extends StatefulWidget {
   final bool showResult;
   final bool? isCorrect;
   final List<int>? selectedIndexes;
+  final List<int>? wrongIndexes;
   const MultipleChoiceTestWidget(
       {super.key,
       required this.question,
       required this.onAnswered,
       this.showResult = false,
       this.isCorrect,
-      this.selectedIndexes});
+      this.selectedIndexes,
+      this.wrongIndexes});
   @override
   State<MultipleChoiceTestWidget> createState() => _MultipleChoiceTestWidgetState();
 }
 
 class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
-  List<int> selectedIndexesLocal = [];
-
-  @override
-  void initState() {
-    super.initState();
-    selectedIndexesLocal = widget.selectedIndexes ?? [];
-  }
-
-  @override
-  void didUpdateWidget(covariant MultipleChoiceTestWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selectedIndexes != oldWidget.selectedIndexes) {
-      selectedIndexesLocal = widget.selectedIndexes ?? [];
-    }
-  }
+  // Убираю локальное состояние выбора
 
   @override
   Widget build(BuildContext context) {
@@ -49,57 +37,58 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
           (index) => _buildOptionItem(index, showResult, isCorrect),
         ),
         const SizedBox(height: 20),
-        if (showResult && isCorrect != null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isCorrect ? const Color(0xFFE6F9E2) : const Color(0xFFFFE6E6),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                isCorrect ? 'Верно!' : 'Неверно! -1 ⚡',
-                style: TextStyle(
-                  color: isCorrect ? const Color(0xFF4CD964) : const Color(0xFFFF3B30),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
+        // Удаляю чип 'Неверно!' из блока
+        // if (showResult && isCorrect == false)
+        //   Align(
+        //     alignment: Alignment.centerLeft,
+        //     child: Container(
+        //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        //       decoration: BoxDecoration(
+        //         color: const Color(0xFFFFE6E6),
+        //         borderRadius: BorderRadius.circular(16),
+        //       ),
+        //       child: const Text(
+        //         'Неверно! -1 ⚡',
+        //         style: TextStyle(
+        //           color: Color(0xFFFF3B30),
+        //           fontWeight: FontWeight.bold,
+        //           fontSize: 16,
+        //         ),
+        //       ),
+        //     ),
+        //   ),
       ],
     );
   }
 
   Widget _buildOptionItem(int index, bool showResult, bool? isCorrect) {
-    final isSelected = (widget.selectedIndexes ?? selectedIndexesLocal).contains(index);
-    final isRight = showResult && widget.question.correctIndexes.contains(index);
-    final isWrong = showResult && isSelected && !isRight;
+    final isSelected = (widget.selectedIndexes ?? []).contains(index);
+    final isWrong =
+        (showResult && isSelected && isCorrect == false && !widget.question.correctIndexes.contains(index)) ||
+            (widget.wrongIndexes != null &&
+                widget.wrongIndexes!.contains(index) &&
+                !widget.question.correctIndexes.contains(index));
     Color borderColor = const Color(0xFFE0E0E0);
     Color? fillColor;
-    if (isRight) {
-      borderColor = const Color(0xFF4CD964);
-      fillColor = const Color(0xFFE6F9E2);
-    } else if (isWrong) {
+    if (isWrong) {
       borderColor = const Color(0xFFFF3B30);
       fillColor = const Color(0xFFFFE6E6);
     } else if (isSelected && !showResult) {
-      borderColor = const Color(0xFFFFD600);
-      fillColor = const Color(0xFFFFF9E2);
+      borderColor = const Color(0xFF97CB06);
+      fillColor = const Color(0xFFEFFFC3);
     }
     return GestureDetector(
       onTap: showResult
           ? null
           : () {
-              setState(() {
-                if (isSelected) {
-                  selectedIndexesLocal.remove(index);
-                } else {
-                  selectedIndexesLocal.add(index);
-                }
-              });
-              widget.onAnswered(false, selectedIndexesLocal);
+              // Только через внешний selectedIndexes
+              final newList = List<int>.from(widget.selectedIndexes ?? []);
+              if (isSelected) {
+                newList.remove(index);
+              } else {
+                newList.add(index);
+              }
+              widget.onAnswered(false, newList);
             },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -114,7 +103,7 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
             CustomCheckbox(
               selected: isSelected,
               showResult: showResult,
-              isRight: isRight,
+              isRight: false, // Always false for incorrect options
               isWrong: isWrong,
             ),
             const SizedBox(width: 12),
@@ -124,11 +113,7 @@ class _MultipleChoiceTestWidgetState extends State<MultipleChoiceTestWidget> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                  color: isWrong
-                      ? const Color(0xFFFF3B30)
-                      : isRight
-                          ? const Color(0xFF4CD964)
-                          : const Color(0xFF222222),
+                  color: isWrong ? const Color(0xFFFF3B30) : const Color(0xFF222222),
                 ),
               ),
             ),

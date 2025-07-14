@@ -16,6 +16,7 @@ import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart
 import 'package:notable_moments/features/questions/widgets/test_answer_widget.dart';
 import 'package:notable_moments/features/questions/widgets/energy_recharge_widget.dart';
 import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
+import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -39,6 +40,21 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   int localSuscoins = 10;
   bool answered = false; // Был ли выбран ответ (для смены кнопки)
   bool showRecharge = false;
+  bool showChip = false; // Показывать ли чип результата
+  int? wrongIndex; // Индекс неправильного выбора для single
+  List<int> wrongIndexes = []; // Индексы неправильных для multiple
+
+  void _showResultChip() {
+    setState(() {
+      showChip = true;
+    });
+  }
+
+  void _hideResultChip() {
+    setState(() {
+      showChip = false;
+    });
+  }
 
   @override
   void initState() {
@@ -52,6 +68,8 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     setState(() {
       selectedIndex = idx;
       answered = true;
+      wrongIndex = null; // Сбросить ошибку при новом выборе
+      isCorrect = null; // Сбросить результат при новом выборе
     });
   }
 
@@ -59,6 +77,8 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     setState(() {
       selectedIndexes = idxs;
       answered = idxs.isNotEmpty;
+      wrongIndexes = []; // Сбросить ошибку при новом выборе
+      isCorrect = null; // Сбросить результат при новом выборе
     });
   }
 
@@ -76,6 +96,14 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     setState(() {
       isCorrect = correct;
       results.add(correct);
+      showChip = true;
+      if (!correct) {
+        if (type == QuestionTypeTest.singleChoice) {
+          wrongIndex = selectedIndex;
+        } else if (type == QuestionTypeTest.multipleChoice) {
+          wrongIndexes = List<int>.from(selectedIndexes);
+        }
+      }
       if (correct) {
         localSuscoins += 1;
       } else {
@@ -88,6 +116,11 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   }
 
   void _onNext(List<QuestionTest> tests) {
+    setState(() {
+      showChip = false;
+      wrongIndex = null;
+      wrongIndexes = [];
+    });
     if (currentTestIndex == tests.length - 1) {
       setState(() {
         answered = false;
@@ -96,7 +129,6 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
         selectedIndexes = [];
         showRecharge = false;
       });
-      // Переход к финалу
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => Scaffold(
@@ -132,6 +164,30 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     });
   }
 
+  VoidCallback? getButtonAction(QuestionTest? currentTest, QuestionTypeTest type, List<QuestionTest> tests) {
+    if (!(selectedIndex != null || (selectedIndexes.isNotEmpty && type == QuestionTypeTest.multipleChoice))) {
+      return null;
+    }
+
+    if (isCorrect == null) {
+      return () {
+        _onAnswer(currentTest!, type, tests);
+        _showResultChip();
+      };
+    } else if (isCorrect == true) {
+      return () {
+        _onNext(tests);
+      };
+    } else {
+      return () {
+        setState(() {
+          isCorrect = null;
+          showChip = false;
+        });
+      };
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final points = widget.route.points;
@@ -142,116 +198,121 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F6),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: TopProgressBar(
-                current: currentTestIndex + 1,
-                total: tests.length,
-                onExit: () => Navigator.of(context).pop(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-              child: ProfileStatsBar(
-                suscoins: localSuscoins,
-                energy: localEnergy,
-                onAddSuscoin: () {},
-                onAddEnergy: () {},
-              ),
-            ),
-            const Gap(12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Text(
-                type.text,
-                style: const TextStyle(
-                  color: Color(0xFF8F99A8),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: TopProgressBar(
+                    current: currentTestIndex + 1,
+                    total: tests.length,
+                    onExit: () => Navigator.of(context).pop(),
+                  ),
                 ),
-              ),
-            ),
-            const Gap(4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Text(
-                currentTest?.text ?? '',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF222222),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                  child: ProfileStatsBar(
+                    suscoins: localSuscoins,
+                    energy: localEnergy,
+                    onAddSuscoin: () {},
+                    onAddEnergy: () {},
+                  ),
                 ),
-              ),
-            ),
-            const Gap(18),
-            if (showRecharge)
-              Expanded(
-                child: EnergyRechargeWidget(
-                  suscoins: localSuscoins,
-                  energy: localEnergy,
-                  onBuy: _onBuyEnergy,
-                  onClose: () => Navigator.of(context).pop(),
-                ),
-              )
-            else if (currentTest != null)
-              Expanded(
-                child: Padding(
+                const Gap(12),
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: type == QuestionTypeTest.singleChoice
-                      ? SingleChoiceTestWidget(
-                          question: currentTest as SingleChoiceQuestion,
-                          selectedIndex: selectedIndex,
-                          showResult: isCorrect != null,
-                          isCorrect: isCorrect,
-                          onAnswered: (_, idx) {
-                            setState(() {
-                              selectedIndex = idx;
-                              answered = true;
-                            });
-                          },
-                        )
-                      : MultipleChoiceTestWidget(
-                          question: currentTest as MultipleChoiceQuestion,
-                          selectedIndexes: selectedIndexes,
-                          showResult: isCorrect != null,
-                          isCorrect: isCorrect,
-                          onAnswered: (_, idxs) {
-                            setState(() {
-                              selectedIndexes = List<int>.from(idxs);
-                              answered = selectedIndexes.isNotEmpty;
-                            });
-                          },
-                        ),
+                  child: Text(
+                    type.text,
+                    style: const TextStyle(
+                      color: Color(0xFF8F99A8),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ),
-              )
-            else
-              const Expanded(
-                child: Center(child: Text('Нет доступных тестов')),
-              ),
-            const Gap(12),
-            // --- Кнопка ---
-            if (!showRecharge && currentTest != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                child: AppButton(
-                  title:
-                      (selectedIndex != null || (selectedIndexes.isNotEmpty && type == QuestionTypeTest.multipleChoice))
+                const Gap(4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Text(
+                    currentTest?.text ?? '',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF222222),
+                    ),
+                  ),
+                ),
+                const Gap(18),
+                if (showRecharge)
+                  Expanded(
+                    child: EnergyRechargeWidget(
+                      suscoins: localSuscoins,
+                      energy: localEnergy,
+                      onBuy: _onBuyEnergy,
+                      onClose: () => Navigator.of(context).pop(),
+                    ),
+                  )
+                else if (currentTest != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: type == QuestionTypeTest.singleChoice
+                          ? SingleChoiceTestWidget(
+                              question: currentTest as SingleChoiceQuestion,
+                              selectedIndex: selectedIndex,
+                              showResult: isCorrect == true,
+                              isCorrect: isCorrect,
+                              wrongIndex: wrongIndex,
+                              onAnswered: (_, idx) {
+                                setState(() {
+                                  selectedIndex = idx;
+                                  answered = true;
+                                  wrongIndex = null;
+                                  isCorrect = null; // Сбрасываем результат при новом выборе
+                                });
+                              },
+                            )
+                          : MultipleChoiceTestWidget(
+                              question: currentTest as MultipleChoiceQuestion,
+                              selectedIndexes: selectedIndexes,
+                              showResult: isCorrect == true,
+                              isCorrect: isCorrect,
+                              wrongIndexes: wrongIndexes,
+                              onAnswered: (_, idxs) {
+                                setState(() {
+                                  selectedIndexes = List<int>.from(idxs);
+                                  answered = selectedIndexes.isNotEmpty;
+                                  wrongIndexes = [];
+                                  isCorrect = null; // Сбрасываем результат при новом выборе
+                                });
+                              },
+                            ),
+                    ),
+                  )
+                else
+                  const Expanded(
+                    child: Center(child: Text('Нет доступных тестов')),
+                  ),
+                const Gap(12),
+                // --- Кнопка ---
+                if (!showRecharge && currentTest != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    child: AppButton(
+                      title: isCorrect == true
                           ? (currentTestIndex == tests.length - 1 ? 'Завершить' : 'Далее')
                           : 'Ответить',
-                  onTap:
-                      (selectedIndex != null || (selectedIndexes.isNotEmpty && type == QuestionTypeTest.multipleChoice))
-                          ? () {
-                              if (isCorrect == null) {
-                                _onAnswer(currentTest, type, tests);
-                              } else {
-                                _onNext(tests);
-                              }
-                            }
-                          : null,
-                ),
+                      onTap: getButtonAction(currentTest, type, tests),
+                    ),
+                  ),
+              ],
+            ),
+            if (showChip && isCorrect != null)
+              AnswerResultChip(
+                isCorrect: isCorrect!,
+                onHide: _hideResultChip,
               ),
           ],
         ),
