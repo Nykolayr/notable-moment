@@ -130,9 +130,28 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
             onMapCreated: (controller) async {
               mapController = controller;
               await Future.delayed(const Duration(milliseconds: 500));
-              mapController?.map.animateToKrasnoyarsk(); // используем map из mapWindow
+              final map = mapController!.map;
+              map.mapObjects.clear();
+              final allRoutes = routesState.allRoutes;
+              List<yandex_map.Point> allPoints = [];
+              for (final route in allRoutes) {
+                map.addRoute(route);
+                allPoints.addAll(route.points.map((p) => p.point));
+              }
+              if (allPoints.isNotEmpty) {
+                final minLat = allPoints.map((p) => p.latitude).reduce((a, b) => a < b ? a : b);
+                final maxLat = allPoints.map((p) => p.latitude).reduce((a, b) => a > b ? a : b);
+                final minLng = allPoints.map((p) => p.longitude).reduce((a, b) => a < b ? a : b);
+                final maxLng = allPoints.map((p) => p.longitude).reduce((a, b) => a > b ? a : b);
+                final centerPoint = yandex_map.Point(
+                  latitude: (minLat + maxLat) / 2,
+                  longitude: (minLng + maxLng) / 2,
+                );
+                await Future.delayed(const Duration(milliseconds: 300));
+                map.animateToPoint(centerPoint, zoom: 12);
+              }
             },
-            disableTaps: true,
+            disableTaps: false, // Теперь карта интерактивна
           ),
           Align(
             alignment: Alignment.centerRight,
