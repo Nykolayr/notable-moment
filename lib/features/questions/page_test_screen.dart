@@ -20,6 +20,8 @@ import 'package:notable_moments/features/questions/widgets/energy_recharge_page.
 import 'package:notable_moments/features/questions/model/general_question.dart';
 import 'package:notable_moments/features/questions/model/true_false_question.dart';
 import 'package:notable_moments/features/questions/model/anagram_question.dart';
+import 'package:notable_moments/features/questions/page_type_question/pair_test_widget.dart';
+import 'package:notable_moments/features/questions/model/pair_question.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -47,6 +49,9 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   bool hintUsedThisTest = false;
   List<String?>? anagramUserAnswer;
   List<String>? anagramBank;
+  bool pairButtonActive = false;
+  ValueNotifier<bool> pairCheckNotifier = ValueNotifier(false);
+  bool allPairsCompleted = false;
 
   void _showResultChip() {
     setState(() {
@@ -295,6 +300,13 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     }
   }
 
+  String _getButtonTitle(QuestionTest? currentTest, QuestionTypeTest type) {
+    if (type == QuestionTypeTest.pair) {
+      return allPairsCompleted ? 'Далее' : 'Ответить';
+    }
+    return isCorrect == true ? 'Далее' : 'Ответить';
+  }
+
   @override
   Widget build(BuildContext context) {
     final points = widget.route.points;
@@ -360,36 +372,45 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: type == QuestionTypeTest.anagram
-                        ? type.buildTestWidget(
-                            currentTest!,
-                            onAnswered: (_, __) {},
-                            userAnswer: anagramUserAnswer!,
-                            bank: anagramBank!,
-                            onMove: (fromRow, fromIdx, toRow, toIdx) {
+                    child: type == QuestionTypeTest.pair
+                        ? PairTestWidget(
+                            question: currentTest as PairQuestion,
+                            onSelectionChanged: (selectedIndexes, canAnswer) {
                               setState(() {
-                                if (fromRow == 0 && toRow == 0) {
-                                  // Перемещение в верхнем ряду (ответ)
-                                  final tmp = anagramUserAnswer![toIdx];
-                                  anagramUserAnswer![toIdx] = anagramUserAnswer![fromIdx];
-                                  anagramUserAnswer![fromIdx] = tmp;
-                                } else if (fromRow == 1 && toRow == 0) {
-                                  // Перемещение из банка в ответ
-                                  final letter = anagramBank![fromIdx];
-                                  anagramUserAnswer![toIdx] = letter;
-                                  anagramBank!.removeAt(fromIdx);
-                                } else if (fromRow == 0 && toRow == 1) {
-                                  // Перемещение из ответа в банк
-                                  final letter = anagramUserAnswer![fromIdx];
-                                  if (letter != null) {
-                                    anagramUserAnswer![fromIdx] = null;
-                                    anagramBank!.add(letter);
-                                  }
-                                }
+                                pairButtonActive = canAnswer;
+                                allPairsCompleted = false;
                               });
                             },
-                            showResult: isCorrect == true,
-                            isCorrect: isCorrect,
+                            onPairChecked: (isCorrect, selectedIndexes) {
+                              if (!isCorrect) {
+                                final userProgressNotifier = ref.read(userProgressProvider.notifier);
+                                userProgressNotifier.spendEnergy(1);
+                                setState(() {
+                                  showChip = true;
+                                  this.isCorrect = false;
+                                });
+                                final userProgress = ref.read(userProgressProvider);
+                                if (userProgress.energy == 0) {
+                                  Future.microtask(() async {
+                                    await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => EnergyRechargePage(routeId: widget.route.id),
+                                      ),
+                                    );
+                                  });
+                                }
+                              }
+                            },
+                            onAllPairsCompleted: () {
+                              setState(() {
+                                allPairsCompleted = true;
+                                pairButtonActive = false;
+                                showChip = true;
+                                isCorrect = true;
+                              });
+                              ref.read(userProgressProvider.notifier).addSuscoins(1);
+                            },
+                            checkPairSignal: pairCheckNotifier,
                           )
                         : type.buildTestWidget(
                             currentTest!,
@@ -420,10 +441,27 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                 if (!showRecharge)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    child: AppButton(
-                      title: isCorrect == true ? 'Далее' : 'Ответить',
-                      onTap: getButtonAction(currentTest, type, tests),
-                    ),
+                    child: type == QuestionTypeTest.pair
+                        ? AppButton(
+                            title: allPairsCompleted ? 'Далее' : 'Ответить',
+                            onTap: allPairsCompleted
+                                ? () {
+                                    setState(() {
+                                      showChip = false;
+                                      isCorrect = null;
+                                    });
+                                    _onNext(tests);
+                                  }
+                                : (pairButtonActive
+                                    ? () {
+                                        pairCheckNotifier.value = true;
+                                      }
+                                    : null),
+                          )
+                        : AppButton(
+                            title: _getButtonTitle(currentTest, type),
+                            onTap: getButtonAction(currentTest, type, tests),
+                          ),
                   ),
               ],
             ),
