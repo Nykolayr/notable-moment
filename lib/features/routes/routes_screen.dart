@@ -6,6 +6,7 @@ import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
+import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/features/routes/provider/routes_provider.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
@@ -118,40 +119,54 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
 
   void _drawRoutesAndPoints() {
     final allRoutes = ref.read(routesProvider).allRoutes;
-    final progress = ref.read(progressProvider);
+
+    if (allRoutes.isEmpty) {
+      setState(() {
+        mapObjects = [];
+      });
+      return;
+    }
+
     int globalIndex = 0;
     final List<MapObject> objects = [];
+
     for (final route in allRoutes) {
-      final lastUnlocked = progress.unlockedIndexes[route.id] ?? -1;
-      final isRouteOpened = lastUnlocked >= route.points.length - 1;
+      if (route.points.isEmpty) continue;
+
+      // Временно считаем все маршруты открытыми для тестирования
+      bool isRouteOpened = true;
+
       final polyline = Polyline(
         points: route.points.map((p) => Point(latitude: p.point.latitude, longitude: p.point.longitude)).toList(),
       );
+
       objects.add(
         PolylineMapObject(
           mapId: MapObjectId('polyline_${route.id}'),
           polyline: polyline,
-          strokeColor: isRouteOpened ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD),
-          strokeWidth: isRouteOpened ? 4 : 2,
+          strokeColor: const Color(0xFF466BFF), // Всегда синий
+          strokeWidth: 4, // Всегда толстая линия
+          dashLength: 20.0, // Всегда штрихпунктир
+          gapLength: 10.0,
         ),
       );
+
       for (int i = 0; i < route.points.length; i++) {
-        final point = route.points[i].point;
+        final point = route.points[i];
         final isSelected = globalIndex == selectedPointIndex;
+
         objects.add(
           PlacemarkMapObject(
             mapId: MapObjectId('placemark_${route.id}_$i'),
-            point: Point(latitude: point.latitude, longitude: point.longitude),
+            point: Point(latitude: point.point.latitude, longitude: point.point.longitude),
             opacity: 1,
             icon: PlacemarkIcon.single(
               PlacemarkIconStyle(
-                image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
+                image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'),
                 scale: isSelected ? 1.4 : 1.0,
               ),
             ),
             onTap: (_, __) {
-              final pointName = route.points[i].title;
-              Logger.i('Placemark tapped at index: $globalIndex, name: $pointName');
               setState(() {
                 selectedPointIndex = globalIndex;
                 _drawRoutesAndPoints();
@@ -162,6 +177,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
         globalIndex++;
       }
     }
+
     setState(() {
       mapObjects = objects;
     });
