@@ -19,6 +19,7 @@ import 'package:notable_moments/features/questions/widgets/modals.dart';
 import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
 import 'package:notable_moments/features/questions/model/general_question.dart';
 import 'package:notable_moments/features/questions/model/true_false_question.dart';
+import 'package:notable_moments/features/questions/model/anagram_question.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -44,6 +45,8 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   int? wrongIndex; // Индекс неправильного выбора для single
   List<int> wrongIndexes = []; // Индексы неправильных для multiple
   bool hintUsedThisTest = false;
+  List<String?>? anagramUserAnswer;
+  List<String>? anagramBank;
 
   void _showResultChip() {
     setState(() {
@@ -75,6 +78,11 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     });
   }
 
+  void _initAnagramState(AnagramQuestion anagram) {
+    anagramUserAnswer = List<String?>.filled(anagram.answer.length, null);
+    anagramBank = List<String>.from(anagram.letters.map((e) => e.toLowerCase()));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +104,15 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
         final userProgressNotifier = ref.read(userProgressProvider.notifier);
         userProgressNotifier.initializeRoute(routeId);
       });
+    }
+    // Инициализация для AnagramTestWidget
+    final points = widget.route.points;
+    final tests = points[widget.currentIndex].tests;
+    final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
+    if (currentTest != null && currentTest.type == QuestionTypeTest.anagram) {
+      final anagram = currentTest as AnagramQuestion;
+      anagramUserAnswer = List<String?>.filled(anagram.answer.length, null);
+      anagramBank = List<String>.from(anagram.letters.map((e) => e.toLowerCase()));
     }
   }
 
@@ -171,6 +188,13 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
       showChip = false;
       wrongIndex = null;
       wrongIndexes = [];
+      if (tests.isNotEmpty &&
+          tests[currentTestIndex + 1 < tests.length ? currentTestIndex + 1 : currentTestIndex].type ==
+              QuestionTypeTest.anagram) {
+        final nextTest =
+            tests[currentTestIndex + 1 < tests.length ? currentTestIndex + 1 : currentTestIndex] as AnagramQuestion;
+        _initAnagramState(nextTest);
+      }
     });
     final points = widget.route.points;
     final isLastTestInPoint = currentTestIndex == tests.length - 1;
@@ -277,6 +301,9 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     final tests = points[widget.currentIndex].tests;
     final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
     final type = currentTest?.type ?? QuestionTypeTest.singleChoice;
+    if (type == QuestionTypeTest.anagram && (anagramUserAnswer == null || anagramBank == null)) {
+      _initAnagramState(currentTest as AnagramQuestion);
+    }
     final routeId = widget.route.id;
     final userProgress = ref.watch(userProgressProvider);
     final routeProgress = userProgress.routes[routeId];
@@ -333,27 +360,59 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: type.buildTestWidget(
-                      currentTest!,
-                      onAnswered: (isCorrect, selected) {
-                        setState(() {
-                          selectedIndexes = List<int>.from(selected);
-                          this.isCorrect = isCorrect;
-                          answered = selectedIndexes.isNotEmpty;
-                          wrongIndex = null;
-                        });
-                      },
-                      selectedIndexes: selectedIndexes,
-                      showResult: isCorrect == true,
-                      isCorrect: isCorrect,
-                      wrongIndexes: wrongIndexes,
-                      onSelectionChanged: (newList) {
-                        setState(() {
-                          selectedIndexes = List<int>.from(newList);
-                          answered = selectedIndexes.isNotEmpty;
-                        });
-                      },
-                    ),
+                    child: type == QuestionTypeTest.anagram
+                        ? type.buildTestWidget(
+                            currentTest!,
+                            onAnswered: (_, __) {},
+                            userAnswer: anagramUserAnswer!,
+                            bank: anagramBank!,
+                            onMove: (fromRow, fromIdx, toRow, toIdx) {
+                              setState(() {
+                                if (fromRow == 0 && toRow == 0) {
+                                  // Перемещение в верхнем ряду (ответ)
+                                  final tmp = anagramUserAnswer![toIdx];
+                                  anagramUserAnswer![toIdx] = anagramUserAnswer![fromIdx];
+                                  anagramUserAnswer![fromIdx] = tmp;
+                                } else if (fromRow == 1 && toRow == 0) {
+                                  // Перемещение из банка в ответ
+                                  final letter = anagramBank![fromIdx];
+                                  anagramUserAnswer![toIdx] = letter;
+                                  anagramBank!.removeAt(fromIdx);
+                                } else if (fromRow == 0 && toRow == 1) {
+                                  // Перемещение из ответа в банк
+                                  final letter = anagramUserAnswer![fromIdx];
+                                  if (letter != null) {
+                                    anagramUserAnswer![fromIdx] = null;
+                                    anagramBank!.add(letter);
+                                  }
+                                }
+                              });
+                            },
+                            showResult: isCorrect == true,
+                            isCorrect: isCorrect,
+                          )
+                        : type.buildTestWidget(
+                            currentTest!,
+                            onAnswered: (isCorrect, selected) {
+                              print('[PageTestScreen] onAnswered: isCorrect=$isCorrect, selected=$selected');
+                              setState(() {
+                                selectedIndexes = List<int>.from(selected);
+                                this.isCorrect = isCorrect;
+                                answered = selectedIndexes.isNotEmpty;
+                                wrongIndex = null;
+                              });
+                            },
+                            selectedIndexes: selectedIndexes,
+                            showResult: isCorrect == true,
+                            isCorrect: isCorrect,
+                            wrongIndexes: wrongIndexes,
+                            onSelectionChanged: (newList) {
+                              setState(() {
+                                selectedIndexes = List<int>.from(newList);
+                                answered = selectedIndexes.isNotEmpty;
+                              });
+                            },
+                          ),
                   ),
                 ),
                 const Gap(12),

@@ -39,7 +39,7 @@ enum QuestionTypeTest {
   anagram(
     title: 'Анаграмма',
     icon: Icons.text_fields,
-    text: 'Переставь буквы в слове, чтобы получить другое слово.',
+    text: 'Перетащи буквы в их правильные позиции..',
   ),
   order(
     title: 'Расположи по порядку',
@@ -49,7 +49,7 @@ enum QuestionTypeTest {
   pair(
     title: 'Найди пару',
     icon: Icons.link,
-    text: 'Найди пару предметов.',
+    text: 'Найди пару.',
   ),
   general(
     title: 'Общий вопрос',
@@ -102,7 +102,11 @@ extension QuestionTypeTestExt on QuestionTypeTest {
   Widget buildTestWidget(
     QuestionTest test, {
     required void Function(bool, List<int>) onAnswered,
+    void Function(bool, List<String>)? onAnagramAnswered,
     List<int> selectedIndexes = const [],
+    List<String?>? userAnswer,
+    List<String>? bank,
+    void Function(int fromRow, int fromIdx, int toRow, int toIdx)? onMove,
     bool showResult = false,
     bool? isCorrect,
     List<int>? wrongIndexes,
@@ -129,7 +133,14 @@ extension QuestionTypeTestExt on QuestionTypeTest {
           onSelectionChanged: onSelectionChanged,
         );
       case QuestionTypeTest.anagram:
-        return AnagramTestWidget(question: test as AnagramQuestion);
+        return AnagramTestWidget(
+          question: test as AnagramQuestion,
+          userAnswer: userAnswer!,
+          bank: bank!,
+          onMove: onMove,
+          showResult: showResult,
+          isCorrect: isCorrect,
+        );
       case QuestionTypeTest.order:
         return OrderTestWidget(question: test as OrderQuestion);
       case QuestionTypeTest.pair:
