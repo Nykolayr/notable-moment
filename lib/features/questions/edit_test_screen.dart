@@ -186,7 +186,17 @@ class _EditTestScreenState extends State<EditTestScreen> {
                         isExpanded: true,
                         icon: const Icon(Icons.keyboard_arrow_down_rounded),
                         onChanged: _onTypeChanged,
+
+                        ///
                         items: QuestionTypeTest.values
+                            .where(
+                              (type) => ![
+                                // Здесь перечисляем типы, которые НЕ должны показываться
+                                QuestionTypeTest.anagram,
+                                QuestionTypeTest.order,
+                                QuestionTypeTest.sentenceOrder,
+                              ].contains(type),
+                            )
                             .map(
                               (type) => DropdownMenuItem(
                                 value: type,

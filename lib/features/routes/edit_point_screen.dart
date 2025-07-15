@@ -2,7 +2,6 @@
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notable_moments/core/helpers/validator.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
@@ -224,7 +223,8 @@ class _EditPointScreenState extends State<EditPointScreen> {
                               builder: (_) => EditTestScreen(test: test),
                             ),
                           );
-                          if (result != null) {
+
+                          if (result != null && result.id != 'empty') {
                             setState(() {
                               tests[index] = result;
                             });
@@ -233,8 +233,8 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           leading: CircleAvatar(
-                            backgroundColor: Colors.deepPurple.shade100,
-                            child: Icon(test.type.icon, color: Colors.deepPurple),
+                            backgroundColor: Colors.grey.shade200,
+                            child: Icon(test.type.icon, color: Colors.black),
                           ),
                           title: Text(
                             test.text.isEmpty ? 'Без названия' : test.text,
@@ -268,8 +268,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                   builder: (context) => EditTestScreen(test: null),
                 ),
               );
-              Logger.i('>>>> test: ${result?.toJson()}');
-              if (result != null) {
+              if (result != null && result.id != 'empty') {
                 setState(() {
                   tests.add(result);
                 });
