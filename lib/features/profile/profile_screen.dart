@@ -16,7 +16,7 @@ import 'package:notable_moments/core/widget/app_edit_button.dart';
 import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/features/profile/profile_edit_screen.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
-import 'package:notable_moments/features/profile/provider/sus_provider.dart';
+import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/features/profile/sub_page/profile_faq.dart';
 import 'package:notable_moments/features/profile/sub_page/profile_pdf.dart';
 import 'package:notable_moments/features/profile/widget/info_widget.dart';
@@ -30,7 +30,9 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
-    final sus = ref.watch(susProvider);
+    final userProgress = ref.watch(userProgressProvider);
+    // streak: используем profile.streak если есть, иначе userProgress.daysInARow
+    final streak = profile.streak != 0 ? profile.streak : userProgress.daysInARow;
 
     Widget profileLine(String title, {required VoidCallback onTap}) => AppGestureDetector(
           onTap: onTap,
@@ -76,7 +78,7 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Text('Суслик Валера', style: AppStyle.suslik.bgText900),
                       const SizedBox(height: 16),
-                      Image.asset(sus.energy <= 1 ? AppImages.susCry : AppImages.susHi, height: 170),
+                      Image.asset(profile.energy <= 1 ? AppImages.susCry : AppImages.susHi, height: 170),
                       const SizedBox(height: 16),
                       Text('Посещений подряд', style: AppStyle.subtext.bgText900),
                       const SizedBox(height: 7),
@@ -91,7 +93,7 @@ class ProfileScreen extends ConsumerWidget {
                               width: 27,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: sus.daysInARow > index ? AppColor.primary : AppColor.bgText300,
+                                color: streak > index ? AppColor.primary : AppColor.bgText300,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                             ),
@@ -119,7 +121,7 @@ class ProfileScreen extends ConsumerWidget {
                                   (index) => SvgPicture.asset(
                                     AppIcon.energy,
                                     // ignore: deprecated_member_use
-                                    color: sus.energy > index ? AppColor.orange : AppColor.bgText300,
+                                    color: profile.energy > index ? AppColor.orange : AppColor.bgText300,
                                   ),
                                 ),
                               ),
@@ -141,7 +143,7 @@ class ProfileScreen extends ConsumerWidget {
                                 children: [
                                   Image.asset(AppImages.suscoin, height: 24, width: 24),
                                   const SizedBox(width: 8),
-                                  Text(sus.suscoins.toString(), style: AppStyle.body.bgText900),
+                                  Text(profile.suscoins.toString(), style: AppStyle.body.bgText900),
                                 ],
                               ),
                             ],
@@ -151,8 +153,12 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       AppButton(
                         title: 'Покормить',
-                        onTap:
-                            sus.energy == 3 || sus.suscoins == 0 ? null : () => ref.read(susProvider.notifier).feed(),
+                        onTap: profile.energy == 3 || profile.suscoins == 0
+                            ? null
+                            : () async {
+                                await ref.read(profileProvider.notifier).spendSuscoins(1);
+                                await ref.read(profileProvider.notifier).addEnergy(1);
+                              },
                       ),
                     ],
                   ),

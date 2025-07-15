@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:notable_moments/features/profile/provider/profile_provider.dart';
 import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:gap/gap.dart';
@@ -19,10 +20,10 @@ class EnergyRechargePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(profileProvider);
     final userProgress = ref.watch(userProgressProvider);
-    final userProgressNotifier = ref.read(userProgressProvider.notifier);
-    final energy = userProgress.energy;
-    final suscoins = userProgress.suscoins;
+    final energy = profile.energy;
+    final suscoins = profile.suscoins;
     final suslikName = 'Валера';
     final suslikImage = getSuslikImage(energy);
     final canFeed = suscoins > 0 && energy < 3;
@@ -121,8 +122,8 @@ class EnergyRechargePage extends ConsumerWidget {
                       title: 'Покормить',
                       onTap: canFeed
                           ? () {
-                              userProgressNotifier.spendSuscoins(1);
-                              userProgressNotifier.addEnergy(1);
+                              ref.read(profileProvider.notifier).spendSuscoins(1);
+                              ref.read(profileProvider.notifier).addEnergy(1);
                             }
                           : null,
                     ),

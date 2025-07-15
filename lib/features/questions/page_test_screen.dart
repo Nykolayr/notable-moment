@@ -14,7 +14,7 @@ import 'package:collection/collection.dart';
 import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
 import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
 import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
-import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
+import 'package:notable_moments/features/profile/provider/profile_provider.dart';
 import 'package:notable_moments/features/questions/widgets/modals.dart';
 import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
 import 'package:notable_moments/features/questions/model/general_question.dart';
@@ -22,6 +22,7 @@ import 'package:notable_moments/features/questions/model/true_false_question.dar
 import 'package:notable_moments/features/questions/model/anagram_question.dart';
 import 'package:notable_moments/features/questions/page_type_question/pair_test_widget.dart';
 import 'package:notable_moments/features/questions/model/pair_question.dart';
+import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -91,8 +92,9 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   @override
   void initState() {
     super.initState();
+    final profile = ref.read(profileProvider);
     final userProgress = ref.read(userProgressProvider);
-    if (userProgress.energy == 0) {
+    if (profile.energy == 0) {
       Future.microtask(() async {
         await Navigator.of(context).push(
           MaterialPageRoute(
@@ -158,7 +160,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
       final sortedCorrect = List<int>.from(correctIndexes)..sort();
       correct = const ListEquality().equals(sortedSelected, sortedCorrect);
     }
-    final userProgressNotifier = ref.read(userProgressProvider.notifier);
+    ref.read(userProgressProvider.notifier);
     setState(() {
       isCorrect = correct;
       results.add(correct);
@@ -172,11 +174,11 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
       }
     });
     if (correct && !hintUsedThisTest) {
-      userProgressNotifier.addSuscoins(1);
+      ref.read(profileProvider.notifier).addSuscoins(1);
     } else if (!correct) {
-      userProgressNotifier.spendEnergy(1);
-      final userProgress = ref.read(userProgressProvider);
-      if (userProgress.energy == 0) {
+      ref.read(profileProvider.notifier).spendEnergy(1);
+      final profile = ref.read(profileProvider);
+      if (profile.energy == 0) {
         Future.microtask(() async {
           await Navigator.of(context).push(
             MaterialPageRoute(
@@ -205,7 +207,8 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     final isLastTestInPoint = currentTestIndex == tests.length - 1;
     final isLastPoint = widget.currentIndex == points.length - 1;
     final userProgressNotifier = ref.read(userProgressProvider.notifier);
-    final userProgress = ref.read(userProgressProvider);
+    ref.read(userProgressProvider);
+    final profile = ref.read(profileProvider);
     final routeId = widget.route.id;
     final placeId = points[widget.currentIndex].name;
     final suslikAsset = 'assets/image/sus_good.png'; // Можно сделать выбор по количеству правильных
@@ -213,7 +216,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     if (isLastTestInPoint) {
       // Сохраняем прогресс точки и начисляем сускоины
       userProgressNotifier.completePlace(routeId, placeId);
-      userProgressNotifier.addSuscoins(tests.length);
+      ref.read(profileProvider.notifier).addSuscoins(tests.length);
       if (isLastPoint) {
         // Это последняя точка маршрута — показываем итог маршрута
         Navigator.of(context).push(
@@ -223,7 +226,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                 correctCount: results.where((e) => e).length,
                 total: tests.length,
                 suscoins: tests.length,
-                energy: userProgress.energy,
+                energy: profile.energy,
                 routeTitle: widget.route.title,
                 onClose: () {
                   int count = 0;
@@ -320,8 +323,9 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     final userProgress = ref.watch(userProgressProvider);
     final routeProgress = userProgress.routes[routeId];
     final hintsLeft = routeProgress?.hintsLeft ?? 3;
-    final suscoins = userProgress.suscoins;
-    final energy = userProgress.energy;
+    final profile = ref.watch(profileProvider);
+    final suscoins = profile.suscoins;
+    final energy = profile.energy;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F6),
@@ -345,12 +349,14 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                     suscoins: suscoins,
                     energy: energy,
                     onAddSuscoin: () {
-                      ref.read(userProgressProvider.notifier).addSuscoins(1);
+                      ref.read(profileProvider.notifier).addSuscoins(1);
                     },
                     onAddEnergy: () {
-                      final notifier = ref.read(userProgressProvider.notifier);
-                      final currentEnergy = ref.read(userProgressProvider).energy;
-                      if (currentEnergy < 3) notifier.addEnergy(1);
+                      final notifier = ref.read(profileProvider.notifier);
+                      final currentEnergy = ref.read(profileProvider).energy;
+                      if (currentEnergy < 3) {
+                        notifier.addEnergy(1);
+                      }
                     },
                     onHintPressed: () async {
                       await showBuyHintModal(
@@ -383,13 +389,13 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                             },
                             onPairChecked: (isCorrect, selectedIndexes) {
                               if (!isCorrect) {
-                                final userProgressNotifier = ref.read(userProgressProvider.notifier);
+                                final userProgressNotifier = ref.read(profileProvider.notifier);
                                 userProgressNotifier.spendEnergy(1);
                                 setState(() {
                                   showChip = true;
                                   this.isCorrect = false;
                                 });
-                                final userProgress = ref.read(userProgressProvider);
+                                final userProgress = ref.read(profileProvider);
                                 if (userProgress.energy == 0) {
                                   Future.microtask(() async {
                                     await Navigator.of(context).push(
@@ -408,14 +414,13 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                                 showChip = true;
                                 isCorrect = true;
                               });
-                              ref.read(userProgressProvider.notifier).addSuscoins(1);
+                              ref.read(profileProvider.notifier).addSuscoins(1);
                             },
                             checkPairSignal: pairCheckNotifier,
                           )
                         : type.buildTestWidget(
                             currentTest!,
                             onAnswered: (isCorrect, selected) {
-                              print('[PageTestScreen] onAnswered: isCorrect=$isCorrect, selected=$selected');
                               setState(() {
                                 selectedIndexes = List<int>.from(selected);
                                 this.isCorrect = isCorrect;

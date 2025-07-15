@@ -35,18 +35,32 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
     await _db.collection('user_progress').doc(userId).set(state.toMap(), SetOptions(merge: true));
   }
 
-  void addSuscoins(int count) => state = state.copyWith(suscoins: state.suscoins + count);
-  void spendSuscoins(int count) => state = state.copyWith(suscoins: state.suscoins - count);
+  void addSuscoins(int count, String userId) {
+    state = state.copyWith(suscoins: state.suscoins + count);
+    saveToFirestore(userId);
+  }
 
-  void addEnergy(int count) => state = state.copyWith(energy: state.energy + count);
-  void spendEnergy(int count) => state = state.copyWith(energy: state.energy - count);
+  void spendSuscoins(int count, String userId) {
+    state = state.copyWith(suscoins: state.suscoins - count);
+    saveToFirestore(userId);
+  }
+
+  void addEnergy(int count, String userId) {
+    state = state.copyWith(energy: state.energy + count);
+    saveToFirestore(userId);
+  }
+
+  void spendEnergy(int count, String userId) {
+    state = state.copyWith(energy: state.energy - count);
+    saveToFirestore(userId);
+  }
 
   void addStreak() {
     final today = DateTime.now();
     if (state.lastVisit.difference(today).inDays == -1) {
       final newStreak = state.daysInARow + 1;
       state = state.copyWith(daysInARow: newStreak, lastVisit: today);
-      if (newStreak % 7 == 0) addSuscoins(2); // 2 сускоина за 7 дней подряд
+      if (newStreak % 7 == 0) addSuscoins(2, 'dummy_user_id'); // 2 сускоина за 7 дней подряд
     } else if (state.lastVisit.day != today.day) {
       state = state.copyWith(daysInARow: 1, lastVisit: today);
     }
@@ -54,8 +68,8 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
 
   bool feedSuslik() {
     if (state.suscoins >= 3 && state.energy < 3) {
-      spendSuscoins(3);
-      addEnergy(1);
+      spendSuscoins(3, 'dummy_user_id');
+      addEnergy(1, 'dummy_user_id');
       return true;
     }
     return false;
@@ -63,12 +77,12 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
 
   void completeQuest(String questId, {bool noMistakes = false}) {
     state.completedQuests.add(questId);
-    if (noMistakes) addSuscoins(1);
+    if (noMistakes) addSuscoins(1, 'dummy_user_id');
   }
 
   bool buyHint(String questId) {
     if (state.energy > 0 && !state.boughtHints.contains(questId)) {
-      spendEnergy(1);
+      spendEnergy(1, 'dummy_user_id');
       state.boughtHints.add(questId);
       return true;
     }

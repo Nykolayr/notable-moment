@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:notable_moments/features/questions/model/anagram_question.dart';
 
@@ -35,7 +37,6 @@ class _AnagramTestWidgetState extends State<AnagramTestWidget> {
     final userAnswer = widget.userAnswer;
     final bank = widget.bank;
     final questionTypeText = question.type.text;
-    final n = userAnswer.length;
 
     // Стили
     Color getBorderColor(int i) {
@@ -117,7 +118,6 @@ class _AnagramTestWidgetState extends State<AnagramTestWidget> {
                 final parts = data.toString().split(':');
                 final fromRow = int.parse(parts[0]);
                 final fromIdx = int.parse(parts[1]);
-                final letter = parts[2];
                 if (widget.onMove != null) {
                   widget.onMove!(fromRow, fromIdx, rowNum, i);
                 }
