@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notable_moments/core/constant/enum/gender_enum.dart';
 
@@ -21,7 +21,7 @@ class ProfileService {
       final doc = await _firestore.collection('profile').doc(userId).get();
       return doc.data();
     } catch (e) {
-      debugPrint('Error loading profile: $e');
+      Logger.e('Error loading profile: $e');
       return null;
     }
   }
@@ -60,10 +60,10 @@ class ProfileService {
             SetOptions(merge: true),
           );
 
-      debugPrint('ProfileService -- saveProfile: данные сохранены: $updateData');
+      Logger.i('ProfileService -- saveProfile: данные сохранены: $updateData');
       return true;
     } catch (e) {
-      debugPrint('Error saving profile: $e');
+      Logger.e('Error saving profile: $e');
       return false;
     }
   }
@@ -75,10 +75,10 @@ class ProfileService {
       if (userId == null) return false;
 
       await _firestore.collection('profile').doc(userId).delete();
-      debugPrint('ProfileService -- deleteProfile: профиль удалён');
+      Logger.i('ProfileService -- deleteProfile: профиль удалён');
       return true;
     } catch (e) {
-      debugPrint('Error deleting profile: $e');
+      Logger.e('Error deleting profile: $e');
       return false;
     }
   }

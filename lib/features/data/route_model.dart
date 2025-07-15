@@ -1,4 +1,4 @@
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex;
+import 'package:yandex_mapkit/yandex_mapkit.dart' as yandex;
 
 class RouteModel {
   final String id;

@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -14,7 +15,7 @@ import 'package:notable_moments/features/onboarding/onboarding_screen.dart';
 import 'package:notable_moments/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:yandex_maps_mapkit/init.dart' as yminit;
+
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,7 +28,7 @@ void main() async {
   try {
     await dotenv.load();
   } catch (e) {
-    debugPrint('Ошибка загрузки .env: $e');
+    Logger.e('Ошибка загрузки .env: $e');
   }
 
   // Инициализация Firebase
@@ -36,19 +37,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    debugPrint('Ошибка инициализации Firebase: $e');
-  }
-
-  // Инициализация Yandex MapKit
-  try {
-    final yandexKey = dotenv.env['YANDEX_MAPS_API_KEY'];
-    if (yandexKey != null && yandexKey.isNotEmpty) {
-      await yminit.initMapkit(apiKey: yandexKey);
-    } else {
-      debugPrint('YANDEX_MAPS_API_KEY не найден в .env');
-    }
-  } catch (e) {
-    debugPrint('Ошибка инициализации Yandex Maps: $e');
+    Logger.e('Ошибка инициализации Firebase: $e');
   }
 
   // Запрос разрешения геолокации

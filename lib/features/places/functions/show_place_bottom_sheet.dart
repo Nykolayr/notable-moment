@@ -7,10 +7,10 @@ import 'package:notable_moments/core/theme/app_style.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/core/widget/app_image.dart';
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 void showPlaceBottomSheet({
   required BuildContext context,
@@ -111,12 +111,20 @@ void showPlaceBottomSheet({
                       child: AppMap(
                         showControls: false,
                         disableTaps: true,
-                        onMapCreated: (mapWindow) async {
-                          await Future.delayed(const Duration(milliseconds: 300));
-
-                          mapWindow.map.addPlacemark(point.point);
-                          mapWindow.map.animateToPoint(point.point, zoom: 15);
-                        },
+                        onMapCreated: (_) {},
+                        mapObjects: [
+                          PlacemarkMapObject(
+                            mapId: const MapObjectId('place_placemark'),
+                            point: Point(latitude: point.point.latitude, longitude: point.point.longitude),
+                            opacity: 1,
+                            icon: PlacemarkIcon.single(
+                              PlacemarkIconStyle(
+                                image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
+                                scale: 1,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 12),

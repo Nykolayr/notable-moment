@@ -17,9 +17,7 @@ import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:notable_moments/features/routes/provider/routes_provider.dart';
 import 'package:notable_moments/features/routes/widget/point_widget.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart';
-import 'package:yandex_maps_mapkit/runtime.dart';
-import 'package:yandex_maps_mapkit/transport.dart';
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class EditRouteScreen extends ConsumerStatefulWidget {
   const EditRouteScreen({super.key, required this.routeId});
@@ -40,15 +38,11 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
   late final urlController = TextEditingController();
   late final whyThisRouteController = TextEditingController();
   late List<PointAdminModel> points = [];
-  late Polyline polyline = Polyline([]);
+  late Polyline polyline = Polyline(points: []);
 
   bool get hasError => titleController.text.isEmpty;
   bool get canSave => hasChanges && !hasError;
   bool isLoading = false;
-  bool isRouteCalculating = false;
-  bool routeHasError = false;
-  late final _pedestrianRouter = TransportFactory.instance.createPedestrianRouter();
-  MasstransitSession? _pedestrianSession;
 
   RouteAdminModel _initializeRoute() {
     final emptyRoute = RouteAdminModel(
@@ -59,7 +53,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
       whyThisRoute: '',
       points: [],
       isDraft: true,
-      polyline: Polyline([]),
+      polyline: Polyline(points: []),
       order: 0,
     );
 
@@ -92,7 +86,6 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
     descriptionController.dispose();
     urlController.dispose();
     whyThisRouteController.dispose();
-    _pedestrianSession?.cancel();
     super.dispose();
   }
 
@@ -107,70 +100,18 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
     return false;
   }
 
-  void startRouteCalculation() {
-    setState(() {
-      isRouteCalculating = true;
-      routeHasError = false;
-    });
-  }
-
-  void finishRouteCalculation({required Polyline? polyline, bool hasError = false}) {
-    setState(() {
-      isRouteCalculating = false;
-      routeHasError = hasError;
-      this.polyline = polyline ?? Polyline([]);
-    });
-  }
-
-  Future<void> calculateRoute() async {
-    startRouteCalculation();
-
+  // Новый метод: просто соединяем активные точки прямой линией
+  void calculatePolyline() {
     final activePoints = points.where((it) => it.isActive).toList();
-
     if (activePoints.length < 2) {
-      finishRouteCalculation(polyline: null);
+      setState(() {
+        polyline = Polyline(points: []);
+      });
       return;
     }
-
-    final requestPoints = [
-      RequestPoint(activePoints.first.point, RequestPointType.Waypoint, null, null, null),
-      ...(activePoints
-          .sublist(1, activePoints.length - 1)
-          .map((it) => RequestPoint(it.point, RequestPointType.Viapoint, null, null, null))),
-      RequestPoint(activePoints.last.point, RequestPointType.Waypoint, null, null, null),
-    ];
-
-    const timeOptions = TimeOptions();
-    const routeOptions = RouteOptions(FitnessOptions(avoidSteep: false));
-
-    final pedestrianRouteListener = RouteHandler(
-      onMasstransitRoutes: (pedestrianRoutes) {
-        if (pedestrianRoutes.isEmpty) {
-          context.showErrorSnackBar("Can't build a route");
-        }
-
-        final polyline = pedestrianRoutes.first.geometry;
-        finishRouteCalculation(polyline: polyline);
-      },
-      onMasstransitRoutesError: (error) {
-        switch (error) {
-          case final NetworkError _:
-            context.showErrorSnackBar("Маршрут не был построен из-за сетевой ошибки");
-          default:
-            context.showErrorSnackBar("Маршрут не был построен из-за неизвестной ошибки");
-        }
-
-        finishRouteCalculation(hasError: true, polyline: null);
-      },
-    );
-
-    _pedestrianSession?.cancel();
-    _pedestrianSession = _pedestrianRouter.requestRoutes(
-      timeOptions,
-      routeOptions,
-      pedestrianRouteListener,
-      points: requestPoints,
-    );
+    setState(() {
+      polyline = Polyline(points: activePoints.map((e) => e.point).toList());
+    });
   }
 
   void handleBack() async {
@@ -255,7 +196,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                   points[i] = points[i].copyWith(order: i);
                 }
               });
-              calculateRoute();
+              calculatePolyline();
             },
             proxyDecorator: (child, index, animation) {
               return AnimatedBuilder(
@@ -288,7 +229,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
 
                     points[index] = newPoint;
                     setState(() {});
-                    calculateRoute();
+                    calculatePolyline();
 
                     // Автоматически сохраняем маршрут после редактирования точки
                     if (!isNew) {
@@ -300,7 +241,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                     onRemove: () {
                       points.removeAt(index);
                       setState(() {});
-                      calculateRoute();
+                      calculatePolyline();
                     },
                   ),
                 ),
@@ -321,7 +262,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
 
               points.add(point.copyWith(order: points.length));
               setState(() {});
-              calculateRoute();
+              calculatePolyline();
 
               // Автоматически сохраняем маршрут после добавления новой точки
               if (!isNew) {
@@ -332,7 +273,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
           const SizedBox(height: 16),
           AppButton(
             title: 'Предпросмотр маршрута',
-            isLoading: isRouteCalculating,
+            isLoading: false,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => EditRouteMapScreen(route: route),
@@ -350,7 +291,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                             isLoading = true;
                           });
 
-                          await calculateRoute();
+                          calculatePolyline();
                           final res = await ref.read(routesProvider.notifier).createRoute(
                                 title: titleController.text,
                                 description: descriptionController.text,
@@ -380,7 +321,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                           setState(() {
                             isLoading = true;
                           });
-                          calculateRoute();
+                          calculatePolyline();
                           await ref.read(routesProvider.notifier).updateRoute(route);
                           if (!context.mounted) return;
                           setState(() {

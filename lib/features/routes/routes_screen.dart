@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
@@ -12,9 +13,8 @@ import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/route_tooltip_card.dart';
 import 'package:notable_moments/features/routes/edit_routes_screen.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/admin/progress_provider.dart';
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -54,7 +54,8 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
 
-  yandex_map.MapWindow? mapController; // MapWindow который возвращает AppMap
+  YandexMapController? mapController;
+  List<MapObject> mapObjects = [];
   int? selectedPointIndex;
   bool _mapInitialized = false;
 
@@ -116,43 +117,54 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   }
 
   void _drawRoutesAndPoints() {
-    final map = mapController!.map;
-    map.mapObjects.clear();
     final allRoutes = ref.read(routesProvider).allRoutes;
     final progress = ref.read(progressProvider);
     int globalIndex = 0;
+    final List<MapObject> objects = [];
     for (final route in allRoutes) {
       final lastUnlocked = progress.unlockedIndexes[route.id] ?? -1;
       final isRouteOpened = lastUnlocked >= route.points.length - 1;
-      final polylineObject = map.addPolyline(route.polyline);
-      if (!isRouteOpened) {
-        // polylineObject.style.dashPattern = [20, 20]; // пунктир (если поддерживается)
-        // polylineObject.style.innerOutlineEnabled = false; // нельзя изменять, только для чтения
-        polylineObject.setStrokeColor(const Color(0xFFBCC3CD)); // Серый для закрытых
-      } else {
-        // polylineObject.style.dashPattern = []; // сплошная
-        // polylineObject.style.innerOutlineEnabled = true; // нельзя изменять, только для чтения
-        polylineObject.setStrokeColor(const Color(0xFF466BFF)); // Синий для открытых
-      }
+      final polyline = Polyline(
+        points: route.points.map((p) => Point(latitude: p.point.latitude, longitude: p.point.longitude)).toList(),
+      );
+      objects.add(
+        PolylineMapObject(
+          mapId: MapObjectId('polyline_${route.id}'),
+          polyline: polyline,
+          strokeColor: isRouteOpened ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD),
+          strokeWidth: isRouteOpened ? 4 : 2,
+        ),
+      );
       for (int i = 0; i < route.points.length; i++) {
         final point = route.points[i].point;
         final isSelected = globalIndex == selectedPointIndex;
-        map.addPlacemark(
-          point,
-          scale: globalIndex == selectedPointIndex ? 1.4 : 1.0,
-          onTap: (obj, pt) {
-            final pointName = route.points[i].title;
-            print('Placemark tapped at index: $globalIndex, name: $pointName');
-            setState(() {
-              selectedPointIndex = globalIndex;
-              _drawRoutesAndPoints();
-            });
-            return true;
-          },
+        objects.add(
+          PlacemarkMapObject(
+            mapId: MapObjectId('placemark_${route.id}_$i'),
+            point: Point(latitude: point.latitude, longitude: point.longitude),
+            opacity: 1,
+            icon: PlacemarkIcon.single(
+              PlacemarkIconStyle(
+                image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
+                scale: isSelected ? 1.4 : 1.0,
+              ),
+            ),
+            onTap: (_, __) {
+              final pointName = route.points[i].title;
+              Logger.i('Placemark tapped at index: $globalIndex, name: $pointName');
+              setState(() {
+                selectedPointIndex = globalIndex;
+                _drawRoutesAndPoints();
+              });
+            },
+          ),
         );
         globalIndex++;
       }
     }
+    setState(() {
+      mapObjects = objects;
+    });
   }
 
   @override
@@ -179,6 +191,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
               _drawRoutesAndPoints();
               // fit bounds, если нужно
             },
+            mapObjects: mapObjects,
             disableTaps: false, // Теперь карта интерактивна
           ),
           Align(
@@ -190,17 +203,24 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
                 children: [
                   AppButton.icon(
                     icon: AppIcon.plus,
-                    onTap: () => mapController?.map.changeZoomWithDelta(1),
+                    onTap: () => mapController?.moveCamera(CameraUpdate.zoomIn()),
                   ),
                   const SizedBox(height: 8),
                   AppButton.icon(
                     icon: AppIcon.minus,
-                    onTap: () => mapController?.map.changeZoomWithDelta(-1),
+                    onTap: () => mapController?.moveCamera(CameraUpdate.zoomOut()),
                   ),
                   const SizedBox(height: 8),
                   AppButton.icon(
                     icon: AppIcon.location,
-                    onTap: () => mapController?.map.animateToKrasnoyarsk(),
+                    onTap: () => mapController?.moveCamera(
+                      CameraUpdate.newCameraPosition(
+                        const CameraPosition(
+                          target: Point(latitude: 56.0267294, longitude: 92.865734),
+                          zoom: 12,
+                        ),
+                      ),
+                    ),
                   ),
                   if (profileState.isAdmin) ...[
                     const SizedBox(height: 8),

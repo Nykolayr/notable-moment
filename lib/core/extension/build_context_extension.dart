@@ -1,6 +1,7 @@
 // lib/core/extension/build_context_extension.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/theme/app_color.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -72,12 +73,13 @@ extension BuildContextExtension on BuildContext {
 
   /// Открыть ссылку
   Future<bool> openLink(String url) async {
-    debugPrint('openLink $url');
+    Logger.i('openLink $url');
     final uri = Uri.parse(url);
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
       return true;
     } catch (e) {
+      Logger.e('openLink error: $e');
       showError('Не удалось открыть ссылку $url');
       return false;
     }
@@ -85,12 +87,13 @@ extension BuildContextExtension on BuildContext {
 
   /// Открыть телефон
   Future<bool> openTel(String tel) async {
-    debugPrint('openTel $tel');
+    Logger.i('openTel $tel');
     final uri = Uri.parse('tel:$tel');
     try {
       await launchUrl(uri);
       return true;
     } catch (e) {
+      Logger.e('openTel error: $e');
       showError('Не удалось открыть телефон $tel');
       return false;
     }

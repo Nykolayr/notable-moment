@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/helpers/image_error_handler.dart';
 
 class StorageHelper {
@@ -12,15 +12,15 @@ class StorageHelper {
   static Future<String> uploadFile(File file) async {
     try {
       final ref = _storage.ref(_photoPath).child(_generateFileName(file));
-      debugPrint('StorageHelper -- uploadFile ref: $ref');
-      
+      Logger.i('StorageHelper -- uploadFile ref: $ref');
+
       // Получаем актуальный токен перед загрузкой
       await _ensureValidToken();
-      
+
       final uploadTask = await ref.putFile(file);
       return await uploadTask.ref.getDownloadURL();
     } catch (e) {
-      debugPrint('StorageHelper -- uploadFile error: $e');
+      Logger.e('StorageHelper -- uploadFile error: $e');
       rethrow;
     }
   }
@@ -30,7 +30,7 @@ class StorageHelper {
     try {
       return await Future.wait(files.map(uploadFile));
     } catch (e) {
-      debugPrint('StorageHelper -- uploadFiles error: $e');
+      Logger.e('StorageHelper -- uploadFiles error: $e');
       rethrow;
     }
   }
@@ -39,13 +39,13 @@ class StorageHelper {
   static Future<void> deleteFile(String fileUrl) async {
     try {
       final ref = _storage.refFromURL(fileUrl);
-      
+
       // Получаем актуальный токен перед удалением
       await _ensureValidToken();
-      
+
       await ref.delete();
     } catch (e) {
-      debugPrint('StorageHelper -- deleteFile error: $e');
+      Logger.e('StorageHelper -- deleteFile error: $e');
       rethrow;
     }
   }
@@ -59,7 +59,7 @@ class StorageHelper {
         await user.getIdToken(true);
       }
     } catch (e) {
-      debugPrint('StorageHelper -- _ensureValidToken error: $e');
+      Logger.e('StorageHelper -- _ensureValidToken error: $e');
       // Не выбрасываем ошибку, так как это может быть не критично
     }
   }
@@ -72,20 +72,20 @@ class StorageHelper {
       }
 
       final ref = _storage.refFromURL(fileUrl);
-      
+
       // Получаем актуальный токен
       await _ensureValidToken();
-      
+
       // Получаем новый URL с обновленным токеном
       return await ref.getDownloadURL();
     } catch (e) {
-      debugPrint('StorageHelper -- getRefreshedDownloadUrl error: $e');
-      
+      Logger.e('StorageHelper -- getRefreshedDownloadUrl error: $e');
+
       // Пытаемся обработать ошибку через ImageErrorHandler
       if (ImageErrorHandler.isTokenExpiredError(e)) {
         return await ImageErrorHandler.createRefreshedUrl(fileUrl);
       }
-      
+
       return null;
     }
   }
@@ -93,7 +93,7 @@ class StorageHelper {
   /// Обрабатывает ошибку и пытается получить обновленный URL
   static Future<String?> handleStorageError(String fileUrl, dynamic error) async {
     if (ImageErrorHandler.isTokenExpiredError(error)) {
-      debugPrint('StorageHelper: Token expired error detected, attempting to refresh');
+      Logger.i('StorageHelper: Token expired error detected, attempting to refresh');
       return await ImageErrorHandler.createRefreshedUrl(fileUrl);
     }
     return null;

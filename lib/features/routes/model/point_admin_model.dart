@@ -1,9 +1,8 @@
 import 'package:collection/collection.dart';
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/working_hours_model.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
 import 'package:notable_moments/features/questions/model/question.dart';
 import 'package:notable_moments/features/questions/model/single_choice_question.dart';
+import 'package:yandex_mapkit/yandex_mapkit.dart' as yandex_map;
 
 class PointAdminModel {
   final String id;
@@ -44,7 +43,10 @@ class PointAdminModel {
       final test = QuestionTest.fromJson(map['test']);
       return PointAdminModel(
         id: id,
-        point: PointExtension.fromMap(map['point'] as Map<String, dynamic>),
+        point: yandex_map.Point(
+          latitude: (map['point']['latitude'] as num).toDouble(),
+          longitude: (map['point']['longitude'] as num).toDouble(),
+        ),
         photos: List<String>.from(map['photos'] as List<dynamic>),
         title: map['title'] as String,
         description: map['description'] as String,
@@ -60,7 +62,10 @@ class PointAdminModel {
     // Обработка нового формата с массивом тестов
     return PointAdminModel(
       id: id,
-      point: PointExtension.fromMap(map['point'] as Map<String, dynamic>),
+      point: yandex_map.Point(
+        latitude: (map['point']['latitude'] as num).toDouble(),
+        longitude: (map['point']['longitude'] as num).toDouble(),
+      ),
       photos: List<String>.from(map['photos'] as List<dynamic>),
       title: map['title'] as String,
       description: map['description'] as String,
@@ -76,7 +81,10 @@ class PointAdminModel {
   }
 
   Map<String, dynamic> toMap() => {
-        'point': point.toMap(),
+        'point': {
+          'latitude': point.latitude,
+          'longitude': point.longitude,
+        },
         'photos': photos,
         'title': title,
         'description': description,

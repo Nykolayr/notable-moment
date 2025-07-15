@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
@@ -28,7 +29,7 @@ class ProfilePdf extends StatelessWidget {
         ),
       );
     } catch (e) {
-      debugPrint('Ошибка при попытке поделиться PDF: $e');
+      Logger.e('Ошибка при попытке поделиться PDF: $e');
     }
   }
 

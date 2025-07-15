@@ -1,8 +1,7 @@
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:either_dart/either.dart';
-import 'package:flutter/foundation.dart';
-
 import 'package:notable_moments/core/provider/auth_service.dart';
 import 'package:notable_moments/core/provider/auth_state.dart'; // Убедись, что этот файл существует
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
@@ -18,7 +17,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._authService, this.ref) : super(AuthState.initial()) {
     _authService.authStateChanges.listen((user) {
-      debugPrint('authProvider user: $user');
+      Logger.i('authProvider user: $user');
       if (user == null) {
         state = state.copyWith(user: null, removeUser: true);
       } else {
@@ -34,17 +33,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await AuthService.registerWithEmailAndPassword(email, password);
       return result.fold(
         (error) {
-          debugPrint('authProvider -- register error: $error');
+          Logger.e('authProvider -- register error: $error');
           return Left(error);
         },
         (user) {
           state = state.copyWith(user: user);
-          debugPrint('authProvider -- register success: ${user?.uid}');
+          Logger.i('authProvider -- register success: ${user?.uid}');
           return Right(user);
         },
       );
     } catch (e) {
-      debugPrint('authProvider -- register exception: $e');
+      Logger.e('authProvider -- register exception: $e');
       return Left('Ошибка регистрации: ${e.toString()}');
     }
   }
@@ -54,18 +53,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await AuthService.signInWithEmailAndPassword(email, password);
       return result.fold(
         (error) {
-          debugPrint('authProvider -- signIn error: $error');
+          Logger.e('authProvider -- signIn error: $error');
           return Left(error);
         },
         (user) {
           state = state.copyWith(user: user);
           ref.read(profileProvider.notifier).loadProfile();
-          debugPrint('authProvider -- signIn success: ${user?.uid}');
+          Logger.i('authProvider -- signIn success: ${user?.uid}');
           return Right(user);
         },
       );
     } catch (e) {
-      debugPrint('authProvider -- signIn exception: $e');
+      Logger.e('authProvider -- signIn exception: $e');
       return Left('Ошибка входа: ${e.toString()}');
     }
   }
@@ -75,9 +74,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await AuthService.signOut();
       ref.read(profileProvider.notifier).signOut();
       state = state.copyWith(user: null, removeUser: true);
-      debugPrint('authProvider -- signOut success');
+      Logger.i('authProvider -- signOut success');
     } catch (e) {
-      debugPrint('authProvider -- signOut error: $e');
+      Logger.e('authProvider -- signOut error: $e');
     }
   }
 
@@ -85,20 +84,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final isProfileRemoved = await ref.read(profileProvider.notifier).deleteProfile();
       if (!isProfileRemoved) {
-        debugPrint('authProvider -- removeAccount: ошибка удаления профиля');
+        Logger.e('authProvider -- removeAccount: ошибка удаления профиля');
         return;
       }
 
       final result = await AuthService.deleteAccount();
       result.fold(
-        (error) => debugPrint('authProvider -- deleteAccount error: $error'),
+        (error) => Logger.e('authProvider -- deleteAccount error: $error'),
         (_) {
-          debugPrint('authProvider -- deleteAccount success');
+          Logger.i('authProvider -- deleteAccount success');
           signOut();
         },
       );
     } catch (e) {
-      debugPrint('authProvider -- removeAccount exception: $e');
+      Logger.e('authProvider -- removeAccount exception: $e');
     }
   }
 
@@ -107,16 +106,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await AuthService.sendPasswordResetEmail(email);
       return result.fold(
         (error) {
-          debugPrint('authProvider -- sendPasswordResetEmail error: $error');
+          Logger.e('authProvider -- sendPasswordResetEmail error: $error');
           return Left(error);
         },
         (_) {
-          debugPrint('authProvider -- sendPasswordResetEmail success');
+          Logger.i('authProvider -- sendPasswordResetEmail success');
           return const Right(null);
         },
       );
     } catch (e) {
-      debugPrint('authProvider -- sendPasswordResetEmail exception: $e');
+      Logger.e('authProvider -- sendPasswordResetEmail exception: $e');
       return Left('Ошибка сброса пароля: ${e.toString()}');
     }
   }

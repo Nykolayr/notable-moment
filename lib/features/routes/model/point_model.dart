@@ -1,10 +1,13 @@
 import 'package:notable_moments/features/routes/enum/point_state_enum.dart';
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
+
+extension PointMapExt on Point {
+  Map<String, dynamic> toMap() => {'latitude': latitude, 'longitude': longitude};
+}
 
 class PointModel {
   final String title;
-  final yandex_map.Point point;
+  final Point point;
   final PointState state;
 
   // Добавленные поля
@@ -29,7 +32,7 @@ class PointModel {
 
   factory PointModel.fromMap(Map<String, dynamic> map) => PointModel(
         title: map['title'] as String,
-        point: PointExtension.fromMap(map['point'] as Map<String, dynamic>),
+        point: Point(latitude: map['point']['latitude'] as double, longitude: map['point']['longitude'] as double),
         state: PointState.fromMap(map['state'] as String),
         isUnlocked: map['isUnlocked'] ?? false,
         isCompleted: map['isCompleted'] ?? false,
@@ -37,7 +40,7 @@ class PointModel {
 
   PointModel copyWith({
     String? title,
-    yandex_map.Point? point,
+    Point? point,
     PointState? state,
     bool? isUnlocked,
     bool? isCompleted,

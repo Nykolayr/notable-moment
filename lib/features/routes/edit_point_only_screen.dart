@@ -1,39 +1,27 @@
 // lib/features/routes/edit_point_only_screen.dart
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
-import 'package:notable_moments/features/routes/constant/app_map_data.dart';
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
-class EditPointOnlyScreen extends ConsumerStatefulWidget {
+class EditPointOnlyScreen extends StatefulWidget {
   const EditPointOnlyScreen({super.key, required this.point});
 
-  final yandex_map.Point? point;
+  final Point? point;
 
   @override
-  ConsumerState<EditPointOnlyScreen> createState() => _EditPointScreenState();
+  State<EditPointOnlyScreen> createState() => _EditPointScreenState();
 }
 
-class _EditPointScreenState extends ConsumerState<EditPointOnlyScreen> {
+class _EditPointScreenState extends State<EditPointOnlyScreen> {
   late bool isNew;
-  yandex_map.Point? point;
-
-  late yandex_map.MapWindow _mapWindow;
-  yandex_map.Map get map => _mapWindow.map;
-
-  late final _inputListener = MapInputListenerImpl(
-    onMapTapCallback: (map, point) {
-      debugPrint('Tap: $point');
-      addSelectedPoint(point);
-    },
-    onMapLongTapCallback: (map, point) {},
-  );
+  Point? point;
+  YandexMapController? mapController;
+  List<MapObject> mapObjects = [];
 
   @override
   void initState() {
@@ -42,30 +30,32 @@ class _EditPointScreenState extends ConsumerState<EditPointOnlyScreen> {
     point = widget.point;
   }
 
-  void replacePoint(yandex_map.Point point) {
-    map.mapObjects.clear();
-    map.mapObjects.addPlacemark()
-      ..geometry = point
-      ..setIcon(AppMapData.placemarkOpened)
-      ..setIconStyle(const yandex_map.IconStyle(scale: 1, zIndex: 20.0));
-  }
-
-  void addSelectedPoint(yandex_map.Point point) {
-    replacePoint(point);
-    map.animateToPoint(
-      point,
-      zoom: 15,
-      duration: const Duration(milliseconds: 300),
-    );
-
+  void updatePoint(Point p) {
     setState(() {
-      this.point = point;
+      point = p;
+      mapObjects = [
+        PlacemarkMapObject(
+          mapId: const MapObjectId('edit_point'),
+          point: p,
+          opacity: 1,
+          icon: PlacemarkIcon.single(
+            PlacemarkIconStyle(
+              image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
+              scale: 1,
+            ),
+          ),
+        ),
+      ];
     });
+    mapController?.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: p, zoom: 15),
+      ),
+    );
   }
 
   @override
   void dispose() {
-    map.removeInputListener(_inputListener);
     super.dispose();
   }
 
@@ -80,22 +70,26 @@ class _EditPointScreenState extends ConsumerState<EditPointOnlyScreen> {
         fit: StackFit.expand,
         children: [
           AppMap(
-            onMapCreated: (yandex_map.MapWindow mapWindow) {
-              _mapWindow = mapWindow;
-              map.addInputListener(_inputListener);
-
+            onMapCreated: (controller) async {
+              mapController = controller;
               if (point == null) {
-                map.animateToPoint(
-                  AppMapData.krasnoyarskPoint,
-                  zoom: 12,
-                  duration: const Duration(milliseconds: 500),
+                await controller.moveCamera(
+                  CameraUpdate.newCameraPosition(
+                    const CameraPosition(
+                      target: Point(latitude: 56.0267294, longitude: 92.865734),
+                      zoom: 12,
+                    ),
+                  ),
                 );
               } else {
-                map.animateToPoint(point!, zoom: 15, duration: const Duration(milliseconds: 500));
-                replacePoint(point!);
+                updatePoint(point!);
               }
             },
+            mapObjects: mapObjects,
             showEditButton: false,
+            onMapTap: (tappedPoint) {
+              updatePoint(tappedPoint);
+            },
           ),
           Align(
             alignment: Alignment.bottomCenter,
@@ -111,20 +105,4 @@ class _EditPointScreenState extends ConsumerState<EditPointOnlyScreen> {
       ),
     );
   }
-}
-
-final class MapInputListenerImpl implements yandex_map.MapInputListener {
-  final void Function(yandex_map.Map, yandex_map.Point) onMapTapCallback;
-  final void Function(yandex_map.Map, yandex_map.Point) onMapLongTapCallback;
-
-  const MapInputListenerImpl({
-    required this.onMapTapCallback,
-    required this.onMapLongTapCallback,
-  });
-
-  @override
-  void onMapTap(yandex_map.Map map, yandex_map.Point point) => onMapTapCallback(map, point);
-
-  @override
-  void onMapLongTap(yandex_map.Map map, yandex_map.Point point) => onMapLongTapCallback(map, point);
 }

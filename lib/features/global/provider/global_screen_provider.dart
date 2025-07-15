@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notable_moments/core/provider/auth_provider.dart';
 import 'package:notable_moments/core/provider/auth_state.dart';
@@ -37,7 +37,7 @@ class GlobalScreenNotifier extends StateNotifier<GlobalScreen> {
       (previous, current) {
         final (authState, profileState) = current;
 
-        debugPrint('globalScreenProvider isAuthenticated: ${authState.isAuthenticated}');
+        Logger.i('globalScreenProvider isAuthenticated: ${authState.isAuthenticated}');
 
         if (authState.isAuthenticated) {
           justStarted = false;

@@ -10,16 +10,14 @@ import 'package:notable_moments/core/widget/app_button_delete_dialog.dart';
 import 'package:notable_moments/core/widget/app_checkbox.dart';
 import 'package:notable_moments/core/widget/app_input.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
-import 'package:notable_moments/features/routes/constant/app_map_data.dart';
-import 'package:notable_moments/features/questions/edit_test_screen.dart';
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/working_hours_model.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/widget/schedule_editor_widget.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 import 'package:notable_moments/features/questions/model/question.dart';
+import 'package:notable_moments/features/questions/edit_test_screen.dart';
 
 class EditPointScreen extends StatefulWidget {
   const EditPointScreen({super.key, required this.pointAdmin});
@@ -31,7 +29,7 @@ class EditPointScreen extends StatefulWidget {
 
 class _EditPointScreenState extends State<EditPointScreen> {
   bool isNew = true;
-  yandex_map.Point? point;
+  Point? point;
   final _imagePicker = ImagePicker();
 
   late final titleController = TextEditingController(text: widget.pointAdmin?.title);
@@ -45,8 +43,8 @@ class _EditPointScreenState extends State<EditPointScreen> {
   late bool isDraft = widget.pointAdmin?.isDraft ?? true;
   late List<QuestionTest> tests = widget.pointAdmin?.tests ?? [];
 
-  yandex_map.MapWindow? _mapWindow;
-  yandex_map.Map get map => _mapWindow!.map;
+  YandexMapController? mapController;
+  List<MapObject> mapObjects = [];
 
   @override
   void initState() {
@@ -114,16 +112,28 @@ class _EditPointScreenState extends State<EditPointScreen> {
     );
   }
 
-  void updatePoint(yandex_map.Point p) {
+  void updatePoint(Point p) {
     setState(() {
       point = p;
+      mapObjects = [
+        PlacemarkMapObject(
+          mapId: const MapObjectId('edit_point'),
+          point: p,
+          opacity: 1,
+          icon: PlacemarkIcon.single(
+            PlacemarkIconStyle(
+              image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
+              scale: 1,
+            ),
+          ),
+        ),
+      ];
     });
-    map.mapObjects.clear();
-    final placemark = map.mapObjects.addPlacemark()..geometry = p;
-    placemark
-      ..setIcon(AppMapData.placemarkOpened) // исправлено: используем строку пути
-      ..setIconStyle(const yandex_map.IconStyle(scale: 1, zIndex: 20));
-    map.animateToPoint(p, zoom: 15, duration: const Duration(milliseconds: 300));
+    mapController?.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: p, zoom: 15),
+      ),
+    );
   }
 
   bool get hasChanges {
@@ -279,17 +289,25 @@ class _EditPointScreenState extends State<EditPointScreen> {
           SizedBox(
             height: 200,
             child: AppMap(
-              onMapCreated: (mapWindow) {
-                _mapWindow = mapWindow;
+              onMapCreated: (controller) async {
+                mapController = controller;
                 if (point != null) {
                   updatePoint(point!);
                 } else {
-                  map.animateToPoint(AppMapData.krasnoyarskPoint, zoom: 12);
+                  await controller.moveCamera(
+                    CameraUpdate.newCameraPosition(
+                      const CameraPosition(
+                        target: Point(latitude: 56.0267294, longitude: 92.865734),
+                        zoom: 12,
+                      ),
+                    ),
+                  );
                 }
               },
               onMapTap: (tappedPoint) {
                 updatePoint(tappedPoint);
               },
+              mapObjects: mapObjects,
               showEditButton: false,
             ),
           ),

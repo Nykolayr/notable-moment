@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:either_dart/either.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/helpers/storage_helper.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class RoutesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -21,7 +21,7 @@ class RoutesService {
     required String whyThisRoute,
     required List<PointAdminModel> points,
     required bool isDraft,
-    required yandex_map.Polyline polyline,
+    required Polyline polyline,
   }) async {
     try {
       final docRef = _routesCollection.doc();
@@ -44,7 +44,7 @@ class RoutesService {
       await docRef.set(routeData);
       return Right(route);
     } catch (e) {
-      debugPrint('routesService -- createRoute error: $e');
+      Logger.e('routesService -- createRoute error: $e');
 
       return Left(e.toString());
     }
@@ -57,7 +57,7 @@ class RoutesService {
         try {
           return await StorageHelper.getRefreshedDownloadUrl(photo) ?? photo;
         } catch (e) {
-          debugPrint('routesService -- _uploadPhotosIfNeeded error refreshing URL: $e');
+          Logger.e('routesService -- _uploadPhotosIfNeeded error refreshing URL: $e');
           return photo;
         }
       }
@@ -98,7 +98,7 @@ class RoutesService {
           try {
             await StorageHelper.deleteFile(photo);
           } catch (e) {
-            debugPrint('routesService -- updateRoute error deleting photo: $e');
+            Logger.e('routesService -- updateRoute error deleting photo: $e');
             // Продолжаем выполнение даже если не удалось удалить фото
           }
         }
@@ -110,7 +110,7 @@ class RoutesService {
 
       await _routesCollection.doc(route.id).update(updatedRoute.toMap());
     } catch (e) {
-      debugPrint('routesService -- updateRoute error: $e');
+      Logger.e('routesService -- updateRoute error: $e');
       rethrow;
     }
   }
@@ -140,7 +140,7 @@ class RoutesService {
             try {
               await StorageHelper.deleteFile(photo);
             } catch (e) {
-              debugPrint('routesService -- deleteRoute error deleting photo: $e');
+              Logger.e('routesService -- deleteRoute error deleting photo: $e');
               // Продолжаем выполнение даже если не удалось удалить фото
             }
           }),
@@ -150,7 +150,7 @@ class RoutesService {
       // Delete the route document
       await _routesCollection.doc(routeId).delete();
     } catch (e) {
-      debugPrint('routesService -- deleteRoute error: $e');
+      Logger.e('routesService -- deleteRoute error: $e');
       rethrow;
     }
   }

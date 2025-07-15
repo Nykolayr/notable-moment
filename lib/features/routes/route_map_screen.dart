@@ -4,10 +4,9 @@ import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 import 'package:notable_moments/features/routes/widget/router_on_map/point_on_map.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/questions/page_test_screen.dart';
 
@@ -25,8 +24,32 @@ class RouteMapScreen extends ConsumerWidget {
     final description = route.description;
     final routePoints = points
         .where((p) => p.latitude != null && p.longitude != null)
-        .map((p) => yandex.Point(latitude: p.latitude!, longitude: p.longitude!))
+        .map((p) => Point(latitude: p.latitude!, longitude: p.longitude!))
         .toList();
+    final List<MapObject> mapObjects = [];
+    if (routePoints.isNotEmpty) {
+      mapObjects.add(
+        PolylineMapObject(
+          mapId: const MapObjectId('route_polyline'),
+          polyline: Polyline(points: routePoints),
+          strokeColor: const Color(0xFF466BFF),
+          strokeWidth: 4,
+        ),
+      );
+      mapObjects.add(
+        PlacemarkMapObject(
+          mapId: const MapObjectId('route_start'),
+          point: routePoints.first,
+          opacity: 1,
+          icon: PlacemarkIcon.single(
+            PlacemarkIconStyle(
+              image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
+              scale: 1,
+            ),
+          ),
+        ),
+      );
+    }
     return SafeArea(
       child: Scaffold(
         appBar: AppAppBar(title: 'Карта маршрута'),
@@ -79,14 +102,8 @@ class RouteMapScreen extends ConsumerWidget {
                           height: 220,
                           width: double.infinity,
                           child: AppMap(
-                            onMapCreated: (mapWindow) {
-                              final map = mapWindow.map;
-                              final polyline = yandex.Polyline(routePoints);
-                              map.addPolyline(polyline);
-                              if (routePoints.isNotEmpty) {
-                                map.addPlacemark(routePoints.first);
-                              }
-                            },
+                            onMapCreated: (_) {},
+                            mapObjects: mapObjects,
                             disableTaps: true,
                           ),
                         ),

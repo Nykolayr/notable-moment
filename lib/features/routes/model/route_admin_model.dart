@@ -1,7 +1,6 @@
-import 'package:notable_moments/features/routes/helpers/map_extension.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class RouteAdminModel {
   final String id;
@@ -12,7 +11,7 @@ class RouteAdminModel {
   final String whyThisRoute;
   final List<PointAdminModel> points;
   final bool isDraft;
-  final yandex_map.Polyline polyline;
+  final Polyline polyline;
 
   int get visiblePoints => points.where((point) => !point.isDraft).length;
   int get draftPoints => points.where((point) => point.isDraft).length;
@@ -61,8 +60,8 @@ class RouteAdminModel {
       points: parsedPoints,
       isDraft: map['isDraft'] as bool? ?? false,
       polyline: map['polyline'] == null
-          ? yandex_map.Polyline([])
-          : PolylineExtension.fromMap(map['polyline'] as Map<String, dynamic>),
+          ? Polyline(points: [])
+          : PolylineMapExt.fromMap(map['polyline'] as Map<String, dynamic>),
     );
   }
 
@@ -75,7 +74,7 @@ class RouteAdminModel {
     String? whyThisRoute,
     List<PointAdminModel>? points,
     bool? isDraft,
-    yandex_map.Polyline? polyline,
+    Polyline? polyline,
   }) =>
       RouteAdminModel(
         id: id ?? this.id,
@@ -86,13 +85,13 @@ class RouteAdminModel {
         whyThisRoute: whyThisRoute ?? this.whyThisRoute,
         points: points ?? this.points,
         isDraft: isDraft ?? this.isDraft,
-        polyline: polyline ?? this.polyline,
+        polyline: polyline ?? Polyline(points: []),
       );
 
   @override
   String toString() => 'RouteAdminModel(${toMap()})';
 
-  String debugPrint(String label) => '$label RouteAdminModel(id: $id, points.length: ${points.length})';
+  String print(String label) => '$label RouteAdminModel(id: $id, points.length: ${points.length})';
 }
 
 /// ✅ Расширение: безопасно преобразует RouteAdminModel → RouteModel
@@ -114,4 +113,16 @@ extension RouteAdminMapper on RouteAdminModel {
       taskCount: points.length, // При необходимости можешь заменить на сумму заданий
     );
   }
+}
+
+extension PolylineMapExt on Polyline {
+  Map<String, dynamic> toMap() => {
+        'points': points.map((p) => {'latitude': p.latitude, 'longitude': p.longitude}).toList(),
+      };
+
+  static Polyline fromMap(Map<String, dynamic> map) => Polyline(
+        points: (map['points'] as List)
+            .map((e) => Point(latitude: e['latitude'] as double, longitude: e['longitude'] as double))
+            .toList(),
+      );
 }

@@ -1,6 +1,6 @@
 import 'package:either_dart/either.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authServiceProvider = Provider((ref) => AuthService());
@@ -18,7 +18,7 @@ class AuthService {
       );
       return Right(userCredential.user);
     } on FirebaseAuthException catch (e) {
-      debugPrint(e.toString());
+      Logger.e(e.toString());
       switch (e.code) {
         case 'weak-password':
           return Left('Слабый пароль');
@@ -43,7 +43,7 @@ class AuthService {
       );
       return Right(userCredential.user);
     } on FirebaseAuthException catch (e) {
-      debugPrint(e.toString());
+      Logger.e(e.toString());
       switch (e.code) {
         case 'user-not-found':
           return Left('Пользователь не найден');
@@ -72,7 +72,7 @@ class AuthService {
       await _auth.sendPasswordResetEmail(email: email);
       return const Right(null);
     } on FirebaseAuthException catch (e) {
-      debugPrint('Error sending password reset email: $e');
+      Logger.e('Error sending password reset email: $e');
       switch (e.code) {
         case 'user-not-found':
           return Left('Пользователь не найден');
@@ -82,7 +82,7 @@ class AuthService {
           return Left(e.message ?? 'An error occurred while sending password reset email');
       }
     } catch (e) {
-      debugPrint('Error sending password reset email: $e');
+      Logger.e('Error sending password reset email: $e');
       return const Left('An unexpected error occurred');
     }
   }
@@ -96,7 +96,7 @@ class AuthService {
       await user.delete();
       return Right(null);
     } on FirebaseAuthException catch (e) {
-      debugPrint('Error deleting account: $e');
+      Logger.e('Error deleting account: $e');
       switch (e.code) {
         case 'requires-recent-login':
           return Left('Please sign in again before deleting your account');
@@ -104,7 +104,7 @@ class AuthService {
           return Left(e.message ?? 'Failed to delete account');
       }
     } catch (e) {
-      debugPrint('Error deleting account: $e');
+      Logger.e('Error deleting account: $e');
       return Left('Failed to delete account');
     }
   }

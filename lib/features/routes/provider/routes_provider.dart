@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:notable_moments/features/routes/provider/routes_state.dart';
 import 'package:notable_moments/features/routes/service/routes_service.dart';
-import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 final routesProvider = StateNotifierProvider<RoutesNotifier, RoutesState>((ref) {
   return RoutesNotifier();
@@ -16,14 +16,14 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
   RoutesNotifier() : super(RoutesState.initial()) {
     _routesService.watchRoutes().listen(
       (routes) {
-        debugPrint('routesProvider watchRoutes: routes.length: ${routes.length}');
+        Logger.i('routesProvider watchRoutes: routes.length: ${routes.length}');
         for (final route in routes) {
-          route.debugPrint('routesProvider watchRoutes: route.points.length: ${route.points.length}');
+          Logger.i('routesProvider watchRoutes: route.points.length: ${route.points.length}');
         }
         state = state.copyWith(allRoutes: routes);
       },
       onError: (error) {
-        debugPrint('routesProvider watchRoutes error: $error');
+        Logger.e('routesProvider watchRoutes error: $error');
         // Не обновляем состояние при ошибке, чтобы сохранить предыдущие данные
       },
     );
@@ -36,7 +36,7 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
     required String whyThisRoute,
     required List<PointAdminModel> points,
     required bool isDraft,
-    required yandex_map.Polyline polyline,
+    required Polyline polyline,
   }) async {
     try {
       final routeResp = await _routesService.createRoute(
@@ -49,13 +49,13 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
         polyline: polyline,
       );
       if (routeResp.isLeft) {
-        debugPrint('routesProvider createRoute error: ${routeResp.left}');
+        Logger.e('routesProvider createRoute error: ${routeResp.left}');
         return false;
       }
       state = state.copyWith(allRoutes: [...state.allRoutes, routeResp.right]);
       return true;
     } catch (e) {
-      debugPrint('routesProvider createRoute exception: $e');
+      Logger.e('routesProvider createRoute exception: $e');
       return false;
     }
   }
@@ -67,7 +67,7 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
         allRoutes: state.allRoutes.where((element) => element.id != route.id).toList(),
       );
     } catch (e) {
-      debugPrint('routesProvider removeRoute error: $e');
+      Logger.e('routesProvider removeRoute error: $e');
       // Можно добавить уведомление пользователя об ошибке
     }
   }
@@ -79,7 +79,7 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
       final updatedRoutes = state.allRoutes.map((r) => r.id == route.id ? route : r).toList();
       state = state.copyWith(allRoutes: updatedRoutes);
     } catch (e) {
-      debugPrint('routesProvider updateRoute error: $e');
+      Logger.e('routesProvider updateRoute error: $e');
       // Можно добавить уведомление пользователя об ошибке
     }
   }
@@ -112,7 +112,7 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
         await _routesService.updateRoutesInBatch(routesToUpdate);
       }
     } catch (e) {
-      debugPrint('routesProvider reorderRoutes error: $e');
+      Logger.e('routesProvider reorderRoutes error: $e');
       // Можно добавить уведомление пользователя об ошибке
     }
   }

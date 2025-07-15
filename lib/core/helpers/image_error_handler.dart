@@ -1,16 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 
 class ImageErrorHandler {
   /// Проверяет, является ли ошибка связанной с истекшим токеном Firebase Storage
   static bool isTokenExpiredError(dynamic error) {
     if (error == null) return false;
-    
+
     final errorString = error.toString().toLowerCase();
-    return errorString.contains('412') || 
-           errorString.contains('precondition failed') ||
-           errorString.contains('token expired') ||
-           errorString.contains('unauthorized');
+    return errorString.contains('412') ||
+        errorString.contains('precondition failed') ||
+        errorString.contains('token expired') ||
+        errorString.contains('unauthorized');
   }
 
   /// Обновляет токен аутентификации Firebase
@@ -18,16 +18,16 @@ class ImageErrorHandler {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        debugPrint('ImageErrorHandler: No authenticated user');
+        Logger.e('ImageErrorHandler: No authenticated user');
         return null;
       }
 
       // Принудительно обновляем токен
       final token = await user.getIdToken(true);
-      debugPrint('ImageErrorHandler: Token refreshed successfully');
+      Logger.i('ImageErrorHandler: Token refreshed successfully');
       return token;
     } catch (e) {
-      debugPrint('ImageErrorHandler: Error refreshing token: $e');
+      Logger.e('ImageErrorHandler: Error refreshing token: $e');
       return null;
     }
   }
@@ -45,11 +45,11 @@ class ImageErrorHandler {
       final uri = Uri.parse(originalUrl);
       final newQueryParams = Map<String, String>.from(uri.queryParameters);
       newQueryParams['token'] = token;
-      
+
       final newUri = uri.replace(queryParameters: newQueryParams);
       return newUri.toString();
     } catch (e) {
-      debugPrint('ImageErrorHandler: Error creating refreshed URL: $e');
+      Logger.e('ImageErrorHandler: Error creating refreshed URL: $e');
       return null;
     }
   }
@@ -57,9 +57,9 @@ class ImageErrorHandler {
   /// Обрабатывает ошибку изображения и возвращает обновленный URL если возможно
   static Future<String?> handleImageError(String url, dynamic error) async {
     if (isTokenExpiredError(error)) {
-      debugPrint('ImageErrorHandler: Token expired error detected, attempting to refresh');
+      Logger.i('ImageErrorHandler: Token expired error detected, attempting to refresh');
       return await createRefreshedUrl(url);
     }
     return null;
   }
-} 
+}

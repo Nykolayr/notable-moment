@@ -1,6 +1,6 @@
 // lib/features/profile/provider/profile_state.dart
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/constant/enum/gender_enum.dart';
 import 'package:notable_moments/features/profile/model/status_enum.dart';
 
@@ -132,7 +132,7 @@ class ProfileState {
             break;
         }
       } catch (e) {
-        debugPrint('ProfileState.fromJson error on $key: $e');
+        Logger.e('ProfileState.fromJson error on $key: $e');
       }
     }
 
