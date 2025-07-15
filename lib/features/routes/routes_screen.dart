@@ -14,6 +14,7 @@ import 'package:notable_moments/features/routes/edit_routes_screen.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:yandex_maps_mapkit/mapkit.dart' as yandex_map;
 import 'package:notable_moments/features/routes/helpers/map_extension.dart';
+import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -54,6 +55,8 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   bool isExpanded = false;
 
   yandex_map.MapWindow? mapController; // MapWindow который возвращает AppMap
+  int? selectedPointIndex;
+  bool _mapInitialized = false;
 
   @override
   void initState() {
@@ -76,6 +79,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
     _searchController.dispose();
     _focusNode.dispose();
     _animationController.dispose();
+    mapController = null;
     super.dispose();
   }
 
@@ -111,6 +115,46 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
     }
   }
 
+  void _drawRoutesAndPoints() {
+    final map = mapController!.map;
+    map.mapObjects.clear();
+    final allRoutes = ref.read(routesProvider).allRoutes;
+    final progress = ref.read(progressProvider);
+    int globalIndex = 0;
+    for (final route in allRoutes) {
+      final lastUnlocked = progress.unlockedIndexes[route.id] ?? -1;
+      final isRouteOpened = lastUnlocked >= route.points.length - 1;
+      final polylineObject = map.addPolyline(route.polyline);
+      if (!isRouteOpened) {
+        // polylineObject.style.dashPattern = [20, 20]; // пунктир (если поддерживается)
+        // polylineObject.style.innerOutlineEnabled = false; // нельзя изменять, только для чтения
+        polylineObject.setStrokeColor(const Color(0xFFBCC3CD)); // Серый для закрытых
+      } else {
+        // polylineObject.style.dashPattern = []; // сплошная
+        // polylineObject.style.innerOutlineEnabled = true; // нельзя изменять, только для чтения
+        polylineObject.setStrokeColor(const Color(0xFF466BFF)); // Синий для открытых
+      }
+      for (int i = 0; i < route.points.length; i++) {
+        final point = route.points[i].point;
+        final isSelected = globalIndex == selectedPointIndex;
+        map.addPlacemark(
+          point,
+          scale: globalIndex == selectedPointIndex ? 1.4 : 1.0,
+          onTap: (obj, pt) {
+            final pointName = route.points[i].title;
+            print('Placemark tapped at index: $globalIndex, name: $pointName');
+            setState(() {
+              selectedPointIndex = globalIndex;
+              _drawRoutesAndPoints();
+            });
+            return true;
+          },
+        );
+        globalIndex++;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
@@ -128,28 +172,12 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
         children: [
           AppMap(
             onMapCreated: (controller) async {
+              if (_mapInitialized) return;
               mapController = controller;
+              _mapInitialized = true;
               await Future.delayed(const Duration(milliseconds: 500));
-              final map = mapController!.map;
-              map.mapObjects.clear();
-              final allRoutes = routesState.allRoutes;
-              List<yandex_map.Point> allPoints = [];
-              for (final route in allRoutes) {
-                map.addRoute(route);
-                allPoints.addAll(route.points.map((p) => p.point));
-              }
-              if (allPoints.isNotEmpty) {
-                final minLat = allPoints.map((p) => p.latitude).reduce((a, b) => a < b ? a : b);
-                final maxLat = allPoints.map((p) => p.latitude).reduce((a, b) => a > b ? a : b);
-                final minLng = allPoints.map((p) => p.longitude).reduce((a, b) => a < b ? a : b);
-                final maxLng = allPoints.map((p) => p.longitude).reduce((a, b) => a > b ? a : b);
-                final centerPoint = yandex_map.Point(
-                  latitude: (minLat + maxLat) / 2,
-                  longitude: (minLng + maxLng) / 2,
-                );
-                await Future.delayed(const Duration(milliseconds: 300));
-                map.animateToPoint(centerPoint, zoom: 12);
-              }
+              _drawRoutesAndPoints();
+              // fit bounds, если нужно
             },
             disableTaps: false, // Теперь карта интерактивна
           ),
