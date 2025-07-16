@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,6 +7,8 @@ import 'package:notable_moments/core/helpers/image_error_handler.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/core/theme/app_svg.dart';
 import 'package:notable_moments/core/widget/app_loading_icon.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class AppImage extends StatefulWidget {
   const AppImage(
@@ -34,11 +37,15 @@ class AppImage extends StatefulWidget {
 class _AppImageState extends State<AppImage> {
   String? _currentUrl;
   bool _isRetrying = false;
+  bool _hasTimedOut = false;
+  Timer? _timeoutTimer;
+  Object? _timeoutError;
 
   @override
   void initState() {
     super.initState();
     _currentUrl = widget.url;
+    _startTimeout();
   }
 
   @override
@@ -47,7 +54,31 @@ class _AppImageState extends State<AppImage> {
     if (oldWidget.url != widget.url) {
       _currentUrl = widget.url;
       _isRetrying = false;
+      _hasTimedOut = false;
+      _timeoutError = null;
+      _startTimeout();
     }
+  }
+
+  void _startTimeout() {
+    _timeoutTimer?.cancel();
+    if (isNetwork) {
+      _timeoutTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted && !_hasTimedOut) {
+          setState(() {
+            _hasTimedOut = true;
+            _timeoutError = 'Timeout: изображение не загрузилось за 3 секунды';
+          });
+          Logger.e('Timeout: изображение ${_currentUrl ?? ''} не загрузилось за 3 секунды');
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timeoutTimer?.cancel();
+    super.dispose();
   }
 
   bool get isNetwork => _currentUrl?.startsWith('http') ?? false;
@@ -62,16 +93,32 @@ class _AppImageState extends State<AppImage> {
         child: child,
       );
 
-  Widget errorBuilder(BuildContext context, Object error, StackTrace? stackTrace) => 
-      Center(child: AppIcon.imageNo.svgPricture);
+  Widget errorBuilder(BuildContext context, Object error, StackTrace? stackTrace) {
+    Logger.e('Ошибка загрузки локального изображения: $error');
+    return Center(
+      child: SvgPicture.asset(
+        AppIcon.imageNo,
+        width: 64,
+        height: 64,
+        color: const Color(0xFFF4F4F6),
+      ),
+    );
+  }
 
-  Widget loadingBuilder(BuildContext context, Widget child, ImageChunkEvent? loadingProgress) => 
-      loadingProgress == null //
-          ? child
-          : AppLoadingIcon(size: widget.loadingSize);
+  Widget loadingBuilder(BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+    if (_hasTimedOut) {
+      return errorBuilder(context, _timeoutError ?? 'Timeout', null);
+    }
+    if (loadingProgress == null) {
+      _timeoutTimer?.cancel(); // загрузка завершена
+      return child;
+    }
+    return AppLoadingIcon(size: widget.loadingSize);
+  }
 
   /// Обработчик ошибок для сетевых изображений
   Widget _errorWidget(BuildContext context, String url, dynamic error) {
+    Logger.e('Ошибка загрузки сетевого изображения ($url): $error');
     // Проверяем, является ли это ошибкой истекшего токена
     if (ImageErrorHandler.isTokenExpiredError(error)) {
       if (!_isRetrying) {
@@ -86,34 +133,41 @@ class _AppImageState extends State<AppImage> {
         });
       }
     }
-    // Показываем спецсимвол вместо svg-заглушки
-    return const Center(child: Text('🖼️', style: TextStyle(fontSize: 48)));
+    // SVG крупный и светло-серый
+    return Center(
+      child: SvgPicture.asset(
+        AppIcon.imageNo,
+        width: 64,
+        height: 64,
+        color: const Color(0xFFF4F4F6),
+      ),
+    );
   }
 
   Widget get image => frame(
-        isNetwork
-            ? CachedNetworkImage(
-                imageUrl: _currentUrl!,
-                fit: widget.fit,
-                width: widget.width,
-                height: widget.height,
-                placeholder: (BuildContext context, String url) => AppLoadingIcon(size: widget.loadingSize),
-                errorWidget: _errorWidget,
-                // Добавляем дополнительные опции для лучшей обработки ошибок
-                httpHeaders: const {
-                  'Cache-Control': 'max-age=3600',
-                },
-                // Увеличиваем время ожидания
-                maxWidthDiskCache: 1000,
-                maxHeightDiskCache: 1000,
-              )
-            : Image.file(
-                File(_currentUrl!),
-                width: widget.width,
-                height: widget.height,
-                fit: widget.fit,
-                errorBuilder: errorBuilder,
-              ),
+        _hasTimedOut
+            ? errorBuilder(context, _timeoutError ?? 'Timeout', null)
+            : (isNetwork
+                ? CachedNetworkImage(
+                    imageUrl: _currentUrl!,
+                    fit: widget.fit,
+                    width: widget.width,
+                    height: widget.height,
+                    placeholder: (BuildContext context, String url) => AppLoadingIcon(size: widget.loadingSize),
+                    errorWidget: _errorWidget,
+                    httpHeaders: const {
+                      'Cache-Control': 'max-age=3600',
+                    },
+                    maxWidthDiskCache: 1000,
+                    maxHeightDiskCache: 1000,
+                  )
+                : Image.file(
+                    File(_currentUrl!),
+                    width: widget.width,
+                    height: widget.height,
+                    fit: widget.fit,
+                    errorBuilder: errorBuilder,
+                  )),
       );
 
   @override

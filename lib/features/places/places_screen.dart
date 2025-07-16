@@ -22,9 +22,9 @@ class PlacesScreen extends ConsumerWidget {
         .activeRoutes
         .map(
           (route) {
-            return route.points.where((point) => !point.isDraft).map((point) {
-              return (route, point);
-            });
+            return route.points
+                .where((point) => !point.isDraft && point.photos.isNotEmpty)
+                .map((point) => (route, point));
           },
         )
         .flattened
@@ -38,7 +38,7 @@ class PlacesScreen extends ConsumerWidget {
         mainAxisSpacing: 12,
         crossAxisSpacing: 8,
         childAspectRatio: 158 / 213,
-        children: activePlaces.map(
+        children: activePlaces.where((data) => data.$2.photos.isNotEmpty).map(
           (data) {
             final (route, point) = data;
             return AppGestureDetector(
@@ -55,19 +55,10 @@ class PlacesScreen extends ConsumerWidget {
                   children: [
                     AspectRatio(
                       aspectRatio: 1,
-                      child: point.photos.isEmpty
-                          ? Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(6),
-                                color: AppColor.bgText00,
-                              ),
-                              alignment: Alignment.center,
-                              child: AppIcon.imageNo.svgPricture,
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: AppImage(point.photos.first, backgroundColor: AppColor.bgText00),
-                            ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: AppImage(point.photos.first, backgroundColor: AppColor.bgText00),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Flexible(
