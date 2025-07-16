@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class PointSelectMapFrame extends StatefulWidget {
@@ -24,7 +25,9 @@ class _PointSelectMapFrameState extends State<PointSelectMapFrame> {
   @override
   void initState() {
     super.initState();
+
     _currentPoint = widget.point;
+    Logger.i('2 === ${_currentPoint?.toJson()}');
   }
 
   @override
@@ -38,6 +41,7 @@ class _PointSelectMapFrameState extends State<PointSelectMapFrame> {
   }
 
   List<MapObject> get _mapObjects {
+    Logger.i('${_currentPoint?.toJson()}');
     if (_currentPoint == null) return [];
     return [
       PlacemarkMapObject(
@@ -47,7 +51,7 @@ class _PointSelectMapFrameState extends State<PointSelectMapFrame> {
         icon: PlacemarkIcon.single(
           PlacemarkIconStyle(
             image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'),
-            scale: 1.2,
+            scale: 1,
           ),
         ),
         zIndex: 2000,
@@ -82,4 +86,4 @@ class _PointSelectMapFrameState extends State<PointSelectMapFrame> {
       ),
     );
   }
-} 
+}

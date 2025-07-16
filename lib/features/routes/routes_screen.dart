@@ -50,7 +50,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   final FocusNode _focusNode = FocusNode();
 
   late AnimationController _animationController;
-  static const double _collapsedHeightFactor = 0.12;
+  static const double _collapsedHeightFactor = 0.106;
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
 
@@ -194,7 +194,8 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
             ),
             onTap: (_, __) {
               Logger.i(
-                  'Point tapped: ${point.title} | Description: ${point.description} | Tests: ${point.tests.length} | Draft: ${point.isDraft} | Current index: $selectedPointIndex, new: $globalIndex | Scale: ${isSelected ? 1.4 : 1.0}',);
+                'Point tapped: ${point.title} | Description: ${point.description} | Tests: ${point.tests.length} | Draft: ${point.isDraft} | Current index: $selectedPointIndex, new: $globalIndex | Scale: ${isSelected ? 1.4 : 1.0}',
+              );
 
               setState(() {
                 selectedPointIndex = globalIndex;
@@ -237,7 +238,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(pointInfo),
-                  duration: const Duration(seconds: 3),
+                  duration: const Duration(seconds: 5),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -442,7 +443,13 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
                     top: 100,
                     left: 16,
                     right: 16,
-                    child: RouteTooltipCard(route: selectedRoute),
+                    child: GestureDetector(
+                      onTap: () {
+                        // Закрываем карточку при нажатии на саму карточку
+                        ref.read(selectedRouteProvider.notifier).state = null;
+                      },
+                      child: RouteTooltipCard(route: selectedRoute),
+                    ),
                   ),
                 ],
               ),

@@ -12,7 +12,7 @@ import 'package:notable_moments/core/widget/app_input.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/working_hours_model.dart';
-import 'package:notable_moments/features/routes/widget/app_map.dart';
+import 'package:notable_moments/features/routes/widget/point_select_map_frame.dart';
 import 'package:notable_moments/features/routes/widget/schedule_editor_widget.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
@@ -288,27 +288,13 @@ class _EditPointScreenState extends State<EditPointScreen> {
           const SizedBox(height: 12),
           SizedBox(
             height: 200,
-            child: AppMap(
-              onMapCreated: (controller) async {
-                mapController = controller;
-                if (point != null) {
-                  updatePoint(point!);
-                } else {
-                  await controller.moveCamera(
-                    CameraUpdate.newCameraPosition(
-                      const CameraPosition(
-                        target: Point(latitude: 56.0267294, longitude: 92.865734),
-                        zoom: 12,
-                      ),
-                    ),
-                  );
-                }
+            child: PointSelectMapFrame(
+              point: point,
+              onPointChanged: (newPoint) {
+                setState(() {
+                  point = newPoint;
+                });
               },
-              onMapTap: (tappedPoint) {
-                updatePoint(tappedPoint);
-              },
-              mapObjects: mapObjects,
-              showEditButton: false,
             ),
           ),
           const SizedBox(height: 16),
