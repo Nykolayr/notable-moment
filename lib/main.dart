@@ -15,7 +15,6 @@ import 'package:notable_moments/features/onboarding/onboarding_screen.dart';
 import 'package:notable_moments/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';

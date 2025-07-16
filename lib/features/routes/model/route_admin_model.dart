@@ -12,6 +12,7 @@ class RouteAdminModel {
   final List<PointAdminModel> points;
   final bool isDraft;
   final Polyline polyline;
+  final Polyline? calculatedRoute;
 
   int get visiblePoints => points.where((point) => !point.isDraft).length;
   int get draftPoints => points.where((point) => point.isDraft).length;
@@ -26,6 +27,7 @@ class RouteAdminModel {
     required this.points,
     required this.isDraft,
     required this.polyline,
+    this.calculatedRoute,
   });
 
   Map<String, dynamic> toMap() => {
@@ -38,6 +40,7 @@ class RouteAdminModel {
         'points': points.map((point) => point.toMap()).toList(),
         'isDraft': isDraft,
         'polyline': polyline.toMap(),
+        'calculatedRoute': calculatedRoute?.toMap(), // Добавляем рассчитанный маршрут
       };
 
   factory RouteAdminModel.fromMap(Map<String, dynamic> map) {
@@ -62,6 +65,9 @@ class RouteAdminModel {
       polyline: map['polyline'] == null
           ? Polyline(points: [])
           : PolylineMapExt.fromMap(map['polyline'] as Map<String, dynamic>),
+      calculatedRoute: map['calculatedRoute'] == null
+          ? null
+          : PolylineMapExt.fromMap(map['calculatedRoute'] as Map<String, dynamic>), // Обратная совместимость
     );
   }
 
@@ -75,6 +81,7 @@ class RouteAdminModel {
     List<PointAdminModel>? points,
     bool? isDraft,
     Polyline? polyline,
+    Polyline? calculatedRoute,
   }) =>
       RouteAdminModel(
         id: id ?? this.id,
@@ -86,6 +93,7 @@ class RouteAdminModel {
         points: points ?? this.points,
         isDraft: isDraft ?? this.isDraft,
         polyline: polyline ?? Polyline(points: []),
+        calculatedRoute: calculatedRoute ?? this.calculatedRoute,
       );
 
   @override

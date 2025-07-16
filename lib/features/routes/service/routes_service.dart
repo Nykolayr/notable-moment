@@ -53,15 +53,31 @@ class RoutesService {
   Future<List<String>> _uploadPhotosIfNeeded(List<String> photos) async {
     final photoUploads = photos.map((photo) async {
       if (photo.startsWith('http')) {
-        // Для существующих URL проверяем, не нужно ли обновить токен
-        try {
-          return await StorageHelper.getRefreshedDownloadUrl(photo) ?? photo;
-        } catch (e) {
-          Logger.e('routesService -- _uploadPhotosIfNeeded error refreshing URL: $e');
+        // Проверяем, не является ли это уже локальным путем (после обработки ошибки)
+        if (photo.contains('firebasestorage.googleapis.com')) {
+          // Для существующих Firebase URL проверяем, не нужно ли обновить токен
+          try {
+            final refreshedUrl = await StorageHelper.getRefreshedDownloadUrl(photo);
+            return refreshedUrl ?? photo;
+          } catch (e) {
+            Logger.e('routesService -- _uploadPhotosIfNeeded error refreshing URL: $e');
+            // При ошибке Firebase возвращаем исходный URL
+            return photo;
+          }
+        } else {
+          // Это уже не Firebase URL, возвращаем как есть
           return photo;
         }
       }
-      return await StorageHelper.uploadFile(File(photo));
+
+      // Для локальных файлов пытаемся загрузить в Firebase
+      try {
+        return await StorageHelper.uploadFile(File(photo));
+      } catch (e) {
+        Logger.e('routesService -- _uploadPhotosIfNeeded error uploading file: $e');
+        // При ошибке Firebase возвращаем локальный путь
+        return photo;
+      }
     }).toList();
 
     return await Future.wait(photoUploads);

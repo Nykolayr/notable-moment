@@ -15,11 +15,10 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
 
   RoutesNotifier() : super(RoutesState.initial()) {
     _routesService.watchRoutes().listen(
-      (routes) {
+      (routes) async {
         Logger.i('routesProvider watchRoutes: routes.length: ${routes.length}');
-        for (final route in routes) {
-          Logger.i('routesProvider watchRoutes: route.points.length: ${route.points.length}');
-        }
+
+        // Просто обновляем состояние без расчета маршрутов
         state = state.copyWith(allRoutes: routes);
       },
       onError: (error) {

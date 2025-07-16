@@ -6,7 +6,6 @@ import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
-import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/features/routes/provider/routes_provider.dart';
 import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
@@ -14,8 +13,8 @@ import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/route_tooltip_card.dart';
 import 'package:notable_moments/features/routes/edit_routes_screen.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
-import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
+import 'dart:math';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -59,6 +58,9 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   List<MapObject> mapObjects = [];
   int? selectedPointIndex;
   bool _mapInitialized = false;
+
+  // Добавлено для отслеживания изменений маршрутов
+  List<RouteAdminModel> _previousRoutes = [];
 
   @override
   void initState() {
@@ -117,8 +119,8 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
     }
   }
 
-  void _drawRoutesAndPoints() {
-    final allRoutes = ref.read(routesProvider).allRoutes;
+  void _drawRoutesAndPoints() async {
+    final allRoutes = ref.watch(routesProvider).allRoutes;
 
     if (allRoutes.isEmpty) {
       setState(() {
@@ -133,21 +135,45 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
     for (final route in allRoutes) {
       if (route.points.isEmpty) continue;
 
-      // Временно считаем все маршруты открытыми для тестирования
-      bool isRouteOpened = true;
+      // Получаем точки маршрута
+      final points = route.points.map((p) => Point(latitude: p.point.latitude, longitude: p.point.longitude)).toList();
 
-      final polyline = Polyline(
-        points: route.points.map((p) => Point(latitude: p.point.latitude, longitude: p.point.longitude)).toList(),
-      );
+      // Строим настоящий автомобильный маршрут через YandexDriving
+      Polyline? routePolyline;
+      if (points.length >= 2) {
+        try {
+          // Создаем RequestPoint для каждой точки
+          final requestPoints =
+              points.map((point) => RequestPoint(point: point, requestPointType: RequestPointType.wayPoint)).toList();
+
+          // Запрос на построение маршрута
+          final drivingSession = await YandexDriving.requestRoutes(
+            points: requestPoints,
+            drivingOptions: DrivingOptions(),
+          );
+
+          // Обработка результата
+          final drivingResult = await drivingSession.$2;
+          if (drivingResult.routes != null && drivingResult.routes!.isNotEmpty) {
+            routePolyline = drivingResult.routes!.first.geometry;
+          }
+        } catch (e) {
+          Logger.e('_drawRoutesAndPoints: Error building driving route: $e');
+        }
+      }
+
+      // Если не удалось построить маршрут, используем прямую линию
+      routePolyline ??= Polyline(points: points);
 
       objects.add(
         PolylineMapObject(
           mapId: MapObjectId('polyline_${route.id}'),
-          polyline: polyline,
+          polyline: routePolyline,
           strokeColor: const Color(0xFF466BFF), // Всегда синий
           strokeWidth: 4, // Всегда толстая линия
-          dashLength: 20.0, // Всегда штрихпунктир
-          gapLength: 10.0,
+          dashLength: 12.0, // Штрих
+          gapLength: 6.0, // Промежуток
+          zIndex: 1000, // Высокий zIndex чтобы маршруты были поверх всего
         ),
       );
 
@@ -172,6 +198,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
                 _drawRoutesAndPoints();
               });
             },
+            zIndex: 2000, // Еще выше zIndex для точек
           ),
         );
         globalIndex++;
@@ -183,11 +210,99 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
     });
   }
 
+  /// Генерирует маршрут с отклонениями между точками
+  Polyline generateRouteWithDeviations(List<Point> waypoints) {
+    if (waypoints.length < 2) {
+      return Polyline(points: waypoints);
+    }
+
+    final List<Point> routePoints = [];
+    final random = Random();
+
+    for (int i = 0; i < waypoints.length - 1; i++) {
+      final start = waypoints[i];
+      final end = waypoints[i + 1];
+
+      // Добавляем начальную точку
+      routePoints.add(start);
+
+      // Создаем промежуточные точки с большими отклонениями
+      for (int j = 1; j <= 5; j++) {
+        final progress = j / 6.0;
+
+        // Линейная интерполяция между точками
+        final lat = start.latitude + (end.latitude - start.latitude) * progress;
+        final lng = start.longitude + (end.longitude - start.longitude) * progress;
+
+        // Добавляем большое случайное отклонение (до 200 метров)
+        final latOffset = (random.nextDouble() - 0.5) * 0.002; // примерно 200 метров
+        final lngOffset = (random.nextDouble() - 0.5) * 0.002;
+
+        routePoints.add(
+          Point(
+            latitude: lat + latOffset,
+            longitude: lng + lngOffset,
+          ),
+        );
+      }
+
+      // Добавляем конечную точку (кроме последней итерации)
+      if (i == waypoints.length - 2) {
+        routePoints.add(end);
+      }
+    }
+
+    return Polyline(points: routePoints);
+  }
+
+  bool _hasRoutesChanged(List<RouteAdminModel> currentRoutes) {
+    if (currentRoutes.length != _previousRoutes.length) {
+      return true;
+    }
+    for (int i = 0; i < currentRoutes.length; i++) {
+      final currentRoute = currentRoutes[i];
+      final previousRoute = _previousRoutes[i];
+
+      // Проверяем основные изменения
+      if (currentRoute.id != previousRoute.id ||
+          currentRoute.title != previousRoute.title ||
+          currentRoute.description != previousRoute.description ||
+          currentRoute.points.length != previousRoute.points.length) {
+        return true;
+      }
+
+      // Проверяем изменения в calculatedRoute
+      final currentCalculated = currentRoute.calculatedRoute;
+      final previousCalculated = previousRoute.calculatedRoute;
+
+      if (currentCalculated != null && previousCalculated == null) {
+        return true; // Добавился calculatedRoute
+      }
+      if (currentCalculated == null && previousCalculated != null) {
+        return true; // Удалился calculatedRoute
+      }
+      if (currentCalculated != null && previousCalculated != null) {
+        if (currentCalculated.points.length != previousCalculated.points.length) {
+          return true; // Изменилось количество точек в calculatedRoute
+        }
+      }
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final routesState = ref.watch(routesProvider);
     final selectedRoute = ref.watch(selectedRouteProvider);
+
+    // Автоматическое обновление карты при изменении маршрутов
+    if (_mapInitialized && _hasRoutesChanged(routesState.allRoutes)) {
+      _previousRoutes = List.from(routesState.allRoutes);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _drawRoutesAndPoints();
+      });
+    }
 
     final screenHeight = MediaQuery.of(context).size.height;
     final minHeight = screenHeight * _collapsedHeightFactor;
