@@ -65,6 +65,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     return GestureDetector(
       onTap: context.unfocus,
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Родные штрихи',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: AppColor.primary),

@@ -223,6 +223,24 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
                   }
                 }
               });
+
+              // Показываем окно маршрута при нажатии на точку
+              ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
+
+              // Закрываем предыдущие SnackBar перед показом нового
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+              // Показываем информацию о точке через SnackBar на 3 секунды
+              final taskCount = point.tests.length;
+              final isOpen = !point.isDraft;
+              final pointInfo = '${point.title}\n(заданий - ${taskCount}) ${isOpen ? 'Открыто' : 'Закрыто'}';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(pointInfo),
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
             },
             zIndex: 2000, // Еще выше zIndex для точек
           ),
@@ -342,13 +360,14 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
             },
             mapObjects: mapObjects,
             disableTaps: false, // Теперь карта интерактивна
+            showControls: false, // Отключаем встроенные кнопки управления
           ),
           Align(
-            alignment: Alignment.centerRight,
+            alignment: Alignment.topRight,
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.only(top: 60, right: 16),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   AppButton.icon(
                     icon: AppIcon.plus,
@@ -403,11 +422,30 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
             ),
           ),
           if (selectedRoute != null)
-            Positioned(
-              top: 100,
-              left: 16,
-              right: 16,
-              child: RouteTooltipCard(route: selectedRoute),
+            Positioned.fill(
+              child: Stack(
+                children: [
+                  // Прозрачный фон для закрытия карточки
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () {
+                        // Закрываем карточку при нажатии на фон
+                        ref.read(selectedRouteProvider.notifier).state = null;
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                      ),
+                    ),
+                  ),
+                  // Карточка маршрута
+                  Positioned(
+                    top: 100,
+                    left: 16,
+                    right: 16,
+                    child: RouteTooltipCard(route: selectedRoute),
+                  ),
+                ],
+              ),
             ),
         ],
       ),

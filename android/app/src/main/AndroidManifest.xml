@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:name=".MainApplication"
-        android:label="notable_moments"
+        android:label="Родные штрихи"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
