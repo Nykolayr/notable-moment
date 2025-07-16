@@ -193,9 +193,35 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
               ),
             ),
             onTap: (_, __) {
+              Logger.i(
+                  'Point tapped: ${point.title} | Description: ${point.description} | Tests: ${point.tests.length} | Draft: ${point.isDraft} | Current index: $selectedPointIndex, new: $globalIndex | Scale: ${isSelected ? 1.4 : 1.0}');
+
               setState(() {
                 selectedPointIndex = globalIndex;
-                _drawRoutesAndPoints();
+                Logger.i('Updated selectedPointIndex to: $selectedPointIndex');
+
+                // Обновляем все точки с новыми размерами
+                for (int j = 0; j < mapObjects.length; j++) {
+                  final obj = mapObjects[j];
+                  if (obj is PlacemarkMapObject && obj.mapId.value.startsWith('placemark_')) {
+                    final isThisSelected = obj.mapId.value == 'placemark_${route.id}_$i';
+                    final newScale = isThisSelected ? 1.2 : 1.0;
+
+                    mapObjects[j] = PlacemarkMapObject(
+                      mapId: obj.mapId,
+                      point: obj.point,
+                      opacity: obj.opacity,
+                      icon: PlacemarkIcon.single(
+                        PlacemarkIconStyle(
+                          image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'),
+                          scale: newScale,
+                        ),
+                      ),
+                      onTap: obj.onTap,
+                      zIndex: obj.zIndex,
+                    );
+                  }
+                }
               });
             },
             zIndex: 2000, // Еще выше zIndex для точек
@@ -295,14 +321,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
     final profileState = ref.watch(profileProvider);
     final routesState = ref.watch(routesProvider);
     final selectedRoute = ref.watch(selectedRouteProvider);
-
-    // Автоматическое обновление карты при изменении маршрутов
-    if (_mapInitialized && _hasRoutesChanged(routesState.allRoutes)) {
-      _previousRoutes = List.from(routesState.allRoutes);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _drawRoutesAndPoints();
-      });
-    }
 
     final screenHeight = MediaQuery.of(context).size.height;
     final minHeight = screenHeight * _collapsedHeightFactor;
