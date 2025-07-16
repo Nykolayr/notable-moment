@@ -19,6 +19,8 @@ import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -82,6 +84,7 @@ class _MyAppState extends ConsumerState<MyApp> {
           Locale('en'),
         ],
         locale: const Locale('ru'),
+        navigatorObservers: [routeObserver],
         home: FutureBuilder<User?>(
           future: FirebaseAuth.instance.authStateChanges().first,
           builder: (context, snapshot) {

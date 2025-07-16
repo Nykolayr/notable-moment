@@ -62,14 +62,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         body: Column(
           children: [
             Expanded(
-              child: Stack(
+              child: IndexedStack(
+                index: _currentIndex,
                 children: [
-                  // Places Screen
-                  if (_currentIndex == 0) const PlacesScreen(),
-                  // Routes Screen
-                  if (_currentIndex == 1) RoutesScreen(isActive: true),
-                  // Profile Screen
-                  if (_currentIndex == 2) const ProfileScreen(),
+                  const PlacesScreen(),
+                  RoutesScreen(isActive: true),
+                  const ProfileScreen(),
                 ],
               ),
             ),

@@ -16,6 +16,7 @@ import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'dart:math';
 import 'package:notable_moments/features/routes/provider/routes_state.dart';
+import '../../../main.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -46,7 +47,8 @@ class RoutesScreen extends ConsumerStatefulWidget {
   ConsumerState<RoutesScreen> createState() => _RoutesScreenState();
 }
 
-class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerProviderStateMixin {
+class _RoutesScreenState extends ConsumerState<RoutesScreen>
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin, RouteAware {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
@@ -81,13 +83,29 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _searchController.dispose();
     _focusNode.dispose();
     _animationController.dispose();
     mapController = null;
     super.dispose();
   }
+
+  @override
+  void didPopNext() {
+    // Вернулись на экран — обновить точки и маршруты
+    _drawRoutesAndPoints();
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 
   void _expandPanel() {
     _animationController.forward();
@@ -339,6 +357,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final profileState = ref.watch(profileProvider);
     final routesState = ref.watch(routesProvider);
     final selectedRoute = ref.watch(selectedRouteProvider);
@@ -464,13 +483,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
                     top: 100,
                     left: 16,
                     right: 16,
-                    child: GestureDetector(
-                      onTap: () {
-                        // Закрываем карточку при нажатии на саму карточку
-                        ref.read(selectedRouteProvider.notifier).state = null;
-                      },
-                      child: RouteTooltipCard(route: selectedRoute),
-                    ),
+                    child: RouteTooltipCard(route: selectedRoute),
                   ),
                 ],
               ),
