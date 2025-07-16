@@ -14,15 +14,15 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
   final _routesService = RoutesService();
 
   RoutesNotifier() : super(RoutesState.initial()) {
+    state = state.copyWith(isLoading: true);
     _routesService.watchRoutes().listen(
       (routes) async {
-        Logger.i('routesProvider watchRoutes: routes.length: ${routes.length}');
-
-        // Просто обновляем состояние без расчета маршрутов
-        state = state.copyWith(allRoutes: routes);
+        Logger.i('routesProvider watchRoutes: routes.length:  routes.length}');
+        state = state.copyWith(allRoutes: routes, isLoading: false);
       },
       onError: (error) {
         Logger.e('routesProvider watchRoutes error: $error');
+        state = state.copyWith(isLoading: false);
         // Не обновляем состояние при ошибке, чтобы сохранить предыдущие данные
       },
     );

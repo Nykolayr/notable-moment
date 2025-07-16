@@ -15,6 +15,7 @@ import 'package:notable_moments/features/routes/edit_routes_screen.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'dart:math';
+import 'package:notable_moments/features/routes/provider/routes_state.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -61,6 +62,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
 
   // Добавлено для отслеживания изменений маршрутов
   final List<RouteAdminModel> _previousRoutes = [];
+  bool _subscribedToRoutes = false;
 
   @override
   void initState() {
@@ -341,6 +343,22 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
     final routesState = ref.watch(routesProvider);
     final selectedRoute = ref.watch(selectedRouteProvider);
 
+    if (!_subscribedToRoutes) {
+      _subscribedToRoutes = true;
+      ref.listen<RoutesState>(routesProvider, (prev, next) {
+        if (prev?.isLoading == true && next.isLoading == false) {
+          _drawRoutesAndPoints();
+        }
+      });
+    }
+
+    // Если карта инициализирована, маршруты загружены, mapObjects пустой и есть маршруты — строим точки
+    if (_mapInitialized && !routesState.isLoading && mapObjects.isEmpty && routesState.allRoutes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _drawRoutesAndPoints();
+      });
+    }
+
     final screenHeight = MediaQuery.of(context).size.height;
     final minHeight = screenHeight * _collapsedHeightFactor;
     final maxHeight = screenHeight * _expandedHeightFactor;
@@ -356,13 +374,16 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
               mapController = controller;
               _mapInitialized = true;
               await Future.delayed(const Duration(milliseconds: 500));
-              _drawRoutesAndPoints();
-              // fit bounds, если нужно
+              final routesState = ref.read(routesProvider);
+              if (!routesState.isLoading && routesState.allRoutes.isNotEmpty) {
+                _drawRoutesAndPoints();
+              }
             },
             mapObjects: mapObjects,
             disableTaps: false, // Теперь карта интерактивна
             showControls: false, // Отключаем встроенные кнопки управления
           ),
+          if (routesState.isLoading) const Center(child: CircularProgressIndicator()),
           Align(
             alignment: Alignment.topRight,
             child: Padding(
