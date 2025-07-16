@@ -5,7 +5,6 @@ import 'package:flutter/widgets.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:notable_moments/core/helpers/image_error_handler.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
-import 'package:notable_moments/core/theme/app_svg.dart';
 import 'package:notable_moments/core/widget/app_loading_icon.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -94,13 +93,14 @@ class _AppImageState extends State<AppImage> {
       );
 
   Widget errorBuilder(BuildContext context, Object error, StackTrace? stackTrace) {
-    Logger.e('Ошибка загрузки локального изображения: $error');
+    // ignore: avoid_print
+    print('Ошибка загрузки локального изображения: $error');
     return Center(
       child: SvgPicture.asset(
         AppIcon.imageNo,
         width: 64,
         height: 64,
-        color: const Color(0xFFF4F4F6),
+        colorFilter: const ColorFilter.mode(Color(0xFFF4F4F6), BlendMode.srcIn),
       ),
     );
   }
@@ -139,7 +139,7 @@ class _AppImageState extends State<AppImage> {
         AppIcon.imageNo,
         width: 64,
         height: 64,
-        color: const Color(0xFFF4F4F6),
+        colorFilter: const ColorFilter.mode(Color(0xFFF4F4F6), BlendMode.srcIn),
       ),
     );
   }

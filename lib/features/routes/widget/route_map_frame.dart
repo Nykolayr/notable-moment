@@ -112,7 +112,7 @@ class _RouteMapFrameState extends State<RouteMapFrame> {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             final taskCount = point.tests.length;
             final isOpen = point.isUnlocked;
-            final pointInfo = '${point.name}\n(заданий - ${taskCount}) ${isOpen ? 'Открыто' : 'Закрыто'}';
+            final pointInfo = '${point.name}\n(заданий - $taskCount) ${isOpen ? 'Открыто' : 'Закрыто'}';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(pointInfo),
@@ -147,8 +147,8 @@ class _RouteMapFrameState extends State<RouteMapFrame> {
     final southWest = Point(latitude: minLat, longitude: minLng);
     final northEast = Point(latitude: maxLat, longitude: maxLng);
     await mapController!.moveCamera(
-      CameraUpdate.newBounds(
-        BoundingBox(northEast: northEast, southWest: southWest),
+      CameraUpdate.newGeometry(
+        Geometry.fromBoundingBox(BoundingBox(northEast: northEast, southWest: southWest)),
       ),
     );
   }

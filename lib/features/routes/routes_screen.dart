@@ -320,7 +320,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
     return Polyline(points: routePoints);
   }
 
-  bool _hasRoutesChanged(List<RouteAdminModel> currentRoutes) {
+  bool hasRoutesChanged(List<RouteAdminModel> currentRoutes) {
     if (currentRoutes.length != _previousRoutes.length) {
       return true;
     }

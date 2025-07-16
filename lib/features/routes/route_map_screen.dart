@@ -4,13 +4,12 @@ import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
-import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/questions/page_test_screen.dart';
-import 'package:notable_moments/features/routes/widget/route_map_frame.dart';
+import 'package:notable_moments/features/routes/widget/router_on_map/point_on_map.dart';
 
 class RouteMapScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -25,7 +24,7 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
   YandexMapController? mapController;
   List<MapObject> mapObjects = [];
   int? selectedPointIndex;
-  bool _mapInitialized = false;
+  bool mapInitialized = false;
 
   @override
   void initState() {
@@ -47,7 +46,10 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
     final List<MapObject> objects = [];
 
     // Получаем точки маршрута
-    final routePoints = points.map((p) => Point(latitude: p.latitude!, longitude: p.longitude!)).toList();
+    final routePoints = points
+        .where((p) => p.latitude != null && p.longitude != null)
+        .map((p) => Point(latitude: p.latitude!, longitude: p.longitude!))
+        .toList();
 
     // Строим настоящий автомобильный маршрут через YandexDriving
     Polyline? routePolyline;
@@ -141,7 +143,7 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
             // Показываем информацию о точке через SnackBar
             final taskCount = point.tests.length;
             final isOpen = point.isUnlocked;
-            final pointInfo = '${point.name}\n(заданий - ${taskCount}) ${isOpen ? 'Открыто' : 'Закрыто'}';
+            final pointInfo = '${point.name}\n(заданий - $taskCount) ${isOpen ? 'Открыто' : 'Закрыто'}';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(pointInfo),
@@ -160,7 +162,7 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
     });
   }
 
-  Future<void> _fitBoundsToAllPoints() async {
+  Future<void> fitBoundsToAllPoints() async {
     final points = widget.route.points.where((p) => p.latitude != null && p.longitude != null).toList();
     if (points.length < 2 || mapController == null) return;
     final latitudes = points.map((p) => p.latitude!).toList();
@@ -178,8 +180,8 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
     final southWest = Point(latitude: minLat, longitude: minLng);
     final northEast = Point(latitude: maxLat, longitude: maxLng);
     await mapController!.moveCamera(
-      CameraUpdate.newBounds(
-        BoundingBox(northEast: northEast, southWest: southWest),
+      CameraUpdate.newGeometry(
+        Geometry.fromBoundingBox(BoundingBox(northEast: northEast, southWest: southWest)),
       ),
     );
   }
@@ -192,6 +194,11 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
     final title = widget.route.title;
     final description = widget.route.description;
     final whyThisRoute = widget.route.whyThisRoute ?? '';
+
+    final routePoints = points
+        .where((p) => p.latitude != null && p.longitude != null)
+        .map((p) => Point(latitude: p.latitude!, longitude: p.longitude!))
+        .toList();
 
     return SafeArea(
       child: Scaffold(
@@ -209,67 +216,82 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                 ),
+                PointsOnMap(
+                  points: points,
+                  lastUnlockedIndex: lastUnlockedIndex,
+                  onPointTap: (index, isLocked) {
+                    if (isLocked) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PageTestScreen(
+                            route: widget.route,
+                            currentIndex: index,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(description),
-                      const Gap(24),
-                      const Text(
-                        'Почему этот маршрут',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                  child: Text(description),
+                ),
+                if (whyThisRoute.trim().isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                    child: const Text(
+                      'Почему этот маршрут',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    child: Text(whyThisRoute),
+                  ),
+                ],
+                const Gap(20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: SizedBox(
+                      height: 220,
+                      width: double.infinity,
+                      child: AbsorbPointer(
+                        absorbing: true,
+                        child: _RouteMapView(routePoints: routePoints),
                       ),
-                      const Gap(8),
-                      Text(whyThisRoute),
-                      const Gap(24),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: RouteMapFrame(route: widget.route),
-                      ),
-                      const Gap(24),
-                      // --- Кнопка с динамическим текстом ---
-                      Builder(
-                        builder: (context) {
-                          final routeId = widget.route.id;
-                          final totalPoints = points.length;
-                          final lastUnlocked = unlocked.unlockedIndexes[routeId] ?? -1;
-                          final passedCount = lastUnlocked + 1;
-                          String buttonText;
-                          if (passedCount <= 0) {
-                            buttonText = 'Пройти маршрут';
-                          } else if (passedCount < totalPoints) {
-                            buttonText = 'Продолжить';
-                          } else {
-                            buttonText = 'Повторить';
-                          }
-                          return SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                context.showSnack('$buttonText скоро будет доступен');
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                              ),
-                              child: Text(
-                                buttonText,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      // --- конец правки ---
-                    ],
+                    ),
+                  ),
+                ),
+                const Gap(24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Builder(
+                    builder: (context) {
+                      final routeId = widget.route.id;
+                      final totalPoints = points.length;
+                      final lastUnlocked = unlocked.unlockedIndexes[routeId] ?? -1;
+                      final passedCount = lastUnlocked + 1;
+                      String buttonText;
+                      if (passedCount <= 0) {
+                        buttonText = 'Пройти маршрут';
+                      } else if (passedCount < totalPoints) {
+                        buttonText = 'Продолжить';
+                      } else {
+                        buttonText = 'Повторить';
+                      }
+                      return SizedBox(
+                        width: double.infinity,
+                        child: AppButton(
+                          title: buttonText,
+                          onTap: () {
+                            context.showSnack(' buttonText скоро будет доступен');
+                          },
+                          style: AppButtonStyle.primary,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -277,6 +299,77 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RouteMapView extends StatefulWidget {
+  final List<Point> routePoints;
+  const _RouteMapView({required this.routePoints});
+
+  @override
+  State<_RouteMapView> createState() => _RouteMapViewState();
+}
+
+class _RouteMapViewState extends State<_RouteMapView> {
+  List<MapObject> _mapObjects = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _buildMapObjects();
+  }
+
+  void _buildMapObjects() {
+    final points = widget.routePoints;
+    final List<MapObject> objects = [];
+    if (points.length >= 2) {
+      objects.add(
+        PolylineMapObject(
+          mapId: const MapObjectId('route_polyline'),
+          polyline: Polyline(points: points),
+          strokeColor: const Color(0xFF466BFF),
+          strokeWidth: 4,
+        ),
+      );
+    }
+    for (int i = 0; i < points.length; i++) {
+      objects.add(
+        PlacemarkMapObject(
+          mapId: MapObjectId('point_$i'),
+          point: points[i],
+          opacity: 1,
+          icon: PlacemarkIcon.single(
+            PlacemarkIconStyle(
+              image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'),
+              scale: 1,
+            ),
+          ),
+          zIndex: 2000,
+        ),
+      );
+    }
+    setState(() {
+      _mapObjects = objects;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return YandexMap(
+      mapObjects: _mapObjects,
+      onMapCreated: (controller) async {
+        if (widget.routePoints.isNotEmpty) {
+          await controller.moveCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: widget.routePoints.first,
+                zoom: 12,
+              ),
+            ),
+          );
+        }
+      },
     );
   }
 }

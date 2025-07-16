@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/helpers/storage_helper.dart';
 
