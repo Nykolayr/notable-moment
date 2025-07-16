@@ -5,6 +5,7 @@ class RouteModel {
   final String id;
   final String title;
   final String description;
+  final String? whyThisRoute;
   final List<RoutePoint> points;
   final int taskCount;
 
@@ -14,6 +15,7 @@ class RouteModel {
     required this.description,
     required this.points,
     required this.taskCount,
+    this.whyThisRoute,
   });
 
   factory RouteModel.fromMap(Map<String, dynamic> map, String id) {
@@ -21,6 +23,7 @@ class RouteModel {
       id: id,
       title: map['title'] ?? '',
       description: map['description'] ?? '',
+      whyThisRoute: map['whyThisRoute'],
       taskCount: map['taskCount'] ?? 0,
       points:
           (map['points'] as List<dynamic>? ?? []).map((e) => RoutePoint.fromMap(e as Map<String, dynamic>)).toList(),
@@ -31,6 +34,7 @@ class RouteModel {
     return {
       'title': title,
       'description': description,
+      'whyThisRoute': whyThisRoute,
       'taskCount': taskCount,
       'points': points.map((p) => p.toJson()).toList(),
     };

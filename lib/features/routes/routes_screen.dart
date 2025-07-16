@@ -60,7 +60,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
   bool _mapInitialized = false;
 
   // Добавлено для отслеживания изменений маршрутов
-  List<RouteAdminModel> _previousRoutes = [];
+  final List<RouteAdminModel> _previousRoutes = [];
 
   @override
   void initState() {
@@ -194,7 +194,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
             ),
             onTap: (_, __) {
               Logger.i(
-                  'Point tapped: ${point.title} | Description: ${point.description} | Tests: ${point.tests.length} | Draft: ${point.isDraft} | Current index: $selectedPointIndex, new: $globalIndex | Scale: ${isSelected ? 1.4 : 1.0}');
+                  'Point tapped: ${point.title} | Description: ${point.description} | Tests: ${point.tests.length} | Draft: ${point.isDraft} | Current index: $selectedPointIndex, new: $globalIndex | Scale: ${isSelected ? 1.4 : 1.0}',);
 
               setState(() {
                 selectedPointIndex = globalIndex;
@@ -233,7 +233,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> with SingleTickerPr
               // Показываем информацию о точке через SnackBar на 3 секунды
               final taskCount = point.tests.length;
               final isOpen = !point.isDraft;
-              final pointInfo = '${point.title}\n(заданий - ${taskCount}) ${isOpen ? 'Открыто' : 'Закрыто'}';
+              final pointInfo = '${point.title}\n(заданий - $taskCount) ${isOpen ? 'Открыто' : 'Закрыто'}';
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(pointInfo),

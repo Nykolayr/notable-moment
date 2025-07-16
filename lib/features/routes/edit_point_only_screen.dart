@@ -5,7 +5,7 @@ import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
-import 'package:notable_moments/features/routes/widget/app_map.dart';
+import 'package:notable_moments/features/routes/widget/point_select_map_frame.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class EditPointOnlyScreen extends StatefulWidget {
@@ -30,30 +30,6 @@ class _EditPointScreenState extends State<EditPointOnlyScreen> {
     point = widget.point;
   }
 
-  void updatePoint(Point p) {
-    setState(() {
-      point = p;
-      mapObjects = [
-        PlacemarkMapObject(
-          mapId: const MapObjectId('edit_point'),
-          point: p,
-          opacity: 1,
-          icon: PlacemarkIcon.single(
-            PlacemarkIconStyle(
-              image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
-              scale: 1,
-            ),
-          ),
-        ),
-      ];
-    });
-    mapController?.moveCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: p, zoom: 15),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     super.dispose();
@@ -69,26 +45,12 @@ class _EditPointScreenState extends State<EditPointOnlyScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          AppMap(
-            onMapCreated: (controller) async {
-              mapController = controller;
-              if (point == null) {
-                await controller.moveCamera(
-                  CameraUpdate.newCameraPosition(
-                    const CameraPosition(
-                      target: Point(latitude: 56.0267294, longitude: 92.865734),
-                      zoom: 12,
-                    ),
-                  ),
-                );
-              } else {
-                updatePoint(point!);
-              }
-            },
-            mapObjects: mapObjects,
-            showEditButton: false,
-            onMapTap: (tappedPoint) {
-              updatePoint(tappedPoint);
+          PointSelectMapFrame(
+            point: point,
+            onPointChanged: (newPoint) {
+              setState(() {
+                point = newPoint;
+              });
             },
           ),
           Align(
