@@ -116,7 +116,7 @@ class _RouteMapFrameState extends State<RouteMapFrame> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(pointInfo),
-                duration: const Duration(seconds: 3),
+                duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
               ),
             );

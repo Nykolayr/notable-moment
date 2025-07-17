@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/route_map_screen.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
+import 'package:notable_moments/features/routes/routes_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RouteTooltipCard extends StatelessWidget {
   final RouteModel route;
@@ -19,6 +21,9 @@ class RouteTooltipCard extends StatelessWidget {
     final taskCount = points.fold(0, (sum, point) => sum + point.tests.length);
     return GestureDetector(
       onTap: () {
+        // Сбросить выбранный маршрут перед переходом
+        final container = ProviderScope.containerOf(context, listen: false);
+        container.read(selectedRouteProvider.notifier).state = null;
         context.push(
           RouteMapScreen(route: route),
         );

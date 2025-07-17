@@ -140,14 +140,14 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
             // Закрываем предыдущие SnackBar перед показом нового
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-            // Показываем информацию о точке через SnackBar
+            // Показываем информацию о точке через SnackBar на 1 секунду
             final taskCount = point.tests.length;
             final isOpen = point.isUnlocked;
             final pointInfo = '${point.name}\n(заданий - $taskCount) ${isOpen ? 'Открыто' : 'Закрыто'}';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(pointInfo),
-                duration: const Duration(seconds: 3),
+                duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
               ),
             );

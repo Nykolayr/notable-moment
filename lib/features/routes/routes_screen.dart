@@ -83,18 +83,15 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)!);
-  }
-
-  @override
   void dispose() {
     routeObserver.unsubscribe(this);
     _searchController.dispose();
     _focusNode.dispose();
     _animationController.dispose();
     mapController = null;
+    // Сброс выбранного маршрута при уходе со страницы
+    final container = ProviderScope.containerOf(context, listen: false);
+    container.read(selectedRouteProvider.notifier).state = null;
     super.dispose();
   }
 
@@ -102,6 +99,12 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   void didPopNext() {
     // Вернулись на экран — обновить точки и маршруты
     _drawRoutesAndPoints();
+  }
+
+  @override
+  void didPushNext() {
+    // Сброс выбранного маршрута при переходе на другой экран
+    ref.read(selectedRouteProvider.notifier).state = null;
   }
 
   @override
@@ -251,14 +254,14 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
               // Закрываем предыдущие SnackBar перед показом нового
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-              // Показываем информацию о точке через SnackBar на 3 секунды
+              // Показываем информацию о точке через SnackBar на 1 секунду
               final taskCount = point.tests.length;
               final isOpen = !point.isDraft;
               final pointInfo = '${point.title}\n(заданий - $taskCount) ${isOpen ? 'Открыто' : 'Закрыто'}';
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(pointInfo),
-                  duration: const Duration(seconds: 5),
+                  duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -466,24 +469,18 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
             Positioned.fill(
               child: Stack(
                 children: [
-                  // Прозрачный фон для закрытия карточки
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: () {
-                        // Закрываем карточку при нажатии на фон
-                        ref.read(selectedRouteProvider.notifier).state = null;
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                      ),
-                    ),
-                  ),
-                  // Карточка маршрута
                   Positioned(
                     top: 100,
                     left: 16,
                     right: 16,
-                    child: RouteTooltipCard(route: selectedRoute),
+                    child: Dismissible(
+                      key: ValueKey(selectedRoute.id),
+                      direction: DismissDirection.horizontal,
+                      onDismissed: (_) {
+                        ref.read(selectedRouteProvider.notifier).state = null;
+                      },
+                      child: RouteTooltipCard(route: selectedRoute),
+                    ),
                   ),
                 ],
               ),

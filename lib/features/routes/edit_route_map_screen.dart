@@ -66,11 +66,12 @@ class _EditRouteMapScreenState extends ConsumerState<EditRouteMapScreen> {
             ),
             onTap: (_, __) {
               // Показываем информацию о точке
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               final pointInfo = 'Точка ${i + 1}';
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(pointInfo),
-                  duration: const Duration(seconds: 3),
+                  duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
