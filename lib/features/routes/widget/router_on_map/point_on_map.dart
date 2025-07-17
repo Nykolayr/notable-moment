@@ -244,11 +244,12 @@ class PointsOnMap extends StatelessWidget {
           );
         }
 
-        // Линия для последнего четного row (справа от края до центра правого кружка)
+        // Для последнего четного row - справа линия, слева четверть
         if (i + 2 >= points.length) {
           final bool isRightUnlocked = (i + 1) <= lastUnlockedIndex;
           final Color lineColor = isRightUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD);
 
+          // Линия справа от кружка до края экрана
           lines.add(
             Positioned(
               left: rightX + circleDiameter / 2, // От центра правого кружка
@@ -259,17 +260,19 @@ class PointsOnMap extends StatelessWidget {
             ),
           );
 
-          // leftBottom четверть для последнего четного row (где линия справа)
-          lines.add(
-            Positioned(
-              left: 15, // 15 от левого края
-              top: y - step + circleDiameter / 2,
-              child: CurveQuarter(
-                isBlue: isRightUnlocked,
-                corner: QuarterCorner.leftBottom,
+          // Четверть слева для соединения с предыдущим рядом (если не первый ряд)
+          if (rowIndex > 0) {
+            lines.add(
+              Positioned(
+                left: 15, // 15 от левого края
+                top: y - step + circleDiameter / 2,
+                child: CurveQuarter(
+                  isBlue: isRightUnlocked,
+                  corner: QuarterCorner.leftBottom,
+                ),
               ),
-            ),
-          );
+            );
+          }
         }
 
         i += 2;
@@ -329,22 +332,11 @@ class PointsOnMap extends StatelessWidget {
           ),
         );
 
-        // Линии слева и справа от центрального кружка до краев экрана
+        // Для последней одиночной точки в четном ряду - справа линия, слева четверть
         final bool isCenterUnlocked = i <= lastUnlockedIndex;
         final Color lineColor = isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD);
 
-        // Линия слева от края до кружка
-        lines.add(
-          Positioned(
-            left: 0,
-            top: y + (circleDiameter - 10) / 2, // По центру кружка
-            width: centerX, // До центра кружка
-            height: 10,
-            child: Container(color: lineColor),
-          ),
-        );
-
-        // Линия справа от кружка до края
+        // Линия справа от кружка до края экрана
         lines.add(
           Positioned(
             left: centerX + circleDiameter, // От правого края кружка
@@ -355,7 +347,7 @@ class PointsOnMap extends StatelessWidget {
           ),
         );
 
-        // leftBottom четверть для соединения с предыдущим рядом (если это не первый ряд)
+        // Четверть слева для соединения с предыдущим рядом (если не первый ряд)
         if (rowIndex > 0) {
           lines.add(
             Positioned(
@@ -367,13 +359,35 @@ class PointsOnMap extends StatelessWidget {
               ),
             ),
           );
+
+          // Линия от четверти до кружка
+          lines.add(
+            Positioned(
+              left: 15 + 58, // От четверти (15 + размер четверти)
+              top: y + (circleDiameter - 10) / 2, // По центру кружка
+              width: centerX - (15 + 58), // До центра кружка
+              height: 10,
+              child: Container(color: isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD)),
+            ),
+          );
+        } else {
+          // Если это первый ряд, то линия слева от края до кружка
+          lines.add(
+            Positioned(
+              left: 0,
+              top: y + (circleDiameter - 10) / 2, // По центру кружка
+              width: centerX, // До центра кружка
+              height: 10,
+              child: Container(color: lineColor),
+            ),
+          );
         }
 
         i += 1;
         rowIndex++;
         pointIndex += 1;
       } else {
-        // Один поинт по центру
+        // Один поинт по центру (нечетный ряд)
         final double y = rowIndex * step;
 
         // Для центрального кружка:
@@ -477,11 +491,23 @@ class PointsOnMap extends StatelessWidget {
           );
         }
 
-        // Линия для последнего нечетного row (слева от края до центра кружка)
+        // Для последнего нечетного row - слева линия, справа четверть
         if (i + 1 >= points.length) {
           final bool isCenterUnlocked = i <= lastUnlockedIndex;
+          final Color lineColor = isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD);
 
-          // rightTop четверть для последнего нечетного row (где нет линии слева)
+          // Линия слева от края до кружка
+          lines.add(
+            Positioned(
+              left: 0,
+              top: y + (circleDiameter - 10) / 2, // По центру кружка
+              width: centerX, // До центра кружка
+              height: 10,
+              child: Container(color: lineColor),
+            ),
+          );
+
+          // Четверть справа
           lines.add(
             Positioned(
               right: 15, // 15 от правого края
@@ -490,6 +516,17 @@ class PointsOnMap extends StatelessWidget {
                 isBlue: isCenterUnlocked,
                 corner: QuarterCorner.rightTop,
               ),
+            ),
+          );
+
+          // Линия от кружка до четверти справа
+          lines.add(
+            Positioned(
+              left: centerX + circleDiameter / 2, // От центра кружка
+              top: y + (circleDiameter - 10) / 2, // По центру кружка
+              width: screenWidth - 15 - 58 - (centerX + circleDiameter / 2), // До четверти справа
+              height: 10,
+              child: Container(color: isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD)),
             ),
           );
         }
