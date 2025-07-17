@@ -42,6 +42,34 @@ abstract class Validator {
     if (value == null || value.isEmpty) {
       return 'Введите дату рождения';
     }
+
+    // Проверяем формат дд.мм.гггг
+    if (!RegExp(r'^\d{2}\.\d{2}\.\d{4}$').hasMatch(value)) {
+      return 'Введите корректную дату в формате дд.мм.гггг';
+    }
+
+    // Проверяем что дата корректная
+    try {
+      final parts = value.split('.');
+      final day = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final year = int.parse(parts[2]);
+
+      final date = DateTime(year, month, day);
+
+      // Проверяем что дата не в будущем
+      if (date.isAfter(DateTime.now())) {
+        return 'Дата рождения не может быть в будущем';
+      }
+
+      // Проверяем что дата не слишком старая (больше 150 лет)
+      if (date.isBefore(DateTime.now().subtract(const Duration(days: 365 * 150)))) {
+        return 'Дата рождения не может быть раньше 1874 года';
+      }
+    } catch (e) {
+      return 'Введите корректную дату в формате дд.мм.гггг';
+    }
+
     return null;
   }
 

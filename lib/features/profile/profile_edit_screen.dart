@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:notable_moments/core/constant/enum/gender_enum.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/helpers/validator.dart';
@@ -33,6 +34,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   String? school;
   Gender? gender;
   late int avatarId;
+  final _dateFormat = DateFormat('dd.MM.yyyy');
 
   bool get canSave {
     final profile = ref.watch(profileProvider);
@@ -42,7 +44,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (school == null) return false;
 
     if (nameController.text != profile.name) return true;
-    if (birthdayController.text != (profile.birthday?.toLocal().toString().split(' ')[0] ?? '')) return true;
+    if (birthdayController.text != (profile.birthday != null ? _dateFormat.format(profile.birthday!) : '')) return true;
     if (gender != profile.gender) return true;
     if (school != profile.school) return true;
     if (avatarId != profile.avatarId) return true;
@@ -55,7 +57,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     super.initState();
     final profile = ref.read(profileProvider);
     nameController.text = profile.name ?? '';
-    birthdayController.text = profile.birthday?.toLocal().toString().split(' ')[0] ?? '';
+    birthdayController.text = profile.birthday != null ? _dateFormat.format(profile.birthday!) : '';
     gender = profile.gender;
     school = profile.school;
     avatarId = profile.avatarId;
@@ -196,16 +198,26 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             onTap: canSave
                 ? () async {
                     try {
-                      final parts = birthdayController.text.split('.');
-                      if (parts.length != 3) {
+                      // Проверяем формат даты
+                      if (!RegExp(r'^\d{2}\.\d{2}\.\d{4}$').hasMatch(birthdayController.text)) {
                         context.showErrorSnackBar('Введите корректную дату в формате дд.мм.гггг');
                         return;
                       }
-                      final bday = DateTime(
-                        int.parse(parts[2]),
-                        int.parse(parts[1]),
-                        int.parse(parts[0]),
-                      );
+
+                      // Парсим дату
+                      DateTime? bday;
+                      try {
+                        bday = _dateFormat.parse(birthdayController.text);
+                      } catch (e) {
+                        context.showErrorSnackBar('Введите корректную дату в формате дд.мм.гггг');
+                        return;
+                      }
+
+                      // Проверяем что дата не в будущем
+                      if (bday.isAfter(DateTime.now())) {
+                        context.showErrorSnackBar('Дата рождения не может быть в будущем');
+                        return;
+                      }
 
                       final res = await ref.read(profileProvider.notifier).updateProfile(
                             name: nameController.text,
