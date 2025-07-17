@@ -18,6 +18,7 @@ import 'dart:math';
 import 'package:notable_moments/features/routes/provider/routes_state.dart';
 import '../../../main.dart';
 import 'package:notable_moments/features/routes/route_map_screen.dart';
+import 'package:flutter/widgets.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -54,7 +55,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   final FocusNode _focusNode = FocusNode();
 
   late AnimationController _animationController;
-  static const double _collapsedHeightFactor = 0.106;
+  static const double _collapsedHeightFactor = 0.1;
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
 
