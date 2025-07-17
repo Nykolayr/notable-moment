@@ -8,9 +8,61 @@ import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/core/widget/app_image.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
-import 'package:notable_moments/features/routes/widget/app_map.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
+
+class PlaceMapWidget extends StatefulWidget {
+  final PointAdminModel point;
+
+  const PlaceMapWidget({
+    super.key,
+    required this.point,
+  });
+
+  @override
+  State<PlaceMapWidget> createState() => _PlaceMapWidgetState();
+}
+
+class _PlaceMapWidgetState extends State<PlaceMapWidget> {
+  YandexMapController? mapController;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 160,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: YandexMap(
+          mapObjects: [
+            PlacemarkMapObject(
+              mapId: const MapObjectId('place_placemark'),
+              point: Point(latitude: widget.point.point.latitude, longitude: widget.point.point.longitude),
+              opacity: 1,
+              icon: PlacemarkIcon.single(
+                PlacemarkIconStyle(
+                  image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'),
+                  scale: 1,
+                ),
+              ),
+            ),
+          ],
+          onMapCreated: (controller) async {
+            mapController = controller;
+            // Центрируем карту на точке места
+            await controller.moveCamera(
+              CameraUpdate.newCameraPosition(
+                CameraPosition(
+                  target: Point(latitude: widget.point.point.latitude, longitude: widget.point.point.longitude),
+                  zoom: 15,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
 
 void showPlaceBottomSheet({
   required BuildContext context,
@@ -47,7 +99,16 @@ void showPlaceBottomSheet({
                   ),
                 ),
               ),
-              if (point.photos.isEmpty)
+              // Картинка места сверху как в открытых местах
+              if (point.photos.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: AppImage(point.photos.first, backgroundColor: AppColor.bgText00),
+                  ),
+                )
+              else
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
@@ -63,38 +124,6 @@ void showPlaceBottomSheet({
                       textAlign: TextAlign.center,
                     ),
                   ),
-                )
-              else if (point.photos.length == 1)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: AppImage(
-                      point.photos[0],
-                      width: double.infinity,
-                      height: 200,
-                      backgroundColor: AppColor.bgText200,
-                      loadingSize: 24,
-                    ),
-                  ),
-                )
-              else
-                SizedBox(
-                  height: 200,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: point.photos.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) => AppImage(
-                      point.photos[index],
-                      borderRadius: 8,
-                      width: 300,
-                      height: 200,
-                      backgroundColor: AppColor.bgText200,
-                      loadingSize: 24,
-                    ),
-                  ),
                 ),
               const SizedBox(height: 12),
               Padding(
@@ -106,27 +135,8 @@ void showPlaceBottomSheet({
                     const SizedBox(height: 12),
                     Text('г. Красноярск', style: AppStyle.subtext.bgText600),
                     const SizedBox(height: 12),
-                    AspectRatio(
-                      aspectRatio: 324 / 130,
-                      child: AppMap(
-                        showControls: false,
-                        disableTaps: true,
-                        onMapCreated: (_) {},
-                        mapObjects: [
-                          PlacemarkMapObject(
-                            mapId: const MapObjectId('place_placemark'),
-                            point: Point(latitude: point.point.latitude, longitude: point.point.longitude),
-                            opacity: 1,
-                            icon: PlacemarkIcon.single(
-                              PlacemarkIconStyle(
-                                image: BitmapDescriptor.fromAssetImage('assets/svg/placemark.svg'),
-                                scale: 1,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Кастомная карта с кнопками управления
+                    PlaceMapWidget(point: point),
                     const SizedBox(height: 12),
                     Text(point.description, style: AppStyle.roboto14w400.bgText900),
                     if (point.schedule.periods.isNotEmpty) ...[
