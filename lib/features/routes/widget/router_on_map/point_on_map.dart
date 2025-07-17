@@ -68,7 +68,6 @@ class PointsOnMap extends StatelessWidget {
     int pointIndex = 0; // Только для кружков
 
     // Проверяем, является ли точка последней в маршруте
-    final bool isLastPointInRoute = points.length == 1;
 
     while (i < points.length) {
       // 2-1-2-1 чередование

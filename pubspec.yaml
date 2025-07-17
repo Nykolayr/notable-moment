@@ -36,7 +36,8 @@ dependencies:
   timeline_tile_plus: ^0.0.3 #https://pub.dev/packages/timeline_tile_plus
   gap: ^3.0.1 #https://pub.dev/packages/gap
   yandex_mapkit: ^4.1.0 # https://pub.dev/packages/yandex_mapkit
-  http: ^1.2.0 # Для работы с Yandex Maps API
+  modal_bottom_sheet: ^3.0.0 #https://pub.dev/packages/modal_bottom_sheet
+
 
 dev_dependencies:
   flutter_test:

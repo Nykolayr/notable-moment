@@ -78,12 +78,12 @@ class _EditRouteMapScreenState extends ConsumerState<EditRouteMapScreen> {
               _drawRouteAndPoints();
               await Future.delayed(const Duration(milliseconds: 300));
               // Если есть хотя бы одна точка — fitBounds
-              final points = widget.route.points.where((p) => p.latitude != null && p.longitude != null).toList();
+              final points = widget.route.points;
               if (points.length == 1) {
                 await controller.moveCamera(
                   CameraUpdate.newCameraPosition(
                     CameraPosition(
-                      target: Point(latitude: points.first.latitude!, longitude: points.first.longitude!),
+                      target: Point(latitude: points.first.latitude, longitude: points.first.longitude),
                       zoom: 15,
                     ),
                   ),
@@ -134,11 +134,11 @@ class _EditRouteMapScreenState extends ConsumerState<EditRouteMapScreen> {
   }
 
   void _drawRouteAndPoints() async {
-    final points = widget.route.points.where((p) => p.latitude != null && p.longitude != null).toList();
+    final points = widget.route.points;
     final List<MapObject> objects = [];
 
     if (points.isNotEmpty) {
-      final routePoints = points.map((p) => Point(latitude: p.latitude!, longitude: p.longitude!)).toList();
+      final routePoints = points.map((p) => Point(latitude: p.latitude, longitude: p.longitude)).toList();
       if (routePoints.length >= 2) {
         final routePolyline = await buildRoutePolyline(routePoints);
         objects.add(
@@ -158,7 +158,7 @@ class _EditRouteMapScreenState extends ConsumerState<EditRouteMapScreen> {
         objects.add(
           PlacemarkMapObject(
             mapId: MapObjectId('edit_route_point_$i'),
-            point: Point(latitude: point.latitude!, longitude: point.longitude!),
+            point: Point(latitude: point.latitude, longitude: point.longitude),
             opacity: 1,
             icon: PlacemarkIcon.single(
               PlacemarkIconStyle(
@@ -189,11 +189,11 @@ class _EditRouteMapScreenState extends ConsumerState<EditRouteMapScreen> {
   }
 
   Future<void> _fitBoundsToAllPoints() async {
-    final points = widget.route.points.where((p) => p.latitude != null && p.longitude != null).toList();
+    final points = widget.route.points;
     if (points.length < 2 || mapController == null) return;
 
-    final latitudes = points.map((p) => p.latitude!).toList();
-    final longitudes = points.map((p) => p.longitude!).toList();
+    final latitudes = points.map((p) => p.latitude).toList();
+    final longitudes = points.map((p) => p.longitude).toList();
 
     double minLat = latitudes.reduce((a, b) => a < b ? a : b);
     double maxLat = latitudes.reduce((a, b) => a > b ? a : b);
