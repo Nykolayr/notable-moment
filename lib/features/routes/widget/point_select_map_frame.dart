@@ -94,6 +94,12 @@ class _PointSelectMapFrameState extends State<PointSelectMapFrame> {
                 _currentPoint = point;
               });
               widget.onPointChanged(point);
+              // Центрируемся на выбранной точке
+              mapController?.moveCamera(
+                CameraUpdate.newCameraPosition(
+                  CameraPosition(target: point, zoom: 15),
+                ),
+              );
             },
           ),
           Align(
@@ -117,9 +123,9 @@ class _PointSelectMapFrameState extends State<PointSelectMapFrame> {
                     icon: AppIcon.location,
                     onTap: () => mapController?.moveCamera(
                       CameraUpdate.newCameraPosition(
-                        const CameraPosition(
-                          target: Point(latitude: 56.0267294, longitude: 92.865734),
-                          zoom: 12,
+                        CameraPosition(
+                          target: _currentPoint ?? const Point(latitude: 56.0267294, longitude: 92.865734),
+                          zoom: _currentPoint != null ? 15 : 12,
                         ),
                       ),
                     ),
