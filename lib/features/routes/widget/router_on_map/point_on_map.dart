@@ -278,6 +278,100 @@ class PointsOnMap extends StatelessWidget {
 
         // Проверяем, не вышли ли за границы после увеличения i
         if (i >= points.length) break;
+      } else if ((rowIndex % 2 == 0) && (i + 1 >= points.length)) {
+        // Случай, когда должны быть двойные точки, но осталась только одна
+        // Используем логику для одиночной точки
+        final double y = rowIndex * step;
+
+        // Для центрального кружка:
+        final isUnlockedCenter = i <= lastUnlockedIndex;
+        final isFirstLockedCenter = i == lastUnlockedIndex + 1;
+        final isLockedCenter = !isUnlockedCenter && !isFirstLockedCenter;
+
+        circlesAndLabels.add(
+          Positioned(
+            left: centerX,
+            top: y,
+            child: CirclePoint(
+              isUnlocked: isUnlockedCenter,
+              isFirstLocked: isFirstLockedCenter,
+              isLocked: isLockedCenter,
+              childIcon: isLockedCenter
+                  ? SvgPicture.asset(
+                      'assets/svg/lock.svg',
+                      width: 20,
+                      height: 20,
+                    )
+                  : null,
+              onTap: (index, isLocked, isFirstLocked) {
+                _handlePointTap(context, index, isLocked, isFirstLocked);
+              },
+              pointIndex: pointIndex,
+            ),
+          ),
+        );
+
+        // Подпись по центру в контейнере
+        circlesAndLabels.add(
+          Positioned(
+            left: centerX - (screenWidth - 80 - circleDiameter) / 2, // Центрирую относительно кружка
+            top: y + circleDiameter + 8,
+            child: SizedBox(
+              width: screenWidth - 90, // Формула для одного кружка
+              child: Text(
+                points[i].name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF9198A1), fontWeight: FontWeight.w500, fontSize: 11),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        );
+
+        // Линии слева и справа от центрального кружка до краев экрана
+        final bool isCenterUnlocked = i <= lastUnlockedIndex;
+        final Color lineColor = isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD);
+
+        // Линия слева от края до кружка
+        lines.add(
+          Positioned(
+            left: 0,
+            top: y + (circleDiameter - 10) / 2, // По центру кружка
+            width: centerX, // До центра кружка
+            height: 10,
+            child: Container(color: lineColor),
+          ),
+        );
+
+        // Линия справа от кружка до края
+        lines.add(
+          Positioned(
+            left: centerX + circleDiameter, // От правого края кружка
+            top: y + (circleDiameter - 10) / 2, // По центру кружка
+            width: screenWidth - (centerX + circleDiameter), // До края экрана
+            height: 10,
+            child: Container(color: lineColor),
+          ),
+        );
+
+        // leftBottom четверть для соединения с предыдущим рядом (если это не первый ряд)
+        if (rowIndex > 0) {
+          lines.add(
+            Positioned(
+              left: 15, // 15 от левого края
+              top: y - step + circleDiameter / 2,
+              child: CurveQuarter(
+                isBlue: isCenterUnlocked,
+                corner: QuarterCorner.leftBottom,
+              ),
+            ),
+          );
+        }
+
+        i += 1;
+        rowIndex++;
+        pointIndex += 1;
       } else {
         // Один поинт по центру
         final double y = rowIndex * step;
