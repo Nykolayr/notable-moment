@@ -67,6 +67,9 @@ class PointsOnMap extends StatelessWidget {
     int rowIndex = 0;
     int pointIndex = 0; // Только для кружков
 
+    // Проверяем, является ли точка последней в маршруте
+    final bool isLastPointInRoute = points.length == 1;
+
     while (i < points.length) {
       // 2-1-2-1 чередование
       if ((rowIndex % 2 == 0) && (i + 1 < points.length)) {
@@ -436,10 +439,15 @@ class PointsOnMap extends StatelessWidget {
           ),
         );
 
-        // rightBottom четверть для нечетных row (начинается от середины правого кружка)
-        if (i + 1 < points.length) {
-          // Не последний row
-          final bool isCenterUnlocked = i <= lastUnlockedIndex;
+        // Проверяем, является ли эта точка последней
+        final bool isLastPoint = i + 1 >= points.length;
+        final bool isCenterUnlocked = i <= lastUnlockedIndex;
+        final Color lineColor = isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD);
+
+        if (!isLastPoint) {
+          // Не последняя точка - добавляем обе четверти (вверх и вниз)
+
+          // rightBottom четверть для нечетных row (начинается от середины правого кружка)
           lines.add(
             Positioned(
               right: 15, // 15 от правого края
@@ -451,12 +459,8 @@ class PointsOnMap extends StatelessWidget {
               ),
             ),
           );
-        }
 
-        // leftTop четверть для нечетных row (начинается от середины левого кружка)
-        if (i + 1 < points.length) {
-          // Не последний row
-          final bool isCenterUnlocked = i <= lastUnlockedIndex;
+          // leftTop четверть для нечетных row (начинается от середины левого кружка)
           lines.add(
             Positioned(
               left: 15, // 15 от левого края
@@ -489,12 +493,8 @@ class PointsOnMap extends StatelessWidget {
               child: Container(color: isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD)),
             ),
           );
-        }
-
-        // Для последнего нечетного row - слева линия, справа четверть
-        if (i + 1 >= points.length) {
-          final bool isCenterUnlocked = i <= lastUnlockedIndex;
-          final Color lineColor = isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD);
+        } else {
+          // ПОСЛЕДНЯЯ ТОЧКА В НЕЧЕТНОМ РЯДУ
 
           // Линия слева от края до кружка
           lines.add(
@@ -507,17 +507,17 @@ class PointsOnMap extends StatelessWidget {
             ),
           );
 
-          // Четверть справа
-          lines.add(
-            Positioned(
-              right: 15, // 15 от правого края
-              top: y + circleDiameter / 2, // От центра кружка по высоте
-              child: CurveQuarter(
-                isBlue: isCenterUnlocked,
-                corner: QuarterCorner.rightTop,
-              ),
-            ),
-          );
+          // ТОЛЬКО четверть вверх справа (rightTop)
+          // lines.add(
+          //   Positioned(
+          //     right: 15, // 15 от правого края
+          //     top: y + circleDiameter / 2, // От центра кружка по высоте
+          //     child: CurveQuarter(
+          //       isBlue: isCenterUnlocked,
+          //       corner: QuarterCorner.rightTop, // ТОЛЬКО ВВЕРХ!
+          //     ),
+          //   ),
+          // );
 
           // Линия от кружка до четверти справа
           lines.add(
@@ -526,7 +526,7 @@ class PointsOnMap extends StatelessWidget {
               top: y + (circleDiameter - 10) / 2, // По центру кружка
               width: screenWidth - 15 - 58 - (centerX + circleDiameter / 2), // До четверти справа
               height: 10,
-              child: Container(color: isCenterUnlocked ? const Color(0xFF466BFF) : const Color(0xFFBCC3CD)),
+              child: Container(color: lineColor),
             ),
           );
         }
