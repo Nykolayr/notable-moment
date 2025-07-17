@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
+import 'package:notable_moments/core/widget/app_button.dart';
+import 'package:notable_moments/core/theme/app_icon.dart';
 
 class PointSelectMapFrame extends StatefulWidget {
   final Point? point;
@@ -64,25 +66,69 @@ class _PointSelectMapFrameState extends State<PointSelectMapFrame> {
     return SizedBox(
       height: widget.height,
       width: double.infinity,
-      child: YandexMap(
-        mapObjects: _mapObjects,
-        onMapCreated: (controller) async {
-          mapController = controller;
-          if (_currentPoint != null) {
-            await controller.moveCamera(
-              CameraUpdate.newCameraPosition(
-                CameraPosition(target: _currentPoint!, zoom: 15),
+      child: Stack(
+        children: [
+          YandexMap(
+            mapObjects: _mapObjects,
+            onMapCreated: (controller) async {
+              mapController = controller;
+              if (_currentPoint != null) {
+                await controller.moveCamera(
+                  CameraUpdate.newCameraPosition(
+                    CameraPosition(target: _currentPoint!, zoom: 15),
+                  ),
+                );
+              } else {
+                await controller.moveCamera(
+                  CameraUpdate.newCameraPosition(
+                    const CameraPosition(
+                      target: Point(latitude: 56.0267294, longitude: 92.865734),
+                      zoom: 12,
+                    ),
+                  ),
+                );
+              }
+            },
+            onMapTap: (point) {
+              setState(() {
+                _currentPoint = point;
+              });
+              widget.onPointChanged(point);
+            },
+          ),
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8, right: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppButton.icon(
+                    icon: AppIcon.plus,
+                    onTap: () => mapController?.moveCamera(CameraUpdate.zoomIn()),
+                  ),
+                  const SizedBox(height: 4),
+                  AppButton.icon(
+                    icon: AppIcon.minus,
+                    onTap: () => mapController?.moveCamera(CameraUpdate.zoomOut()),
+                  ),
+                  const SizedBox(height: 4),
+                  AppButton.icon(
+                    icon: AppIcon.location,
+                    onTap: () => mapController?.moveCamera(
+                      CameraUpdate.newCameraPosition(
+                        const CameraPosition(
+                          target: Point(latitude: 56.0267294, longitude: 92.865734),
+                          zoom: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            );
-          }
-        },
-        onMapTap: (point) {
-          setState(() {
-            _currentPoint = point;
-          });
-          widget.onPointChanged(point);
-        },
-        // Стандартные жесты карты (масштаб, перемещение) работают по умолчанию
+            ),
+          ),
+        ],
       ),
     );
   }
