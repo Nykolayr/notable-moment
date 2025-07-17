@@ -33,6 +33,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
   bool isNew = true;
   Point? point;
   final _imagePicker = ImagePicker();
+  bool _enableListViewScroll = true;
 
   late final titleController = TextEditingController(text: widget.pointAdmin?.title);
   late final descriptionController = TextEditingController(text: widget.pointAdmin?.description);
@@ -190,6 +191,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
         backButtonTap: handleBack,
       ),
       body: ListView(
+        physics: _enableListViewScroll ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           AppCheckbox(
@@ -290,13 +292,33 @@ class _EditPointScreenState extends State<EditPointScreen> {
           const SizedBox(height: 12),
           SizedBox(
             height: 200,
-            child: PointSelectMapFrame(
-              point: point,
-              onPointChanged: (newPoint) {
+            child: Listener(
+              onPointerDown: (_) {
+                // Отключаем прокрутку ListView при начале взаимодействия с картой
                 setState(() {
-                  point = newPoint;
+                  _enableListViewScroll = false;
                 });
               },
+              onPointerUp: (_) {
+                // Включаем прокрутку ListView после завершения взаимодействия
+                setState(() {
+                  _enableListViewScroll = true;
+                });
+              },
+              onPointerCancel: (_) {
+                // Включаем прокрутку, если жест был отменён
+                setState(() {
+                  _enableListViewScroll = true;
+                });
+              },
+              child: PointSelectMapFrame(
+                point: point,
+                onPointChanged: (newPoint) {
+                  setState(() {
+                    point = newPoint;
+                  });
+                },
+              ),
             ),
           ),
           const SizedBox(height: 16),
