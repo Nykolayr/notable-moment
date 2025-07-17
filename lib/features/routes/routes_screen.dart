@@ -55,7 +55,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   final FocusNode _focusNode = FocusNode();
 
   late AnimationController _animationController;
-  static const double _collapsedHeightFactor = 0.1;
+  static const double _collapsedHeightFactor = 0.101;
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
 

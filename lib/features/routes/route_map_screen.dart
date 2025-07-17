@@ -286,7 +286,36 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
                         child: AppButton(
                           title: buttonText,
                           onTap: () {
-                            context.showSnack(' buttonText скоро будет доступен');
+                            // Находим первую неоткрытую точку
+                            int firstLockedIndex = 0;
+
+                            // Если есть открытые точки, начинаем с первой закрытой
+                            if (lastUnlocked >= 0) {
+                              firstLockedIndex = lastUnlocked + 1;
+                            }
+
+                            // Проверяем, что индекс не выходит за границы массива
+                            if (firstLockedIndex < totalPoints) {
+                              // Переходим к прохождению тестов для этой точки
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PageTestScreen(
+                                    route: widget.route,
+                                    currentIndex: firstLockedIndex,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              // Если все точки пройдены, начинаем сначала
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PageTestScreen(
+                                    route: widget.route,
+                                    currentIndex: 0,
+                                  ),
+                                ),
+                              );
+                            }
                           },
                           style: AppButtonStyle.primary,
                         ),
