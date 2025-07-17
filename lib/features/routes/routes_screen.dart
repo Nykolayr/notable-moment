@@ -17,6 +17,7 @@ import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'dart:math';
 import 'package:notable_moments/features/routes/provider/routes_state.dart';
 import '../../../main.dart';
+import 'package:notable_moments/features/routes/route_map_screen.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
@@ -545,7 +546,9 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                       final route = filtered[index];
                       return GestureDetector(
                         onTap: () {
-                          ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
+                          // Вместо показа карточки сразу переходим на страницу маршрута
+                          final routeModel = toRouteModel(route);
+                          context.push(RouteMapScreen(route: routeModel));
                           _collapsePanel();
                         },
                         child: Container(
