@@ -396,8 +396,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                             },
                             onPairChecked: (isCorrect, selectedIndexes) {
                               if (!isCorrect) {
-                                final userProgressNotifier = ref.read(profileProvider.notifier);
-                                userProgressNotifier.spendEnergy(1);
+                                ref.read(profileProvider.notifier).spendEnergy(1);
                                 setState(() {
                                   showChip = true;
                                   this.isCorrect = false;

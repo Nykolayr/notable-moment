@@ -5,6 +5,7 @@ import 'package:notable_moments/features/profile/provider/user_progress_provider
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:notable_moments/features/profile/widget/feed_suslik_widget.dart';
 
 class EnergyRechargePage extends ConsumerWidget {
   final String routeId;
@@ -24,9 +25,6 @@ class EnergyRechargePage extends ConsumerWidget {
     final userProgress = ref.watch(userProgressProvider);
     final energy = profile.energy;
     final suscoins = profile.suscoins;
-    final suslikName = 'Валера';
-    final suslikImage = getSuslikImage(energy);
-    final canFeed = suscoins > 0 && energy < 3;
     final visitsInARow = userProgress.daysInARow;
 
     return Scaffold(
@@ -56,79 +54,14 @@ class EnergyRechargePage extends ConsumerWidget {
             ),
             const Gap(24),
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 18),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F4F6),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Text(
-                      'Суслик $suslikName',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Color(0xFF222222),
-                      ),
-                    ),
-                    const Gap(10),
-                    Image.asset(
-                      suslikImage,
-                      width: 240,
-                      height: 240,
-                      fit: BoxFit.contain,
-                    ),
-                    const Gap(10),
-                    // Посещений подряд (бар)
-                    const Text(
-                      'Посещений подряд',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Color(0xFF222222),
-                      ),
-                    ),
-                    const Gap(8),
-                    StreakBar(streak: visitsInARow),
-                    const Gap(18),
-                    // Энергия и сускоины с иконками info
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Text('Энергия', style: TextStyle(fontSize: 15, color: Color(0xFF222222))),
-                            const SizedBox(width: 4),
-                            Icon(Icons.info_outline, size: 18, color: Color(0xFF222222)),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Text('Сускоины', style: TextStyle(fontSize: 15, color: Color(0xFF222222))),
-                            const SizedBox(width: 4),
-                            Icon(Icons.info_outline, size: 18, color: Color(0xFF222222)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const Gap(10),
-                    // Визуальное отображение энергии и сускоина (как в ProfileStatsBar)
-                    _EnergyAndSuscoinBar(energy: energy, suscoins: suscoins),
-                    const Gap(18),
-                    AppButton(
-                      title: 'Покормить',
-                      onTap: canFeed
-                          ? () {
-                              ref.read(profileProvider.notifier).spendSuscoins(1);
-                              ref.read(profileProvider.notifier).addEnergy(1);
-                            }
-                          : null,
-                    ),
-                  ],
-                ),
+              child: FeedSuslikWidget(
+                streak: visitsInARow,
+                energy: energy,
+                suscoins: suscoins,
+                onFeed: () {
+                  ref.read(profileProvider.notifier).spendSuscoins(1);
+                  ref.read(profileProvider.notifier).addEnergy(1);
+                },
               ),
             ),
             const Gap(18),

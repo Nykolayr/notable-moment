@@ -153,7 +153,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
 
   Future<void> addEnergy(int count) async {
-    final newEnergy = (state.energy) + count;
+    final newEnergy = ((state.energy) + count).clamp(0, 3);
     await _profileService.saveProfile(energy: newEnergy);
     state = state.copyWith(energy: newEnergy);
     Logger.i('profileProvider -- addEnergy: +$count => $newEnergy');
