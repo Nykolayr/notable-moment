@@ -89,9 +89,10 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
     return false;
   }
 
-  void completePlace(String routeId, String placeId) {
+  void completePlace(String routeId, String placeId, String userId) {
     state.routes.putIfAbsent(routeId, () => RouteProgress(completedPlaces: {}, completedQuests: {}));
     state.routes[routeId]!.completedPlaces.add(placeId);
+    saveToFirestore(userId);
   }
 
   void updateRoutes(List<dynamic> newRoutes) {
@@ -112,7 +113,7 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
     }
   }
 
-  void spendSuscoinAndUpdateHints(String routeId, int newHintsLeft) {
+  void spendSuscoinAndUpdateHints(String routeId, int newHintsLeft, String userId) {
     final routeProgress = state.routes[routeId];
     final updatedRouteProgress = routeProgress?.copyWith(hintsLeft: newHintsLeft) ??
         RouteProgress(completedPlaces: {}, completedQuests: {}, hintsLeft: newHintsLeft);
@@ -122,6 +123,7 @@ class UserProgressNotifier extends StateNotifier<UserProgress> {
       suscoins: state.suscoins - 1,
       routes: newRoutes,
     );
+    saveToFirestore(userId);
   }
 
   Future<List<Achievement>> fetchAchievements(String userId) async {

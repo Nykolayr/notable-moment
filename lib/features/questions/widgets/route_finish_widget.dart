@@ -117,12 +117,12 @@ class QuestFinishWidget extends StatelessWidget {
           body: Column(
             children: [
               const SizedBox(height: 120),
-              Text('Отличная работа!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+              Text('Отличная работа!', style:1TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
               Image.asset(suslikAsset, width: 160, height: 160),
               const SizedBox(height: 16),
               Text(
-                '$correctCount из $total верных ответов',
+                '$total из $total верных ответов',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),

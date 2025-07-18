@@ -23,6 +23,7 @@ import 'package:notable_moments/features/questions/model/anagram_question.dart';
 import 'package:notable_moments/features/questions/page_type_question/pair_test_widget.dart';
 import 'package:notable_moments/features/questions/model/pair_question.dart';
 import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
+import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -215,7 +216,12 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
 
     if (isLastTestInPoint) {
       // Сохраняем прогресс точки и начисляем сускоины
-      userProgressNotifier.completePlace(routeId, placeId);
+      userProgressNotifier.completePlace(routeId, placeId, profile.uid);
+
+      // Также обновляем progressProvider для синхронизации с UI
+      final progressNotifier = ref.read(progressProvider.notifier);
+      progressNotifier.unlockNext(routeId);
+
       ref.read(profileProvider.notifier).addSuscoins(tests.length);
       if (isLastPoint) {
         // Это последняя точка маршрута — показываем итог маршрута
@@ -365,7 +371,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                         onBuy: () {
                           // Списываем сускоин и уменьшаем количество подсказок
                           final userProgressNotifier = ref.read(userProgressProvider.notifier);
-                          userProgressNotifier.spendSuscoinAndUpdateHints(routeId, hintsLeft - 1);
+                          userProgressNotifier.spendSuscoinAndUpdateHints(routeId, hintsLeft - 1, profile.uid);
                           _useHint(routeId);
                         },
                       );
