@@ -171,7 +171,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   final FocusNode _focusNode = FocusNode();
 
   late AnimationController _animationController;
-  static const double _collapsedHeightFactor = 0.101;
+  static const double _collapsedHeightFactor = 0.105;
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
 
@@ -345,7 +345,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                 // Обновляем все точки с новыми размерами
                 for (int j = 0; j < mapObjects.length; j++) {
                   final obj = mapObjects[j];
-                  if (obj is PlacemarkMapObject && obj.mapId.value.startsWith('placemark_')) {
+                  if (obj is PlacemarkMapObject && obj.mapId.value.startsWith('placemark_${route.id}_$i')) {
                     final isThisSelected = obj.mapId.value == 'placemark_${route.id}_$i';
                     final newScale = isThisSelected ? 1.2 : 1.0;
 
@@ -366,21 +366,9 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                 }
               });
 
-              // Показываем окно маршрута при нажатии на точку
-              ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
-
-              // Закрываем предыдущие SnackBar перед показом нового
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-              // Показываем информацию о точке через SnackBar на 1 секунду
-              final taskCount = point.tests.length;
-              final isOpen = !point.isDraft;
-              final pointInfo = '${point.title}\n(заданий - $taskCount) ${isOpen ? 'Открыто' : 'Закрыто'}';
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(pointInfo),
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => RouteMapScreen(route: toRouteModel(route)),
                 ),
               );
             },
