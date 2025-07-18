@@ -23,22 +23,10 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
 
+// Используем метод расширения из route_admin_model.dart
 RouteModel toRouteModel(RouteAdminModel admin) {
-  return RouteModel(
-    id: admin.id,
-    title: admin.title,
-    description: admin.description,
-    points: admin.points.map((p) {
-      return RoutePoint(
-        name: p.title, // ← Исправлено: теперь берём название точки
-        description: p.description,
-        latitude: p.latitude,
-        longitude: p.longitude,
-        tests: p.tests,
-      );
-    }).toList(),
-    taskCount: admin.points.length,
-  );
+  // Используем метод расширения
+  return admin.toRouteModel();
 }
 
 class RoutesScreen extends ConsumerStatefulWidget {

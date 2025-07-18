@@ -17,7 +17,20 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
     state = state.copyWith(isLoading: true);
     _routesService.watchRoutes().listen(
       (routes) async {
-        Logger.i('routesProvider watchRoutes: routes.length:  routes.length}');
+        Logger.i('routesProvider watchRoutes: получено ${routes.length} маршрутов');
+
+        // Проверяем, есть ли изменения в маршрутах
+        final hasChanges = _checkForChanges(state.allRoutes, routes);
+        if (hasChanges) {
+          Logger.i('routesProvider: обнаружены изменения в маршрутах, обновляем состояние');
+
+          // Логируем информацию о подсказках в первом маршруте для отладки
+          if (routes.isNotEmpty && routes.first.points.isNotEmpty && routes.first.points.first.tests.isNotEmpty) {
+            final firstTest = routes.first.points.first.tests.first;
+            Logger.i('routesProvider: первый тест в первой точке имеет подсказку: "${firstTest.hint}"');
+          }
+        }
+
         state = state.copyWith(allRoutes: routes, isLoading: false);
       },
       onError: (error) {
@@ -26,6 +39,28 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
         // Не обновляем состояние при ошибке, чтобы сохранить предыдущие данные
       },
     );
+  }
+
+  // Вспомогательный метод для проверки изменений в маршрутах
+  bool _checkForChanges(List<RouteAdminModel> oldRoutes, List<RouteAdminModel> newRoutes) {
+    if (oldRoutes.length != newRoutes.length) return true;
+
+    for (int i = 0; i < oldRoutes.length; i++) {
+      if (oldRoutes[i].id != newRoutes[i].id) return true;
+
+      // Проверяем изменения в точках
+      if (oldRoutes[i].points.length != newRoutes[i].points.length) return true;
+
+      for (int j = 0; j < oldRoutes[i].points.length; j++) {
+        final oldPoint = oldRoutes[i].points[j];
+        final newPoint = newRoutes[i].points[j];
+
+        // Проверяем изменения в тестах
+        if (oldPoint.tests.length != newPoint.tests.length) return true;
+      }
+    }
+
+    return false;
   }
 
   Future<bool> createRoute({

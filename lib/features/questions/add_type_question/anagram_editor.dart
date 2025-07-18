@@ -16,6 +16,7 @@ class AnagramEditor extends StatefulWidget {
 class _AnagramEditorState extends State<AnagramEditor> {
   late TextEditingController _questionController;
   late TextEditingController _answerController;
+  late TextEditingController _hintController;
   late List<String> _letters;
 
   @override
@@ -23,6 +24,7 @@ class _AnagramEditorState extends State<AnagramEditor> {
     super.initState();
     _questionController = TextEditingController(text: widget.initial.text);
     _answerController = TextEditingController(text: widget.initial.answer);
+    _hintController = TextEditingController(text: widget.initial.hint);
     _letters =
         widget.initial.letters.isNotEmpty ? List<String>.from(widget.initial.letters) : _shuffle(widget.initial.answer);
     WidgetsBinding.instance.addPostFrameCallback((_) => _notifyParent());
@@ -32,6 +34,7 @@ class _AnagramEditorState extends State<AnagramEditor> {
   void dispose() {
     _questionController.dispose();
     _answerController.dispose();
+    _hintController.dispose();
     super.dispose();
   }
 
@@ -40,6 +43,7 @@ class _AnagramEditorState extends State<AnagramEditor> {
       text: _questionController.text,
       answer: _answerController.text,
       letters: _letters,
+      hint: _hintController.text,
     );
     final isValid = _questionController.text.trim().isNotEmpty &&
         _answerController.text.trim().length > 1 &&
@@ -48,28 +52,23 @@ class _AnagramEditorState extends State<AnagramEditor> {
     widget.onChanged(data, isValid);
   }
 
-  List<String> _shuffle(String value) {
-    final chars = value.trim().split('');
-    final rnd = Random();
-    for (int i = chars.length - 1; i > 0; i--) {
-      int j = rnd.nextInt(i + 1);
-      final tmp = chars[i];
-      chars[i] = chars[j];
-      chars[j] = tmp;
-    }
-    return chars;
+  void _onAnswerChanged(String value) {
+    setState(() {
+      _letters = _shuffle(value);
+      _notifyParent();
+    });
+  }
+
+  List<String> _shuffle(String word) {
+    if (word.isEmpty) return [];
+    final letters = word.split('');
+    letters.shuffle(Random());
+    return letters;
   }
 
   void _reshuffle() {
     setState(() {
       _letters = _shuffle(_answerController.text);
-      _notifyParent();
-    });
-  }
-
-  void _onAnswerChanged(String value) {
-    setState(() {
-      _letters = _shuffle(value);
       _notifyParent();
     });
   }
@@ -108,17 +107,28 @@ class _AnagramEditorState extends State<AnagramEditor> {
             spacing: 8,
             runSpacing: 8,
             children: _letters
-                .map((l) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F8FA),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFE0E4EA)),
-                      ),
-                      child: Text(l.toLowerCase(),
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color(0xFF222222)),),
-                    ),)
+                .map(
+                  (l) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FA),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE0E4EA)),
+                    ),
+                    child: Text(
+                      l.toLowerCase(),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color(0xFF222222)),
+                    ),
+                  ),
+                )
                 .toList(),
+          ),
+          const SizedBox(height: 16),
+          AppInputOnlyText(
+            controller: _hintController,
+            hintText: 'Текст подсказки',
+            maxLines: 3,
+            onChanged: (_) => setState(_notifyParent),
           ),
         ],
       ),

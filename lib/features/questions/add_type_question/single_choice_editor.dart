@@ -19,22 +19,25 @@ class SingleChoiceEditor extends StatefulWidget {
 class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
   late TextEditingController _questionController;
   late List<TextEditingController> _optionControllers;
+  late TextEditingController _hintController;
   late int _correctIndex;
 
   @override
   void initState() {
     super.initState();
     _questionController = TextEditingController(text: widget.initial.text);
+    _hintController = TextEditingController(text: widget.initial.hint);
     _optionControllers = widget.initial.options.isNotEmpty
         ? widget.initial.options.map((e) => TextEditingController(text: e)).toList()
-        : [TextEditingController(), TextEditingController()];
-    _correctIndex = widget.initial.correctIndex < _optionControllers.length ? widget.initial.correctIndex : 0;
+        : [TextEditingController(), TextEditingController(), TextEditingController()];
+    _correctIndex = widget.initial.correctIndex;
     WidgetsBinding.instance.addPostFrameCallback((_) => _notify());
   }
 
   @override
   void dispose() {
     _questionController.dispose();
+    _hintController.dispose();
     for (final c in _optionControllers) {
       c.dispose();
     }
@@ -44,6 +47,7 @@ class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
   void _notify() {
     final options = _optionControllers.map((c) => c.text.trim()).toList();
     final question = _questionController.text.trim();
+    final hint = _hintController.text.trim();
     final isValid = question.isNotEmpty &&
         options.length >= 2 &&
         options.every((o) => o.isNotEmpty) &&
@@ -56,7 +60,7 @@ class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
         options: options,
         correctIndex: _correctIndex,
         points: widget.initial.points,
-        hint: widget.initial.hint,
+        hint: hint,
       ),
       isValid,
     );
@@ -81,86 +85,76 @@ class _SingleChoiceEditorState extends State<SingleChoiceEditor> {
     _notify();
   }
 
+  void _onOptionChanged(int index, String value) {
+    _notify();
+  }
+
+  void _onSelectCorrect(int index) {
+    setState(() {
+      _correctIndex = index;
+      _notify();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 24),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Выбери один правильный вариант ответа.',
-                style: TextStyle(fontSize: 14, color: Color(0xFF7B7B8B)),
-              ),
-              const SizedBox(height: 20),
-              AppInputOnlyText(
-                controller: _questionController,
-                hintText: 'Введите текст вопроса',
-                onChanged: (_) => _notify(),
-              ),
-              const SizedBox(height: 24),
-              Column(
-                children: List.generate(
-                  _optionControllers.length,
-                  (i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        Radio<int>(
-                          value: i,
-                          groupValue: _correctIndex,
-                          onChanged: (val) {
-                            setState(() {
-                              _correctIndex = val!;
-                            });
-                            _notify();
-                          },
-                          activeColor: Color(0xFFA3D421),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        Expanded(
-                          child: AppInputOnlyText(
-                            controller: _optionControllers[i],
-                            hintText: 'Ответ №${i + 1}',
-                            onChanged: (_) => _notify(),
-                            selected: _correctIndex == i,
-                          ),
-                        ),
-                        if (_optionControllers.length > 2)
-                          IconButton(
-                            icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
-                            splashRadius: 18,
-                            onPressed: () => _removeOption(i),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 24),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppInputOnlyText(
+            controller: _questionController,
+            hintText: 'Текст вопроса',
+            onChanged: (_) => _notify(),
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(
+            _optionControllers.length,
+            (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
                 children: [
-                  TextButton.icon(
-                    onPressed: _addOption,
-                    icon: const Icon(Icons.add, size: 18, color: Color(0xFF2563EB)),
-                    label: const Text('Добавить ответ', style: TextStyle(color: Color(0xFF2563EB))),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF2563EB),
-                      textStyle: const TextStyle(fontWeight: FontWeight.w500),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  Radio<int>(
+                    value: i,
+                    groupValue: _correctIndex,
+                    onChanged: (v) => _onSelectCorrect(v!),
+                  ),
+                  Expanded(
+                    child: AppInputOnlyText(
+                      controller: _optionControllers[i],
+                      hintText: 'Вариант №${i + 1}',
+                      selected: _correctIndex == i,
+                      onChanged: (v) => _onOptionChanged(i, v),
                     ),
                   ),
+                  if (_optionControllers.length > 2)
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 22, color: Colors.redAccent),
+                      onPressed: () => _removeOption(i),
+                    ),
                 ],
               ),
-            ],
+            ),
           ),
-        );
-      },
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _addOption,
+              icon: const Icon(Icons.add, size: 20),
+              label: const Text('Добавить вариант'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AppInputOnlyText(
+            controller: _hintController,
+            hintText: 'Текст подсказки',
+            maxLines: 3,
+            onChanged: (_) => _notify(),
+          ),
+        ],
+      ),
     );
   }
 }

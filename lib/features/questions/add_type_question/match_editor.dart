@@ -16,6 +16,7 @@ class MatchEditor extends StatefulWidget {
 
 class _MatchEditorState extends State<MatchEditor> {
   late TextEditingController _questionController;
+  late TextEditingController _hintController;
   late List<TextEditingController> _leftControllers;
   late List<TextEditingController> _rightControllers;
   late List<String> _leftShuffled;
@@ -25,6 +26,7 @@ class _MatchEditorState extends State<MatchEditor> {
   void initState() {
     super.initState();
     _questionController = TextEditingController(text: widget.initial.text);
+    _hintController = TextEditingController(text: widget.initial.hint);
     final pairs = widget.initial.pairs.isNotEmpty ? widget.initial.pairs : [Pair(left: '', right: '')];
     _leftControllers = pairs.map((e) => TextEditingController(text: e.left)).toList();
     _rightControllers = pairs.map((e) => TextEditingController(text: e.right)).toList();
@@ -36,6 +38,7 @@ class _MatchEditorState extends State<MatchEditor> {
   @override
   void dispose() {
     _questionController.dispose();
+    _hintController.dispose();
     for (final c in _leftControllers) {
       c.dispose();
     }
@@ -54,6 +57,7 @@ class _MatchEditorState extends State<MatchEditor> {
       text: _questionController.text,
       pairs: pairs,
       correctPairs: pairs,
+      hint: _hintController.text,
     );
     final isValid = _questionController.text.trim().isNotEmpty &&
         pairs.isNotEmpty &&
@@ -202,6 +206,13 @@ class _MatchEditorState extends State<MatchEditor> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          AppInputOnlyText(
+            controller: _hintController,
+            hintText: 'Текст подсказки',
+            maxLines: 3,
+            onChanged: (_) => setState(_notifyParent),
           ),
         ],
       ),

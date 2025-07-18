@@ -4,7 +4,7 @@ import 'package:notable_moments/features/questions/add_type_question/app_input_o
 
 /// TrueFalseEditor
 ///
-/// Виджет для создания и редактирования вопроса "Правда или ложь".
+/// Виджет для создания и редактирования вопроса "Правда/Ложь".
 /// Используется на экране создания/редактирования теста.
 /// Принимает и возвращает только TrueFalseQuestion.
 
@@ -20,13 +20,14 @@ class TrueFalseEditor extends StatefulWidget {
 
 class _TrueFalseEditorState extends State<TrueFalseEditor> {
   late TextEditingController _questionController;
+  late TextEditingController _hintController;
   late bool _correct;
-  final List<String> _options = const ['Правда', 'Ложь'];
 
   @override
   void initState() {
     super.initState();
     _questionController = TextEditingController(text: widget.initial.text);
+    _hintController = TextEditingController(text: widget.initial.hint);
     _correct = widget.initial.correct;
     WidgetsBinding.instance.addPostFrameCallback((_) => _notifyParent());
   }
@@ -34,6 +35,7 @@ class _TrueFalseEditorState extends State<TrueFalseEditor> {
   @override
   void dispose() {
     _questionController.dispose();
+    _hintController.dispose();
     super.dispose();
   }
 
@@ -41,14 +43,15 @@ class _TrueFalseEditorState extends State<TrueFalseEditor> {
     final data = widget.initial.copyWith(
       text: _questionController.text,
       correct: _correct,
+      hint: _hintController.text,
     );
     final isValid = _questionController.text.trim().isNotEmpty;
     widget.onChanged(data, isValid);
   }
 
-  void _onSelect(int idx) {
+  void _onSelect(bool value) {
     setState(() {
-      _correct = idx == 0;
+      _correct = value;
       _notifyParent();
     });
   }
@@ -66,41 +69,68 @@ class _TrueFalseEditorState extends State<TrueFalseEditor> {
             hintText: 'Текст вопроса',
             onChanged: (_) => setState(_notifyParent),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          const Text('Выберите правильный ответ:'),
+          const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(_options.length, (i) {
-              final selected = (_correct && i == 0) || (!_correct && i == 1);
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: GestureDetector(
-                    onTap: () => _onSelect(i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFFF1FFCC) : const Color(0xFFF7F8FA),
-                        border: Border.all(
-                          color: selected ? const Color(0xFFA3D421) : Colors.transparent,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => _onSelect(true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _correct ? const Color(0xFFF1FFCC) : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _correct ? const Color(0xFFA3D421) : const Color(0xFFE0E4EA),
+                        width: 1.5,
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _options[i],
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: selected ? const Color(0xFF222222) : const Color(0xFFB0B0B8),
-                        ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Правда',
+                      style: TextStyle(
+                        fontWeight: _correct ? FontWeight.bold : FontWeight.normal,
+                        color: const Color(0xFF222222),
                       ),
                     ),
                   ),
                 ),
-              );
-            }),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _onSelect(false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: !_correct ? const Color(0xFFF1FFCC) : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: !_correct ? const Color(0xFFA3D421) : const Color(0xFFE0E4EA),
+                        width: 1.5,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Ложь',
+                      style: TextStyle(
+                        fontWeight: !_correct ? FontWeight.bold : FontWeight.normal,
+                        color: const Color(0xFF222222),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          AppInputOnlyText(
+            controller: _hintController,
+            hintText: 'Текст подсказки',
+            maxLines: 3,
+            onChanged: (_) => setState(_notifyParent),
           ),
         ],
       ),

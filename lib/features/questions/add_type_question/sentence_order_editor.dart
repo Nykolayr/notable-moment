@@ -22,6 +22,7 @@ class SentenceOrderEditor extends StatefulWidget {
 class _SentenceOrderEditorState extends State<SentenceOrderEditor> {
   late TextEditingController _questionController;
   late TextEditingController _answerController;
+  late TextEditingController _hintController;
   late List<String> _words;
   late List<int> _order;
 
@@ -30,8 +31,8 @@ class _SentenceOrderEditorState extends State<SentenceOrderEditor> {
     super.initState();
     _questionController = TextEditingController(text: widget.initial.text);
     _answerController = TextEditingController(text: widget.initial.words.join(' '));
-    _words =
-        widget.initial.words.isNotEmpty ? List<String>.from(widget.initial.words) : _splitWords(_answerController.text);
+    _hintController = TextEditingController(text: widget.initial.hint);
+    _words = widget.initial.words;
     _order = widget.initial.correctOrder.isNotEmpty
         ? List<int>.from(widget.initial.correctOrder)
         : List.generate(_words.length, (i) => i);
@@ -42,6 +43,7 @@ class _SentenceOrderEditorState extends State<SentenceOrderEditor> {
   void dispose() {
     _questionController.dispose();
     _answerController.dispose();
+    _hintController.dispose();
     super.dispose();
   }
 
@@ -50,6 +52,7 @@ class _SentenceOrderEditorState extends State<SentenceOrderEditor> {
       text: _questionController.text,
       words: _words,
       correctOrder: _order,
+      hint: _hintController.text,
     );
     final isValid = _questionController.text.trim().isNotEmpty &&
         _words.length >= 2 &&
@@ -108,26 +111,45 @@ class _SentenceOrderEditorState extends State<SentenceOrderEditor> {
             ],
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: List.generate(_order.length, (idx) {
-              final i = _order[idx];
-              return Container(
-                width: (MediaQuery.of(context).size.width - 64) / 3,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7F8FA),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE0E4EA)),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  (i < _words.length ? _words[i] : ''),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF222222)),
-                ),
-              );
-            }),
+          const Text('Правильный порядок:'),
+          const SizedBox(height: 8),
+          ...List.generate(
+            _order.length,
+            (i) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F8FA),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE0E4EA)),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '${i + 1}.',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF222222),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _order[i] < _words.length ? _words[_order[i]] : '',
+                      style: const TextStyle(fontSize: 16, color: Color(0xFF222222)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AppInputOnlyText(
+            controller: _hintController,
+            hintText: 'Текст подсказки',
+            maxLines: 3,
+            onChanged: (_) => setState(_notifyParent),
           ),
         ],
       ),

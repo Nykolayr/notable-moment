@@ -1,29 +1,34 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
-import 'package:notable_moments/features/questions/model/question.dart';
-import 'package:notable_moments/features/questions/model/single_choice_question.dart';
+import 'package:notable_moments/features/profile/provider/profile_provider.dart';
+import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
+import 'package:notable_moments/features/questions/model/anagram_question.dart';
+import 'package:notable_moments/features/questions/model/general_question.dart';
 import 'package:notable_moments/features/questions/model/multiple_choice_question.dart';
+import 'package:notable_moments/features/questions/model/pair_question.dart';
+import 'package:notable_moments/features/questions/model/question.dart';
 import 'package:notable_moments/features/questions/model/question_type.dart';
+import 'package:notable_moments/features/questions/model/single_choice_question.dart';
+import 'package:notable_moments/features/questions/model/true_false_question.dart';
+import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
+import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
+import 'package:notable_moments/features/questions/widgets/modals.dart';
 import 'package:notable_moments/features/questions/widgets/profile_stats_bar.dart';
+import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'package:notable_moments/features/questions/model/order_question.dart';
+import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:collection/collection.dart';
 import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
 import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
-import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
-import 'package:notable_moments/features/profile/provider/profile_provider.dart';
-import 'package:notable_moments/features/questions/widgets/modals.dart';
-import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
-import 'package:notable_moments/features/questions/model/general_question.dart';
-import 'package:notable_moments/features/questions/model/true_false_question.dart';
-import 'package:notable_moments/features/questions/model/anagram_question.dart';
 import 'package:notable_moments/features/questions/page_type_question/pair_test_widget.dart';
-import 'package:notable_moments/features/questions/model/pair_question.dart';
-import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
-import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -76,9 +81,25 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
       final type = currentTest?.type ?? QuestionTypeTest.singleChoice;
       if (type == QuestionTypeTest.singleChoice) {
         selectedIndex = (currentTest as SingleChoiceQuestion).correctIndex;
+        selectedIndexes = [selectedIndex!];
       } else if (type == QuestionTypeTest.multipleChoice) {
         selectedIndexes = List<int>.from((currentTest as MultipleChoiceQuestion).correctIndexes);
+      } else if (type == QuestionTypeTest.general) {
+        selectedIndexes = [(currentTest as GeneralQuestion).correctIndex];
+      } else if (type == QuestionTypeTest.trueFalse) {
+        selectedIndexes = [(currentTest as TrueFalseQuestion).correct ? 0 : 1];
+      } else if (type == QuestionTypeTest.order) {
+        selectedIndexes = List<int>.from((currentTest as OrderQuestion).correctOrder);
+      } else if (type == QuestionTypeTest.sentenceOrder) {
+        selectedIndexes = List<int>.from((currentTest as SentenceOrderQuestion).correctOrder);
+      } else if (type == QuestionTypeTest.pair) {
+        // Для pair: подсвечиваем все пары как правильные (если поддерживается)
+        // Здесь можно реализовать свою логику, если в UI есть selectedIndexes для пар
+        // Например, selectedIndexes = [0, 1, 2, ...] для всех пар
+        final pairCount = (currentTest as PairQuestion).pairs.length;
+        selectedIndexes = List<int>.generate(pairCount, (i) => i);
       }
+      // Для анаграммы ничего не делаем
       isCorrect = true; // сразу показываем кнопку "Далее"
       answered = true;
       showChip = false;
@@ -366,14 +387,27 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                       }
                     },
                     onHintPressed: () async {
+                      final points = widget.route.points;
+                      final tests = points[widget.currentIndex].tests;
+                      final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
+                      final hintText = currentTest?.hint ?? '';
+
+                      print('Запрошена подсказка для теста: ${currentTest?.text}');
+                      print('Текст подсказки: "$hintText"');
+
+                      if (hintText.trim().isEmpty) {
+                        print('Подсказка пуста, показываем сообщение "Нет подсказки"');
+                        await showNoHintModal(context);
+                        return;
+                      }
                       await showBuyHintModal(
                         context,
                         hintsLeft: hintsLeft,
-                        onBuy: () {
-                          // Списываем сускоин и уменьшаем количество подсказок
+                        onBuy: () async {
+                          ref.read(profileProvider.notifier).spendSuscoins(1);
                           final userProgressNotifier = ref.read(userProgressProvider.notifier);
                           userProgressNotifier.spendSuscoinAndUpdateHints(routeId, hintsLeft - 1, profile.uid);
-                          _useHint(routeId);
+                          await showHintInfoModal(context, text: hintText, hintsLeft: hintsLeft - 1);
                         },
                       );
                     },

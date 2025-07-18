@@ -183,3 +183,30 @@ Future<void> showHintInfoModal(BuildContext context, {required String text, requ
     ),
   );
 }
+
+Future<void> showNoHintModal(BuildContext context) {
+  return showDialog(
+    context: context,
+    builder: (dialogContext) => AppModal(
+      icon: SvgPicture.asset('assets/svg/lamp.svg', width: 32, height: 32),
+      title: 'Нет подсказки',
+      text: 'Для этого вопроса нет подсказки.',
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF466BFF),
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          child: const Text(
+            'Понятно',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+          ),
+        ),
+      ],
+    ),
+  );
+}

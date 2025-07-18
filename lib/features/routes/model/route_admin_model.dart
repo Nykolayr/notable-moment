@@ -109,6 +109,7 @@ extension RouteAdminMapper on RouteAdminModel {
       id: id,
       title: title,
       description: description,
+      whyThisRoute: whyThisRoute,
       points: points.map((p) {
         return RoutePoint(
           name: p.title,

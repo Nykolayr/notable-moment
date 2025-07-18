@@ -15,6 +15,7 @@ class OrderEditor extends StatefulWidget {
 
 class _OrderEditorState extends State<OrderEditor> {
   late TextEditingController _questionController;
+  late TextEditingController _hintController;
   late List<TextEditingController> _optionControllers;
   late List<int> _order;
 
@@ -22,6 +23,7 @@ class _OrderEditorState extends State<OrderEditor> {
   void initState() {
     super.initState();
     _questionController = TextEditingController(text: widget.initial.text);
+    _hintController = TextEditingController(text: widget.initial.hint);
     _optionControllers = widget.initial.items.isNotEmpty
         ? widget.initial.items.map((e) => TextEditingController(text: e)).toList()
         : [TextEditingController(), TextEditingController(), TextEditingController()];
@@ -34,6 +36,7 @@ class _OrderEditorState extends State<OrderEditor> {
   @override
   void dispose() {
     _questionController.dispose();
+    _hintController.dispose();
     for (final c in _optionControllers) {
       c.dispose();
     }
@@ -46,6 +49,7 @@ class _OrderEditorState extends State<OrderEditor> {
       text: _questionController.text,
       items: items,
       correctOrder: _order,
+      hint: _hintController.text,
     );
     final isValid = _questionController.text.trim().isNotEmpty &&
         items.length >= 2 &&
@@ -54,38 +58,36 @@ class _OrderEditorState extends State<OrderEditor> {
     widget.onChanged(data, isValid);
   }
 
-  void _onOptionChanged(int idx, String value) {
-    setState(_notifyParent);
-  }
-
   void _addOption() {
     setState(() {
       _optionControllers.add(TextEditingController());
-      _order.add(_order.length);
-      _notifyParent();
+      _order = List.generate(_optionControllers.length, (i) => i);
     });
+    _notifyParent();
   }
 
-  void _removeOption(int idx) {
+  void _removeOption(int index) {
     if (_optionControllers.length <= 2) return;
     setState(() {
-      _optionControllers.removeAt(idx).dispose();
-      _order.removeWhere((i) => i == idx);
-      _order = _order.map((i) => i > idx ? i - 1 : i).toList();
-      _notifyParent();
+      _optionControllers.removeAt(index).dispose();
+      _order = List.generate(_optionControllers.length, (i) => i);
     });
+    _notifyParent();
+  }
+
+  void _onOptionChanged(int index, String value) {
+    _notifyParent();
   }
 
   void _reshuffle() {
     setState(() {
-      _order.shuffle(Random());
+      _order = List.generate(_optionControllers.length, (i) => i)..shuffle(Random());
       _notifyParent();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = _optionControllers.map((c) => c.text).toList();
     return SingleChildScrollView(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 24),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -139,40 +141,45 @@ class _OrderEditorState extends State<OrderEditor> {
             ],
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: List.generate(_order.length, (idx) {
-              final i = _order[idx];
-              return Container(
-                width: (MediaQuery.of(context).size.width - 64) / 3,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7F8FA),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE0E4EA)),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  (i < items.length ? items[i] : ''),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF222222)),
-                ),
-              );
-            }),
-          ),
+          const Text('Правильный порядок:'),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              _order.length,
-              (i) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('${i + 1}', style: const TextStyle(fontSize: 16, color: Color(0xFFB0B0B8))),
+          ...List.generate(
+            _order.length,
+            (i) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F8FA),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE0E4EA)),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '${i + 1}.',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF222222),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _order[i] < _optionControllers.length ? _optionControllers[_order[i]].text : '',
+                      style: const TextStyle(fontSize: 16, color: Color(0xFF222222)),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+          const SizedBox(height: 16),
+          AppInputOnlyText(
+            controller: _hintController,
+            hintText: 'Текст подсказки',
+            maxLines: 3,
+            onChanged: (_) => setState(_notifyParent),
           ),
         ],
       ),

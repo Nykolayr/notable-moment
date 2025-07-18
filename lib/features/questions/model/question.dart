@@ -21,7 +21,7 @@ abstract class QuestionTest {
     required this.text,
     required this.type,
     this.points = 1,
-    this.hint,
+    this.hint = '',
   });
 
   Map<String, dynamic> toJson();
@@ -34,23 +34,24 @@ abstract class QuestionTest {
 
   static QuestionTest fromJson(Map<String, dynamic> json) {
     final type = QuestionTypeTest.values.byName(json['type']);
+    final hint = json['hint'] ?? '';
     switch (type) {
       case QuestionTypeTest.singleChoice:
-        return SingleChoiceQuestion.fromJson(json);
+        return SingleChoiceQuestion.fromJson(json).copyWith(hint: hint);
       case QuestionTypeTest.multipleChoice:
-        return MultipleChoiceQuestion.fromJson(json);
+        return MultipleChoiceQuestion.fromJson(json).copyWith(hint: hint);
       case QuestionTypeTest.anagram:
-        return AnagramQuestion.fromJson(json);
+        return AnagramQuestion.fromJson(json).copyWith(hint: hint);
       case QuestionTypeTest.order:
-        return OrderQuestion.fromJson(json);
+        return OrderQuestion.fromJson(json).copyWith(hint: hint);
       case QuestionTypeTest.pair:
-        return PairQuestion.fromJson(json);
+        return PairQuestion.fromJson(json).copyWith(hint: hint);
       case QuestionTypeTest.general:
-        return GeneralQuestion.fromJson(json);
+        return GeneralQuestion.fromJson(json).copyWith(hint: hint);
       case QuestionTypeTest.trueFalse:
-        return TrueFalseQuestion.fromJson(json);
+        return TrueFalseQuestion.fromJson(json).copyWith(hint: hint);
       case QuestionTypeTest.sentenceOrder:
-        return SentenceOrderQuestion.fromJson(json);
+        return SentenceOrderQuestion.fromJson(json).copyWith(hint: hint);
     }
   }
 }
