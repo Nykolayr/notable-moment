@@ -354,6 +354,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                   child: ProfileStatsBar(
                     suscoins: suscoins,
                     energy: energy,
+                    isAdmin: profile.isAdmin,
                     onAddSuscoin: () {
                       ref.read(profileProvider.notifier).addSuscoins(1);
                     },

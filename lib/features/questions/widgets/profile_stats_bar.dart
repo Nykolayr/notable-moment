@@ -11,6 +11,8 @@ class ProfileStatsBar extends ConsumerWidget {
   final VoidCallback? onHintPressed;
   final int hintsLeft;
   final bool hintUsedThisTest;
+  final bool isAdmin;
+
   const ProfileStatsBar({
     super.key,
     required this.suscoins,
@@ -20,6 +22,7 @@ class ProfileStatsBar extends ConsumerWidget {
     this.onHintPressed,
     this.hintsLeft = 3,
     this.hintUsedThisTest = false,
+    this.isAdmin = false,
   });
 
   @override
@@ -52,20 +55,22 @@ class ProfileStatsBar extends ConsumerWidget {
           ),
         ),
         const Spacer(),
-        IconButton(
-          icon: const Icon(Icons.add_circle_outline, color: Color(0xFF4A90E2)),
-          iconSize: 32,
-          tooltip: 'Добавить сускоин',
-          onPressed: onAddSuscoin,
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          icon: const Icon(Icons.flash_on, color: Color(0xFFFFB800)),
-          iconSize: 32,
-          tooltip: 'Добавить энергию',
-          onPressed: onAddEnergy,
-        ),
-        const SizedBox(width: 8),
+        if (isAdmin) ...[
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: Color(0xFF4A90E2)),
+            iconSize: 32,
+            tooltip: 'Добавить сускоин',
+            onPressed: onAddSuscoin,
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.flash_on, color: Color(0xFFFFB800)),
+            iconSize: 32,
+            tooltip: 'Добавить энергию',
+            onPressed: onAddEnergy,
+          ),
+          const SizedBox(width: 8),
+        ],
         GestureDetector(
           onTap: onHintPressed,
           child: Container(
