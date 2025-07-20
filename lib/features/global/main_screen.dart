@@ -31,6 +31,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool result, PopInvokedWithResultCallback? callback) async {
+        print('>>> onPopInvokedWithResult main: $result, $callback');
         // Показываем диалог подтверждения выхода
         final shouldPop = await showDialog<bool>(
               context: context,

@@ -2,8 +2,8 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
@@ -24,7 +24,6 @@ import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/questions/model/order_question.dart';
 import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
-import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:collection/collection.dart';
 import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
 import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
@@ -60,6 +59,60 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   ValueNotifier<bool> pairCheckNotifier = ValueNotifier(false);
   bool allPairsCompleted = false;
 
+  // Метод для показа диалога подтверждения выхода
+  Future<bool> _showExitConfirmationDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Вы действительно хотите выйти?',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        content: const Text(
+          'Вы не завершили квест, новое место не будет открыто',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Colors.grey.shade300),
+                    ),
+                  ),
+                  child: const Text('Нет, остаюсь', style: TextStyle(color: Colors.black)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF466BFF),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Да', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ],
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      ),
+    );
+
+    return result ?? false;
+  }
+
   void _showResultChip() {
     setState(() {
       showChip = true;
@@ -72,7 +125,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     });
   }
 
-  void _useHint(String routeId) {
+  void useHint(String routeId) {
     setState(() {
       hintUsedThisTest = true;
       final points = widget.route.points;
@@ -125,6 +178,23 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
         );
       });
     }
+
+    // Добавляем обработчик физической кнопки назад
+    SystemChannels.navigation.setMethodCallHandler((MethodCall call) async {
+      print('>>> SystemChannels.navigation: ${call.method}');
+      if (call.method == 'popRoute') {
+        final shouldPop = await _showExitConfirmationDialog();
+        if (shouldPop && mounted) {
+          // Если пользователь подтвердил выход, закрываем экран
+          Navigator.of(context).pop();
+          return null;
+        }
+        // Возвращаем null, чтобы система знала, что мы обработали событие
+        return null;
+      }
+      return null;
+    });
+
     // --- Инициализация подсказок на маршрут ---
     final routeId = widget.route.id;
     final routeProgress = userProgress.routes[routeId];
@@ -354,168 +424,184 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     final suscoins = profile.suscoins;
     final energy = profile.energy;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F6),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: TopProgressBar(
-                    current: currentTestIndex + 1,
-                    total: tests.length,
-                    onExit: () => Navigator.of(context).pop(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-                  child: ProfileStatsBar(
-                    suscoins: suscoins,
-                    energy: energy,
-                    isAdmin: profile.isAdmin,
-                    onAddSuscoin: () {
-                      ref.read(profileProvider.notifier).addSuscoins(1);
-                    },
-                    onAddEnergy: () {
-                      final notifier = ref.read(profileProvider.notifier);
-                      final currentEnergy = ref.read(profileProvider).energy;
-                      if (currentEnergy < 3) {
-                        notifier.addEnergy(1);
-                      }
-                    },
-                    onHintPressed: () async {
-                      final points = widget.route.points;
-                      final tests = points[widget.currentIndex].tests;
-                      final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
-                      final hintText = currentTest?.hint ?? '';
-
-                      print('Запрошена подсказка для теста: ${currentTest?.text}');
-                      print('Текст подсказки: "$hintText"');
-
-                      if (hintText.trim().isEmpty) {
-                        print('Подсказка пуста, показываем сообщение "Нет подсказки"');
-                        await showNoHintModal(context);
-                        return;
-                      }
-                      await showBuyHintModal(
-                        context,
-                        hintsLeft: hintsLeft,
-                        onBuy: () async {
-                          ref.read(profileProvider.notifier).spendSuscoins(1);
-                          final userProgressNotifier = ref.read(userProgressProvider.notifier);
-                          userProgressNotifier.spendSuscoinAndUpdateHints(routeId, hintsLeft - 1, profile.uid);
-                          await showHintInfoModal(context, text: hintText, hintsLeft: hintsLeft - 1);
-                        },
-                      );
-                    },
-                    hintsLeft: hintsLeft,
-                    hintUsedThisTest: hintUsedThisTest,
-                  ),
-                ),
-                const Gap(18),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: type == QuestionTypeTest.pair
-                        ? PairTestWidget(
-                            question: currentTest as PairQuestion,
-                            onSelectionChanged: (selectedIndexes, canAnswer) {
-                              setState(() {
-                                pairButtonActive = canAnswer;
-                                allPairsCompleted = false;
-                              });
-                            },
-                            onPairChecked: (isCorrect, selectedIndexes) {
-                              if (!isCorrect) {
-                                ref.read(profileProvider.notifier).spendEnergy(1);
-                                setState(() {
-                                  showChip = true;
-                                  this.isCorrect = false;
-                                });
-                                final userProgress = ref.read(profileProvider);
-                                if (userProgress.energy == 0) {
-                                  Future.microtask(() async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => EnergyRechargePage(routeId: widget.route.id),
-                                      ),
-                                    );
-                                  });
-                                }
-                              }
-                            },
-                            onAllPairsCompleted: () {
-                              setState(() {
-                                allPairsCompleted = true;
-                                pairButtonActive = false;
-                                showChip = true;
-                                isCorrect = true;
-                              });
-                              ref.read(profileProvider.notifier).addSuscoins(1);
-                            },
-                            checkPairSignal: pairCheckNotifier,
-                          )
-                        : type.buildTestWidget(
-                            currentTest!,
-                            onAnswered: (isCorrect, selected) {
-                              setState(() {
-                                selectedIndexes = List<int>.from(selected);
-                                this.isCorrect = isCorrect;
-                                answered = selectedIndexes.isNotEmpty;
-                                wrongIndex = null;
-                              });
-                            },
-                            selectedIndexes: selectedIndexes,
-                            showResult: isCorrect == true,
-                            isCorrect: isCorrect,
-                            wrongIndexes: wrongIndexes,
-                            onSelectionChanged: (newList) {
-                              setState(() {
-                                selectedIndexes = List<int>.from(newList);
-                                answered = selectedIndexes.isNotEmpty;
-                              });
-                            },
-                          ),
-                  ),
-                ),
-                const Gap(12),
-                // --- Кнопка ---
-                if (!showRecharge)
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        print('>>> onPopInvokedWithResult: $didPop, $result');
+        if (didPop) return;
+        final shouldPop = await _showExitConfirmationDialog();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F4F6),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    child: type == QuestionTypeTest.pair
-                        ? AppButton(
-                            title: allPairsCompleted ? 'Далее' : 'Ответить',
-                            onTap: allPairsCompleted
-                                ? () {
-                                    setState(() {
-                                      showChip = false;
-                                      isCorrect = null;
-                                    });
-                                    _onNext(tests);
-                                  }
-                                : (pairButtonActive
-                                    ? () {
-                                        pairCheckNotifier.value = true;
-                                      }
-                                    : null),
-                          )
-                        : AppButton(
-                            title: _getButtonTitle(currentTest, type),
-                            onTap: getButtonAction(currentTest, type, tests),
-                          ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: TopProgressBar(
+                      current: currentTestIndex + 1,
+                      total: tests.length,
+                      onExit: () async {
+                        final shouldExit = await _showExitConfirmationDialog();
+                        if (shouldExit && context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                    ),
                   ),
-              ],
-            ),
-            if (showChip && isCorrect != null)
-              AnswerResultChip(
-                isCorrect: isCorrect!,
-                onHide: _hideResultChip,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                    child: ProfileStatsBar(
+                      suscoins: suscoins,
+                      energy: energy,
+                      isAdmin: profile.isAdmin,
+                      onAddSuscoin: () {
+                        ref.read(profileProvider.notifier).addSuscoins(1);
+                      },
+                      onAddEnergy: () {
+                        final notifier = ref.read(profileProvider.notifier);
+                        final currentEnergy = ref.read(profileProvider).energy;
+                        if (currentEnergy < 3) {
+                          notifier.addEnergy(1);
+                        }
+                      },
+                      onHintPressed: () async {
+                        final points = widget.route.points;
+                        final tests = points[widget.currentIndex].tests;
+                        final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
+                        final hintText = currentTest?.hint ?? '';
+
+                        print('Запрошена подсказка для теста: ${currentTest?.text}');
+                        print('Текст подсказки: "$hintText"');
+
+                        if (hintText.trim().isEmpty) {
+                          print('Подсказка пуста, показываем сообщение "Нет подсказки"');
+                          await showNoHintModal(context);
+                          return;
+                        }
+                        await showBuyHintModal(
+                          context,
+                          hintsLeft: hintsLeft,
+                          onBuy: () async {
+                            ref.read(profileProvider.notifier).spendSuscoins(1);
+                            final userProgressNotifier = ref.read(userProgressProvider.notifier);
+                            userProgressNotifier.spendSuscoinAndUpdateHints(routeId, hintsLeft - 1, profile.uid);
+                            await showHintInfoModal(context, text: hintText, hintsLeft: hintsLeft - 1);
+                          },
+                        );
+                      },
+                      hintsLeft: hintsLeft,
+                      hintUsedThisTest: hintUsedThisTest,
+                    ),
+                  ),
+                  const Gap(18),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: type == QuestionTypeTest.pair
+                          ? PairTestWidget(
+                              question: currentTest as PairQuestion,
+                              onSelectionChanged: (selectedIndexes, canAnswer) {
+                                setState(() {
+                                  pairButtonActive = canAnswer;
+                                  allPairsCompleted = false;
+                                });
+                              },
+                              onPairChecked: (isCorrect, selectedIndexes) {
+                                if (!isCorrect) {
+                                  ref.read(profileProvider.notifier).spendEnergy(1);
+                                  setState(() {
+                                    showChip = true;
+                                    this.isCorrect = false;
+                                  });
+                                  final userProgress = ref.read(profileProvider);
+                                  if (userProgress.energy == 0) {
+                                    Future.microtask(() async {
+                                      await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => EnergyRechargePage(routeId: widget.route.id),
+                                        ),
+                                      );
+                                    });
+                                  }
+                                }
+                              },
+                              onAllPairsCompleted: () {
+                                setState(() {
+                                  allPairsCompleted = true;
+                                  pairButtonActive = false;
+                                  showChip = true;
+                                  isCorrect = true;
+                                });
+                                ref.read(profileProvider.notifier).addSuscoins(1);
+                              },
+                              checkPairSignal: pairCheckNotifier,
+                            )
+                          : type.buildTestWidget(
+                              currentTest!,
+                              onAnswered: (isCorrect, selected) {
+                                setState(() {
+                                  selectedIndexes = List<int>.from(selected);
+                                  this.isCorrect = isCorrect;
+                                  answered = selectedIndexes.isNotEmpty;
+                                  wrongIndex = null;
+                                });
+                              },
+                              selectedIndexes: selectedIndexes,
+                              showResult: isCorrect == true,
+                              isCorrect: isCorrect,
+                              wrongIndexes: wrongIndexes,
+                              onSelectionChanged: (newList) {
+                                setState(() {
+                                  selectedIndexes = List<int>.from(newList);
+                                  answered = selectedIndexes.isNotEmpty;
+                                });
+                              },
+                            ),
+                    ),
+                  ),
+                  const Gap(12),
+                  // --- Кнопка ---
+                  if (!showRecharge)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      child: type == QuestionTypeTest.pair
+                          ? AppButton(
+                              title: allPairsCompleted ? 'Далее' : 'Ответить',
+                              onTap: allPairsCompleted
+                                  ? () {
+                                      setState(() {
+                                        showChip = false;
+                                        isCorrect = null;
+                                      });
+                                      _onNext(tests);
+                                    }
+                                  : (pairButtonActive
+                                      ? () {
+                                          pairCheckNotifier.value = true;
+                                        }
+                                      : null),
+                            )
+                          : AppButton(
+                              title: _getButtonTitle(currentTest, type),
+                              onTap: getButtonAction(currentTest, type, tests),
+                            ),
+                    ),
+                ],
               ),
-          ],
+              if (showChip && isCorrect != null)
+                AnswerResultChip(
+                  isCorrect: isCorrect!,
+                  onHide: _hideResultChip,
+                ),
+            ],
+          ),
         ),
       ),
     );
