@@ -26,6 +26,9 @@ class _RouteSearchModalState extends State<RouteSearchModal> {
   String _query = '';
   List<RouteAdminModel> _filteredRoutes = [];
   Timer? _debounce;
+  final ScrollController _scrollController = ScrollController();
+  int _visibleCount = 3;
+  static const int _pageSize = 3;
 
   @override
   void initState() {
@@ -37,12 +40,14 @@ class _RouteSearchModalState extends State<RouteSearchModal> {
 
     // Подписываемся на изменения текста в поле поиска
     widget.searchController.addListener(_onSearchChanged);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
     widget.searchController.removeListener(_onSearchChanged);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -54,6 +59,7 @@ class _RouteSearchModalState extends State<RouteSearchModal> {
 
       setState(() {
         _query = query;
+        _visibleCount = _pageSize; // сбрасываем лимит при новом поиске
         if (query.isEmpty) {
           _filteredRoutes = List.from(widget.routes);
         } else {
@@ -65,8 +71,19 @@ class _RouteSearchModalState extends State<RouteSearchModal> {
     });
   }
 
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
+      if (_visibleCount < _filteredRoutes.length) {
+        setState(() {
+          _visibleCount = (_visibleCount + _pageSize).clamp(0, _filteredRoutes.length);
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final visibleRoutes = _filteredRoutes.take(_visibleCount).toList();
     return Material(
       color: Colors.transparent,
       child: SafeArea(
@@ -111,13 +128,14 @@ class _RouteSearchModalState extends State<RouteSearchModal> {
                 ),
                 const SizedBox(height: 8),
                 Expanded(
-                  child: _filteredRoutes.isEmpty
+                  child: visibleRoutes.isEmpty
                       ? const Center(child: Text('Ничего не найдено'))
                       : ListView.builder(
+                          controller: _scrollController,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
-                          itemCount: _filteredRoutes.length,
+                          itemCount: visibleRoutes.length,
                           itemBuilder: (context, index) {
-                            final route = _filteredRoutes[index];
+                            final route = visibleRoutes[index];
                             return RouteCard(
                               route: route,
                               onTap: () => widget.onRouteTap(_toRouteModel(route)),
@@ -125,6 +143,11 @@ class _RouteSearchModalState extends State<RouteSearchModal> {
                           },
                         ),
                 ),
+                if (_visibleCount < _filteredRoutes.length)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
               ],
             ),
           ),
