@@ -1,7 +1,7 @@
 name: notable_moments
 description: A new Flutter project.
 publish_to: "none"
-version: 1.0.76
+version: 1.0.77
 
 environment:
   sdk: ">=3.6.2 <4.0.0"

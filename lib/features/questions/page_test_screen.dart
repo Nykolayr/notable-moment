@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:collection/collection.dart';
 import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
@@ -11,22 +12,23 @@ import 'package:notable_moments/features/profile/provider/user_progress_provider
 import 'package:notable_moments/features/questions/model/anagram_question.dart';
 import 'package:notable_moments/features/questions/model/general_question.dart';
 import 'package:notable_moments/features/questions/model/multiple_choice_question.dart';
+import 'package:notable_moments/features/questions/model/order_question.dart';
 import 'package:notable_moments/features/questions/model/pair_question.dart';
 import 'package:notable_moments/features/questions/model/question.dart';
 import 'package:notable_moments/features/questions/model/question_type.dart';
+import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
 import 'package:notable_moments/features/questions/model/single_choice_question.dart';
 import 'package:notable_moments/features/questions/model/true_false_question.dart';
+import 'package:notable_moments/features/questions/page_type_question/anagram_test_widget.dart';
+import 'package:notable_moments/features/questions/page_type_question/order_test_widget.dart';
 import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
 import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
 import 'package:notable_moments/features/questions/widgets/modals.dart';
 import 'package:notable_moments/features/questions/widgets/profile_stats_bar.dart';
+import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
+import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
 import 'package:notable_moments/features/routes/admin/progress_provider.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
-import 'package:notable_moments/features/questions/model/order_question.dart';
-import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
-import 'package:collection/collection.dart';
-import 'package:notable_moments/features/questions/widgets/top_progress_bar.dart';
-import 'package:notable_moments/features/questions/widgets/route_finish_widget.dart';
 import 'package:notable_moments/features/questions/page_type_question/pair_test_widget.dart';
 
 class PageTestScreen extends ConsumerStatefulWidget {
@@ -472,6 +474,14 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                         }
                       },
                       onHintPressed: () async {
+                        // Если подсказка уже была использована на этом тесте, показываем сообщение
+                        if (hintUsedThisTest) {
+                          await showNoHintModal(context,
+                              text:
+                                  'Вы уже использовали подсказку для этого вопроса. Можно использовать только одну подсказку на каждый вопрос.');
+                          return;
+                        }
+
                         final points = widget.route.points;
                         final tests = points[widget.currentIndex].tests;
                         final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
@@ -493,6 +503,11 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                             final userProgressNotifier = ref.read(userProgressProvider.notifier);
                             userProgressNotifier.spendSuscoinAndUpdateHints(routeId, hintsLeft - 1, profile.uid);
                             await showHintInfoModal(context, text: hintText, hintsLeft: hintsLeft - 1);
+
+                            // После показа подсказки отмечаем, что подсказка использована для этого теста
+                            setState(() {
+                              hintUsedThisTest = true;
+                            });
                           },
                         );
                       },

@@ -184,13 +184,13 @@ Future<void> showHintInfoModal(BuildContext context, {required String text, requ
   );
 }
 
-Future<void> showNoHintModal(BuildContext context) {
+Future<void> showNoHintModal(BuildContext context, {String? text}) {
   return showDialog(
     context: context,
     builder: (dialogContext) => AppModal(
       icon: SvgPicture.asset('assets/svg/lamp.svg', width: 32, height: 32),
       title: 'Нет подсказки',
-      text: 'Для этого вопроса нет подсказки.',
+      text: text ?? 'Для этого вопроса нет подсказки.',
       actions: [
         ElevatedButton(
           onPressed: () => Navigator.of(dialogContext).pop(),

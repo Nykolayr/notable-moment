@@ -17,7 +17,6 @@ import 'dart:math';
 import 'package:notable_moments/features/routes/provider/routes_state.dart';
 import '../../../main.dart';
 import 'package:notable_moments/features/routes/route_map_screen.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:notable_moments/features/routes/widgets/route_search_modal.dart';
 
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
