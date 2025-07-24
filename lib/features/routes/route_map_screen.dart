@@ -9,6 +9,7 @@ import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/questions/page_test_screen.dart';
 import 'package:notable_moments/features/routes/widget/router_on_map/point_on_map.dart';
+import 'package:notable_moments/features/routes/utils/route_builder.dart';
 
 class RouteMapScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -50,7 +51,7 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
         .map((p) => Point(latitude: p.latitude!, longitude: p.longitude!))
         .toList();
 
-    // Строим настоящий автомобильный маршрут через YandexDriving
+    // Строим настоящий пеший маршрут через YandexPedestrian
     Polyline? routePolyline;
     if (routePoints.length >= 2) {
       try {
@@ -59,19 +60,20 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
             .map((point) => RequestPoint(point: point, requestPointType: RequestPointType.wayPoint))
             .toList();
 
-        // Запрос на построение маршрута
-        final drivingSession = await YandexDriving.requestRoutes(
+        // Запрос на построение пешего маршрута
+        final pedestrianSession = await YandexPedestrian.requestRoutes(
           points: requestPoints,
-          drivingOptions: DrivingOptions(),
+          avoidSteep: false,
+          timeOptions: TimeOptions(),
         );
 
         // Обработка результата
-        final drivingResult = await drivingSession.$2;
-        if (drivingResult.routes != null && drivingResult.routes!.isNotEmpty) {
-          routePolyline = drivingResult.routes!.first.geometry;
+        final pedestrianResult = await pedestrianSession.$2;
+        if (pedestrianResult.routes != null && pedestrianResult.routes!.isNotEmpty) {
+          routePolyline = pedestrianResult.routes!.first.geometry;
         }
       } catch (e) {
-        Logger.e('_drawRouteAndPoints: Error building driving route: $e');
+        Logger.e('_drawRouteAndPoints: Error building pedestrian route: $e');
       }
     }
 
@@ -203,17 +205,17 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
       child: Scaffold(
         appBar: AppAppBar(title: 'Карта маршрута'),
         body: SingleChildScrollView(
-              child: Padding(
+          child: Padding(
             padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
                   child: Text(
-                      title,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                    ),
+                    title,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
                 ),
                 PointsOnMap(
                   points: points,
@@ -252,10 +254,10 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: SizedBox(
-                        height: 220,
-                        width: double.infinity,
+                    borderRadius: BorderRadius.circular(16),
+                    child: SizedBox(
+                      height: 220,
+                      width: double.infinity,
                       child: AbsorbPointer(
                         absorbing: true,
                         child: _RouteMapView(routePoints: routePoints),
@@ -281,7 +283,7 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
                         buttonText = 'Повторить';
                       }
                       return SizedBox(
-                      width: double.infinity,
+                        width: double.infinity,
                         child: AppButton(
                           title: buttonText,
                           onTap: () {
@@ -320,11 +322,11 @@ class _RouteMapScreenState extends ConsumerState<RouteMapScreen> {
                         ),
                       );
                     },
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -349,31 +351,12 @@ class _RouteMapViewState extends State<_RouteMapView> {
     _buildMapObjects();
   }
 
-  Future<Polyline> buildRoutePolyline(List<Point> points) async {
-    if (points.length < 2) return Polyline(points: points);
-    try {
-      final requestPoints =
-          points.map((point) => RequestPoint(point: point, requestPointType: RequestPointType.wayPoint)).toList();
-      final drivingSession = await YandexDriving.requestRoutes(
-        points: requestPoints,
-        drivingOptions: DrivingOptions(),
-      );
-      final drivingResult = await drivingSession.$2;
-      if (drivingResult.routes != null && drivingResult.routes!.isNotEmpty) {
-        return drivingResult.routes!.first.geometry;
-      }
-    } catch (e) {
-      Logger.e('_RouteMapView: Error building driving route: $e');
-    }
-    return Polyline(points: points);
-  }
-
   void _buildMapObjects() async {
     final points = widget.routePoints;
     final List<MapObject> objects = [];
 
     if (points.length >= 2) {
-      final routePolyline = await buildRoutePolyline(points);
+      final routePolyline = await RouteBuilder.buildRoutePolyline(points);
       objects.add(
         PolylineMapObject(
           mapId: const MapObjectId('route_polyline'),
@@ -409,7 +392,14 @@ class _RouteMapViewState extends State<_RouteMapView> {
   }
 
   Future<void> _fitBoundsToAllPoints() async {
-    final points = widget.routePoints;
+    // Собираем все точки: и точки маршрута, и точки линии
+    final points = <Point>[];
+    points.addAll(widget.routePoints);
+    // Найти PolylineMapObject
+    final polylineObj = _mapObjects.whereType<PolylineMapObject>().firstOrNull;
+    if (polylineObj is PolylineMapObject) {
+      points.addAll(polylineObj.polyline.points);
+    }
     if (points.length < 2 || _mapController == null) return;
 
     final latitudes = points.map((p) => p.latitude).toList();

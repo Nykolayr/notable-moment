@@ -8,6 +8,7 @@ import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
+import 'package:notable_moments/features/routes/utils/route_builder.dart';
 
 class EditRouteMapScreen extends ConsumerStatefulWidget {
   final RouteAdminModel route;
@@ -30,25 +31,6 @@ class _EditRouteMapScreenState extends ConsumerState<EditRouteMapScreen> {
   void initState() {
     super.initState();
     _drawRouteAndPoints();
-  }
-
-  Future<Polyline> buildRoutePolyline(List<Point> points) async {
-    if (points.length < 2) return Polyline(points: points);
-    try {
-      final requestPoints =
-          points.map((point) => RequestPoint(point: point, requestPointType: RequestPointType.wayPoint)).toList();
-      final drivingSession = await YandexDriving.requestRoutes(
-        points: requestPoints,
-        drivingOptions: DrivingOptions(),
-      );
-      final drivingResult = await drivingSession.$2;
-      if (drivingResult.routes != null && drivingResult.routes!.isNotEmpty) {
-        return drivingResult.routes!.first.geometry;
-      }
-    } catch (e) {
-      // ignore
-    }
-    return Polyline(points: points);
   }
 
   static const krasnoyarskPoint = Point(latitude: 56.0267294, longitude: 92.865734);
@@ -140,7 +122,7 @@ class _EditRouteMapScreenState extends ConsumerState<EditRouteMapScreen> {
     if (points.isNotEmpty) {
       final routePoints = points.map((p) => Point(latitude: p.latitude, longitude: p.longitude)).toList();
       if (routePoints.length >= 2) {
-        final routePolyline = await buildRoutePolyline(routePoints);
+        final routePolyline = await RouteBuilder.buildRoutePolyline(routePoints);
         objects.add(
           PolylineMapObject(
             mapId: const MapObjectId('edit_route_polyline'),

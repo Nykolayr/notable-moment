@@ -4,6 +4,8 @@ import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'dart:math' as math;
+import 'package:notable_moments/features/routes/utils/route_builder.dart';
 
 class RouteMapFrame extends StatefulWidget {
   final RouteModel route;
@@ -41,21 +43,7 @@ class _RouteMapFrameState extends State<RouteMapFrame> {
 
     Polyline? routePolyline;
     if (routePoints.length >= 2) {
-      try {
-        final requestPoints = routePoints
-            .map((point) => RequestPoint(point: point, requestPointType: RequestPointType.wayPoint))
-            .toList();
-        final drivingSession = await YandexDriving.requestRoutes(
-          points: requestPoints,
-          drivingOptions: DrivingOptions(),
-        );
-        final drivingResult = await drivingSession.$2;
-        if (drivingResult.routes != null && drivingResult.routes!.isNotEmpty) {
-          routePolyline = drivingResult.routes!.first.geometry;
-        }
-      } catch (e) {
-        Logger.e('RouteMapFrame: Error building driving route: $e');
-      }
+      routePolyline = await RouteBuilder.buildRoutePolyline(routePoints);
     }
     routePolyline ??= Polyline(points: routePoints);
 
@@ -128,6 +116,20 @@ class _RouteMapFrameState extends State<RouteMapFrame> {
     setState(() {
       mapObjects = objects;
     });
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371; // радиус Земли в километрах
+    final double dLat = _degreesToRadians(lat2 - lat1);
+    final double dLon = _degreesToRadians(lon2 - lon1);
+    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.sin(_degreesToRadians(lat1)) * math.sin(_degreesToRadians(lat2)) * math.sin(dLon / 2) * math.sin(dLon / 2);
+    final double c = 2 * math.atan(math.sqrt(a) / math.sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * (math.pi / 180);
   }
 
   Future<void> _fitBoundsToAllPoints() async {

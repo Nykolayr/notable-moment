@@ -18,6 +18,7 @@ import 'package:notable_moments/features/routes/provider/routes_state.dart';
 import '../../../main.dart';
 import 'package:notable_moments/features/routes/route_map_screen.dart';
 import 'package:notable_moments/features/routes/widgets/route_search_modal.dart';
+import 'package:notable_moments/features/routes/utils/route_builder.dart';
 
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
 
@@ -180,37 +181,19 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
 
       // Добавляем линию маршрута, если есть хотя бы 2 точки
       if (routePoints.length >= 2) {
-        // Используем calculatedRoute, если есть, иначе используем обычный polyline
-        final polyline = route.calculatedRoute ?? route.polyline;
-
-        if (polyline.points.isNotEmpty) {
-          objects.add(
-            PolylineMapObject(
-              mapId: MapObjectId('route_${route.id}_line'),
-              polyline: polyline,
-              strokeColor: const Color(0xFF466BFF),
-              strokeWidth: 3.0,
-              onTap: (_, __) {
-                // При нажатии на линию показываем карточку маршрута
-                ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
-              },
-            ),
-          );
-        } else {
-          // Если нет polyline, создаем прямые линии между точками
-          final simplifiedPolyline = _createSimplifiedPolyline(routePoints);
-          objects.add(
-            PolylineMapObject(
-              mapId: MapObjectId('route_${route.id}_line'),
-              polyline: simplifiedPolyline,
-              strokeColor: const Color(0xFF466BFF),
-              strokeWidth: 3.0,
-              onTap: (_, __) {
-                ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
-              },
-            ),
-          );
-        }
+        final polyline = await RouteBuilder.buildRoutePolyline(routePoints);
+        objects.add(
+          PolylineMapObject(
+            mapId: MapObjectId('route_${route.id}_line'),
+            polyline: polyline,
+            strokeColor: const Color(0xFF466BFF),
+            strokeWidth: 3.0,
+            onTap: (_, __) {
+              // При нажатии на линию показываем карточку маршрута
+              ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
+            },
+          ),
+        );
       }
     }
 
@@ -235,47 +218,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
         ),
       );
     }
-  }
-
-  Polyline _createSimplifiedPolyline(List<Point> waypoints) {
-    if (waypoints.length <= 1) return Polyline(points: waypoints);
-
-    final routePoints = <Point>[];
-    final random = Random(42); // Фиксированное зерно для воспроизводимости
-
-    for (int i = 0; i < waypoints.length - 1; i++) {
-      final start = waypoints[i];
-      final end = waypoints[i + 1];
-
-      // Добавляем начальную точку
-      routePoints.add(start);
-
-      // Добавляем промежуточные точки для имитации кривой
-      final segmentCount = 3; // Количество промежуточных точек
-      for (int j = 1; j < segmentCount; j++) {
-        final t = j / segmentCount;
-        final lat = start.latitude + (end.latitude - start.latitude) * t;
-        final lng = start.longitude + (end.longitude - start.longitude) * t;
-
-        // Добавляем небольшое случайное отклонение для имитации кривой дороги
-        final latOffset = (random.nextDouble() - 0.5) * 0.002; // примерно 200 метров
-        final lngOffset = (random.nextDouble() - 0.5) * 0.002;
-
-        routePoints.add(
-          Point(
-            latitude: lat + latOffset,
-            longitude: lng + lngOffset,
-          ),
-        );
-      }
-
-      // Добавляем конечную точку (кроме последней итерации)
-      if (i == waypoints.length - 2) {
-        routePoints.add(end);
-      }
-    }
-
-    return Polyline(points: routePoints);
   }
 
   bool hasRoutesChanged(List<RouteAdminModel> currentRoutes) {
