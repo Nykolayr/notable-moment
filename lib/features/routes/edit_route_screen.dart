@@ -52,7 +52,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
       url: '',
       whyThisRoute: '',
       points: [],
-      isDraft: true,
+      isDraft: false,
       polyline: Polyline(points: []),
       order: 0,
     );

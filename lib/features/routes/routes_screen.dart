@@ -14,7 +14,6 @@ import 'package:notable_moments/features/routes/edit_routes_screen.dart';
 import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'dart:math';
-import 'package:notable_moments/features/routes/provider/routes_state.dart';
 import '../../../main.dart';
 import 'package:notable_moments/features/routes/route_map_screen.dart';
 import 'package:notable_moments/features/routes/widgets/route_search_modal.dart';
@@ -52,7 +51,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
 
   // Добавлено для отслеживания изменений маршрутов
   final List<RouteAdminModel> _previousRoutes = [];
-  bool _subscribedToRoutes = false;
 
   @override
   void initState() {
@@ -74,6 +72,9 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
         // Обновляем состояние для фильтрации
       });
     });
+
+    // Первый раз строим карту
+    _drawRoutesAndPoints();
   }
 
   @override
@@ -93,14 +94,18 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
+    // Подписка на обновления маршрутов
   }
 
   @override
   void didPopNext() {
     super.didPopNext();
-    if (widget.isActive) {
-      _drawRoutesAndPoints();
-    }
+    _drawRoutesAndPoints();
+  }
+
+  void _onRoutesChanged(List<RouteAdminModel> routes) {
+    // Перерисовать карту
+    _drawRoutesAndPoints();
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -272,15 +277,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
     final profileState = ref.watch(profileProvider);
     final routesState = ref.watch(routesProvider);
     final selectedRoute = ref.watch(selectedRouteProvider);
-
-    if (!_subscribedToRoutes) {
-      _subscribedToRoutes = true;
-      ref.listen<RoutesState>(routesProvider, (prev, next) {
-        if (prev?.isLoading == true && next.isLoading == false) {
-          _drawRoutesAndPoints();
-        }
-      });
-    }
 
     // Если карта инициализирована, маршруты загружены, mapObjects пустой и есть маршруты — строим точки
     if (_mapInitialized && !routesState.isLoading && mapObjects.isEmpty && routesState.allRoutes.isNotEmpty) {

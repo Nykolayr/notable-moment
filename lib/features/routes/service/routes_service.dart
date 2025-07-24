@@ -20,7 +20,7 @@ class RoutesService {
     required String url,
     required String whyThisRoute,
     required List<PointAdminModel> points,
-    required bool isDraft,
+    bool isDraft = false,
     required Polyline polyline,
   }) async {
     try {

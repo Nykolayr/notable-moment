@@ -335,7 +335,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         phones: phoneControllers.map((c) => c.text).where((p) => p.isNotEmpty).toList(),
                         url: urlController.text,
                         order: widget.pointAdmin?.order ?? -1,
-                        isDraft: isDraft,
+                        isDraft: widget.pointAdmin?.isDraft ?? false,
                         tests: tests,
                       ),
                     );

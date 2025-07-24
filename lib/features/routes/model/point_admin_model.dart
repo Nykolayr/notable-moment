@@ -33,7 +33,7 @@ class PointAdminModel {
     required this.phones,
     required this.url,
     required this.order,
-    required this.isDraft,
+    this.isDraft = false,
     required this.tests,
   });
 
