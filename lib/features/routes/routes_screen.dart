@@ -342,8 +342,9 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                     const SizedBox(height: 8),
                     AppButton.icon(
                       icon: AppIcon.edit,
-                      onTap: () {
-                        context.push(EditRoutesScreen());
+                      onTap: () async {
+                        await context.push(EditRoutesScreen());
+                        _drawRoutesAndPoints();
                       },
                     ),
                   ],

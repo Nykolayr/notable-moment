@@ -41,7 +41,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
           [TextEditingController()];
   late final List<String> photos = List.from(widget.pointAdmin?.photos ?? []);
   late WorkingHours schedule = widget.pointAdmin?.schedule ?? WorkingHours(periods: []);
-  late bool isDraft = widget.pointAdmin?.isDraft ?? true;
+  late bool isDraft = widget.pointAdmin?.isDraft ?? false;
   late List<QuestionTest> tests = widget.pointAdmin?.tests ?? [];
 
   YandexMapController? mapController;

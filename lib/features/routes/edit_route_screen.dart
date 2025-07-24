@@ -306,7 +306,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                             isLoading = false;
                           });
                           if (res) {
-                            context.pop();
+                            context.pop(true);
                           } else {
                             context.showErrorSnackBar('Ошибка при создании маршрута');
                           }
@@ -327,7 +327,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
                           setState(() {
                             isLoading = false;
                           });
-                          context.pop();
+                          context.pop(true);
                         }
                       : null,
                 ),
