@@ -18,6 +18,7 @@ import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 import 'package:notable_moments/features/questions/model/question.dart';
 import 'package:notable_moments/features/questions/edit_test_screen.dart';
+import 'package:notable_moments/features/routes/widget/photo_grid_widget.dart';
 
 class EditPointScreen extends StatefulWidget {
   const EditPointScreen({super.key, required this.pointAdmin});
@@ -32,6 +33,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
   Point? point;
   final _imagePicker = ImagePicker();
   bool _enableListViewScroll = true;
+  List<XFile> _pickedPhotos = [];
 
   late final titleController = TextEditingController(text: widget.pointAdmin?.title);
   late final descriptionController = TextEditingController(text: widget.pointAdmin?.description);
@@ -288,6 +290,16 @@ class _EditPointScreenState extends State<EditPointScreen> {
             },
           ),
           const SizedBox(height: 12),
+          PhotoGridWidget(
+            photos: _pickedPhotos,
+            onPhotosChanged: (newPhotos) {
+              setState(() {
+                _pickedPhotos = newPhotos;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+
           SizedBox(
             height: 200,
             child: Listener(

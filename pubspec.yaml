@@ -25,7 +25,7 @@ dependencies:
   firebase_core: ^3.14.0
   cloud_firestore: ^5.6.9
   firebase_storage: ^12.4.7
-  image_picker: ^1.0.8
+  image_picker: ^1.1.2 # https://pub.dev/packages/image_picker
   flutter_dotenv: ^5.2.1
   either_dart: ^1.0.0
   intl: ^0.20.2
@@ -41,6 +41,7 @@ dependencies:
   timeline_tile_plus: ^0.0.3 #https://pub.dev/packages/timeline_tile_plus
   gap: ^3.0.1 #https://pub.dev/packages/gap
   yandex_mapkit: ^4.1.0 # https://pub.dev/packages/yandex_mapkit
+  
   
 dev_dependencies:
   flutter_test:
