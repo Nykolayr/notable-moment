@@ -28,51 +28,64 @@ class PlacesScreen extends ConsumerWidget {
         .flattened
         .toList();
 
-    return AppScaffold(
-      appBar: AppAppBar(title: 'Открытые места', hideLeading: true),
-      body: GridView.count(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 8,
-        childAspectRatio: 158 / 213,
-        children: activePlaces.where((data) => data.$2.photos.isNotEmpty).map(
-          (data) {
-            final (route, point) = data;
-            return AppGestureDetector(
-              onTap: () => showPlaceBottomSheet(
-                context: context,
-                point: point,
-                routeTitle: route.title,
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColor.bgText200, borderRadius: BorderRadius.circular(8)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 1,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: AppImage(point.photos.first, backgroundColor: AppColor.bgText00),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Flexible(
-                      child: Text(
-                        point.title,
-                        style: AppStyle.subtext.bgText900,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return SafeArea(
+      child: AppScaffold(
+        appBar: AppAppBar(title: 'Открытые места', hideLeading: true),
+        body: (() {
+          final filteredPlaces = activePlaces
+              .where((data) =>
+                  data.$2.photos.isNotEmpty && !data.$2.photos.first.contains('https://firebasestorage.googleapis.com'))
+              .toList();
+          if (filteredPlaces.isEmpty) {
+            return const Center(
+              child: Text('Ещё нет фото для мест', style: TextStyle(fontSize: 18)),
             );
-          },
-        ).toList(),
+          }
+          return GridView.count(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 8,
+            childAspectRatio: 158 / 213,
+            children: filteredPlaces.map(
+              (data) {
+                final (route, point) = data;
+                return AppGestureDetector(
+                  onTap: () => showPlaceBottomSheet(
+                    context: context,
+                    point: point,
+                    routeTitle: route.title,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: AppColor.bgText200, borderRadius: BorderRadius.circular(8)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: AppImage(point.photos.first, backgroundColor: AppColor.bgText00),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Flexible(
+                          child: Text(
+                            point.title,
+                            style: AppStyle.subtext.bgText900,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ).toList(),
+          );
+        })(),
       ),
     );
   }
