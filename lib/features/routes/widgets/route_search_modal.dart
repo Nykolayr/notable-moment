@@ -7,11 +7,13 @@ import 'package:notable_moments/features/routes/provider/routes_provider.dart';
 class RouteSearchModal extends ConsumerStatefulWidget {
   final void Function(RouteModel) onRouteTap;
   final ScrollController? scrollController;
+  final DraggableScrollableController? controllerDrag;
 
   const RouteSearchModal({
     super.key,
     required this.onRouteTap,
-    this.scrollController,
+    required this.scrollController,
+    required this.controllerDrag,
   });
 
   @override
@@ -19,15 +21,20 @@ class RouteSearchModal extends ConsumerStatefulWidget {
 }
 
 class _RouteSearchModalState extends ConsumerState<RouteSearchModal> {
-  late final TextEditingController _searchController;
+  final TextEditingController _searchController = TextEditingController();
   late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
+
     _focusNode = FocusNode();
     _searchController.addListener(() => setState(() {}));
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        widget.controllerDrag?.animateTo(0.9, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      }
+    });
   }
 
   @override
@@ -66,7 +73,7 @@ class _RouteSearchModalState extends ConsumerState<RouteSearchModal> {
                 child: Container(
                   width: 36,
                   height: 4,
-                  margin: const EdgeInsets.only(top: 8, bottom: 8),
+                  margin: const EdgeInsets.only(top: 12),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade400,
                     borderRadius: BorderRadius.circular(2),
@@ -77,7 +84,10 @@ class _RouteSearchModalState extends ConsumerState<RouteSearchModal> {
             if (index == 1) {
               // Search field
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 child: TextField(
                   controller: _searchController,
                   focusNode: _focusNode,
@@ -105,6 +115,7 @@ class _RouteSearchModalState extends ConsumerState<RouteSearchModal> {
                 ),
               );
             }
+
             if (filteredRoutes.isEmpty) {
               // No routes found
               return const Padding(

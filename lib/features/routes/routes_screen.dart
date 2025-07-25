@@ -36,10 +36,10 @@ class RoutesScreen extends ConsumerStatefulWidget {
 
 class _RoutesScreenState extends ConsumerState<RoutesScreen>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin, RouteAware {
-  late AnimationController _animationController;
   static const double _collapsedHeightFactor = 0.12;
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
+  DraggableScrollableController controllerDrag = DraggableScrollableController();
 
   YandexMapController? mapController;
   List<MapObject> mapObjects = [];
@@ -52,11 +52,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-      value: 0.0,
-    );
 
     // Первый раз строим карту
     _drawRoutesAndPoints();
@@ -65,7 +60,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
-    _animationController.dispose();
+
     mapController = null;
     // Сброс выбранного маршрута при уходе со страницы
     final container = ProviderScope.containerOf(context, listen: false);
@@ -314,11 +309,12 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
             ),
           Positioned.fill(
             child: DraggableScrollableSheet(
-              initialChildSize: 0.11,
-              minChildSize: 0.11,
+              controller: controllerDrag,
+              initialChildSize: 0.12,
+              minChildSize: 0.12,
               maxChildSize: 0.9,
               snap: true,
-              snapSizes: const [0.11, 0.9],
+              snapSizes: const [0.12, 0.9],
               expand: false,
               builder: (context, scrollController) {
                 return RouteSearchModal(
@@ -327,6 +323,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                     context.push(RouteMapScreen(route: routeModel));
                   },
                   scrollController: scrollController,
+                  controllerDrag: controllerDrag,
                 );
               },
             ),
