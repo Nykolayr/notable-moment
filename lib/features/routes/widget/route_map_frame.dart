@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';

@@ -36,11 +36,8 @@ class RoutesScreen extends ConsumerStatefulWidget {
 
 class _RoutesScreenState extends ConsumerState<RoutesScreen>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin, RouteAware {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-
   late AnimationController _animationController;
-  static const double _collapsedHeightFactor = 0.105;
+  static const double _collapsedHeightFactor = 0.12;
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
 
@@ -61,18 +58,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
       value: 0.0,
     );
 
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        _expandPanel();
-      }
-    });
-
-    _searchController.addListener(() {
-      setState(() {
-        // Обновляем состояние для фильтрации
-      });
-    });
-
     // Первый раз строим карту
     _drawRoutesAndPoints();
   }
@@ -80,8 +65,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
-    _searchController.dispose();
-    _focusNode.dispose();
     _animationController.dispose();
     mapController = null;
     // Сброс выбранного маршрута при уходе со страницы
@@ -101,41 +84,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
   void didPopNext() {
     super.didPopNext();
     _drawRoutesAndPoints();
-  }
-
-  void _onRoutesChanged(List<RouteAdminModel> routes) {
-    // Перерисовать карту
-    _drawRoutesAndPoints();
-  }
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    final delta = details.primaryDelta ?? 0;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final maxDelta = screenHeight * (_expandedHeightFactor - _collapsedHeightFactor);
-    final newValue = _animationController.value - delta / maxDelta;
-    _animationController.value = newValue.clamp(0.0, 1.0);
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    if (_animationController.value > 0.5) {
-      _expandPanel();
-    } else {
-      _collapsePanel();
-    }
-  }
-
-  void _expandPanel() {
-    _animationController.animateTo(1.0, curve: Curves.easeOut);
-    setState(() {
-      isExpanded = true;
-    });
-  }
-
-  void _collapsePanel() {
-    _animationController.animateTo(0.0, curve: Curves.easeIn);
-    setState(() {
-      isExpanded = false;
-    });
   }
 
   void _drawRoutesAndPoints() async {
@@ -260,17 +208,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
     return false;
   }
 
-  List<RouteAdminModel> _getFilteredRoutes(List<RouteAdminModel> routes) {
-    final searchQuery = _searchController.text.toLowerCase().trim();
-    if (searchQuery.isEmpty) {
-      return routes;
-    }
-
-    return routes.where((route) {
-      return route.title.toLowerCase().contains(searchQuery) || route.description.toLowerCase().contains(searchQuery);
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -312,62 +249,47 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
           if (routesState.isLoading) const Center(child: CircularProgressIndicator()),
           Align(
             alignment: Alignment.topRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 60, right: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppButton.icon(
-                    icon: AppIcon.plus,
-                    onTap: () => mapController?.moveCamera(CameraUpdate.zoomIn()),
-                  ),
-                  const SizedBox(height: 8),
-                  AppButton.icon(
-                    icon: AppIcon.minus,
-                    onTap: () => mapController?.moveCamera(CameraUpdate.zoomOut()),
-                  ),
-                  const SizedBox(height: 8),
-                  AppButton.icon(
-                    icon: AppIcon.location,
-                    onTap: () => mapController?.moveCamera(
-                      CameraUpdate.newCameraPosition(
-                        const CameraPosition(
-                          target: Point(latitude: 56.0267294, longitude: 92.865734),
-                          zoom: 12,
+            child: SizedBox(
+              height: maxHeight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 60, right: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppButton.icon(
+                      icon: AppIcon.plus,
+                      onTap: () => mapController?.moveCamera(CameraUpdate.zoomIn()),
+                    ),
+                    const SizedBox(height: 8),
+                    AppButton.icon(
+                      icon: AppIcon.minus,
+                      onTap: () => mapController?.moveCamera(CameraUpdate.zoomOut()),
+                    ),
+                    const SizedBox(height: 8),
+                    AppButton.icon(
+                      icon: AppIcon.location,
+                      onTap: () => mapController?.moveCamera(
+                        CameraUpdate.newCameraPosition(
+                          const CameraPosition(
+                            target: Point(latitude: 56.0267294, longitude: 92.865734),
+                            zoom: 12,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (profileState.isAdmin) ...[
-                    const SizedBox(height: 8),
-                    AppButton.icon(
-                      icon: AppIcon.edit,
-                      onTap: () async {
-                        await context.push(EditRoutesScreen());
-                        _drawRoutesAndPoints();
-                      },
-                    ),
+                    if (profileState.isAdmin) ...[
+                      const SizedBox(height: 8),
+                      AppButton.icon(
+                        icon: AppIcon.edit,
+                        onTap: () async {
+                          await context.push(EditRoutesScreen());
+                          _drawRoutesAndPoints();
+                        },
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ),
-          AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              final height = minHeight + (maxHeight - minHeight) * _animationController.value;
-              return Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: height,
-                child: child!,
-              );
-            },
-            child: GestureDetector(
-              onVerticalDragUpdate: _handleDragUpdate,
-              onVerticalDragEnd: _handleDragEnd,
-              child: _buildBottomPanel(context, routesState.activeRoutes),
             ),
           ),
           if (selectedRoute != null)
@@ -390,87 +312,24 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                 ],
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomPanel(BuildContext context, List<RouteAdminModel> routes) {
-    final filteredRoutes = _getFilteredRoutes(routes);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: Column(
-        children: [
-          // Индикатор для перетаскивания
-          Container(
-            width: 36,
-            height: 4,
-            margin: const EdgeInsets.only(top: 8, bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade400,
-              borderRadius: BorderRadius.circular(2),
+          Positioned.fill(
+            child: DraggableScrollableSheet(
+              initialChildSize: 0.11,
+              minChildSize: 0.11,
+              maxChildSize: 0.9,
+              snap: true,
+              snapSizes: const [0.11, 0.9],
+              expand: false,
+              builder: (context, scrollController) {
+                return RouteSearchModal(
+                  onRouteTap: (routeModel) {
+                    context.pop();
+                    context.push(RouteMapScreen(route: routeModel));
+                  },
+                  scrollController: scrollController,
+                );
+              },
             ),
-          ),
-          // Поле поиска
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: TextField(
-              controller: _searchController,
-              focusNode: _focusNode,
-              decoration: InputDecoration(
-                prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                hintText: 'Найти маршрут',
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear, color: Colors.grey.shade600),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {});
-                          FocusScope.of(context).requestFocus(_focusNode);
-                        },
-                      )
-                    : null,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Список маршрутов
-          Expanded(
-            child: filteredRoutes.isEmpty
-                ? Center(
-                    child: Text(
-                      _searchController.text.isEmpty
-                          ? 'Маршруты не найдены'
-                          : 'По запросу "${_searchController.text}" ничего не найдено',
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: filteredRoutes.length,
-                    itemBuilder: (context, index) {
-                      final route = filteredRoutes[index];
-                      return RouteCard(
-                        route: route,
-                        onTap: () {
-                          final routeModel = toRouteModel(route);
-                          context.push(RouteMapScreen(route: routeModel));
-                          _collapsePanel();
-                        },
-                      );
-                    },
-                  ),
           ),
         ],
       ),

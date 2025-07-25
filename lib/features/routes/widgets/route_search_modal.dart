@@ -1,105 +1,69 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'package:notable_moments/features/routes/provider/routes_provider.dart';
 
-/// Оптимизированное модальное окно для поиска маршрутов
-class RouteSearchModal extends StatefulWidget {
-  final List<RouteAdminModel> routes;
-  final TextEditingController searchController;
-  final FocusNode focusNode;
+class RouteSearchModal extends ConsumerStatefulWidget {
   final void Function(RouteModel) onRouteTap;
+  final ScrollController? scrollController;
 
   const RouteSearchModal({
     super.key,
-    required this.routes,
-    required this.searchController,
-    required this.focusNode,
     required this.onRouteTap,
+    this.scrollController,
   });
 
   @override
-  State<RouteSearchModal> createState() => _RouteSearchModalState();
+  ConsumerState<RouteSearchModal> createState() => _RouteSearchModalState();
 }
 
-class _RouteSearchModalState extends State<RouteSearchModal> {
-  String _query = '';
-  List<RouteAdminModel> _filteredRoutes = [];
-  Timer? _debounce;
-  final ScrollController _scrollController = ScrollController();
-  int _visibleCount = 3;
-  static const int _pageSize = 3;
+class _RouteSearchModalState extends ConsumerState<RouteSearchModal> {
+  late final TextEditingController _searchController;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _filteredRoutes = List.from(widget.routes);
-
-    // Устанавливаем начальный фокус на поле поиска
-    widget.focusNode.requestFocus();
-
-    // Подписываемся на изменения текста в поле поиска
-    widget.searchController.addListener(_onSearchChanged);
-    _scrollController.addListener(_onScroll);
+    _searchController = TextEditingController();
+    _focusNode = FocusNode();
+    _searchController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _debounce?.cancel();
-    widget.searchController.removeListener(_onSearchChanged);
-    _scrollController.dispose();
+    _searchController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () {
-      final query = widget.searchController.text.trim().toLowerCase();
-      if (query == _query) return;
-
-      setState(() {
-        _query = query;
-        _visibleCount = _pageSize; // сбрасываем лимит при новом поиске
-        if (query.isEmpty) {
-          _filteredRoutes = List.from(widget.routes);
-        } else {
-          _filteredRoutes = widget.routes.where((r) {
-            return r.title.toLowerCase().contains(query) || r.description.toLowerCase().contains(query);
-          }).toList();
-        }
-      });
-    });
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
-      if (_visibleCount < _filteredRoutes.length) {
-        setState(() {
-          _visibleCount = (_visibleCount + _pageSize).clamp(0, _filteredRoutes.length);
-        });
-      }
-    }
+  List<RouteAdminModel> get _filteredRoutes {
+    final routes = ref.watch(routesProvider).allRoutes;
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) return routes;
+    return routes
+        .where((r) => r.title.toLowerCase().contains(query) || r.description.toLowerCase().contains(query))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final visibleRoutes = _filteredRoutes.take(_visibleCount).toList();
+    final filteredRoutes = _filteredRoutes;
     return Material(
-      color: Colors.transparent,
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       child: SafeArea(
         top: false,
-        child: FractionallySizedBox(
-          heightFactor: 0.8,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
+        child: ListView.builder(
+          controller: widget.scrollController,
+          padding: EdgeInsets.zero,
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: 2 + (filteredRoutes.isEmpty ? 1 : filteredRoutes.length),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              // Drag handle
+              return Center(
+                child: Container(
                   width: 36,
                   height: 4,
                   margin: const EdgeInsets.only(top: 8, bottom: 8),
@@ -108,66 +72,65 @@ class _RouteSearchModalState extends State<RouteSearchModal> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: TextField(
-                    controller: widget.searchController,
-                    focusNode: widget.focusNode,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                      hintText: 'Найти маршрут',
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              );
+            }
+            if (index == 1) {
+              // Search field
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _focusNode,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                    hintText: 'Найти маршрут',
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
                     ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: Colors.grey.shade600),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {});
+                              _focusNode.requestFocus();
+                            },
+                          )
+                        : null,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: visibleRoutes.isEmpty
-                      ? const Center(child: Text('Ничего не найдено'))
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          itemCount: visibleRoutes.length,
-                          itemBuilder: (context, index) {
-                            final route = visibleRoutes[index];
-                            return RouteCard(
-                              route: route,
-                              onTap: () => widget.onRouteTap(_toRouteModel(route)),
-                            );
-                          },
-                        ),
-                ),
-                if (_visibleCount < _filteredRoutes.length)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
-            ),
-          ),
+              );
+            }
+            if (filteredRoutes.isEmpty) {
+              // No routes found
+              return const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: Text('Маршруты не найдены')),
+              );
+            }
+            final route = filteredRoutes[index - 2];
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: _RouteCard(
+                route: route,
+                onTap: () => widget.onRouteTap(route.toRouteModel()),
+              ),
+            );
+          },
         ),
       ),
     );
   }
-
-  // Используем метод расширения из route_admin_model.dart
-  RouteModel _toRouteModel(RouteAdminModel admin) {
-    return admin.toRouteModel();
-  }
 }
 
-// Выделяем карточку маршрута в отдельный виджет для оптимизации
-class RouteCard extends StatelessWidget {
+class _RouteCard extends StatelessWidget {
   final RouteAdminModel route;
   final VoidCallback onTap;
-
-  const RouteCard({super.key, required this.route, required this.onTap});
+  const _RouteCard({required this.route, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

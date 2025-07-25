@@ -3,6 +3,11 @@ description: A new Flutter project.
 publish_to: "none"
 version: 1.0.77
 
+# Certificate fingerprints:
+#          SHA1: 98:5C:D1:9E:58:B8:BF:DC:57:A9:8C:E2:1B:2A:A1:CA:F4:A5:1F:AD
+#          SHA256: 0D:F1:A7:7C:67:03:C2:06:86:17:FD:DB:CD:7F:CC:BE:F9:D6:07:FD:4E:3D:9D:53:B4:DB:EE:DB:98:6D:A2:C8
+
+
 environment:
   sdk: ">=3.6.2 <4.0.0"
 
@@ -36,9 +41,7 @@ dependencies:
   timeline_tile_plus: ^0.0.3 #https://pub.dev/packages/timeline_tile_plus
   gap: ^3.0.1 #https://pub.dev/packages/gap
   yandex_mapkit: ^4.1.0 # https://pub.dev/packages/yandex_mapkit
-  modal_bottom_sheet: ^3.0.0 #https://pub.dev/packages/modal_bottom_sheet
-
-
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -478,7 +478,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                         if (hintUsedThisTest) {
                           await showNoHintModal(context,
                               text:
-                                  'Вы уже использовали подсказку для этого вопроса. Можно использовать только одну подсказку на каждый вопрос.');
+                                  'Вы уже использовали подсказку для этого вопроса. Можно использовать только одну подсказку на каждый вопрос.',);
                           return;
                         }
 

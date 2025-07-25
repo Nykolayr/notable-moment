@@ -22,26 +22,11 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.bgText00,
+      appBar: appBar,
       body: SafeArea(
         top: useSafeAreaTop,
         bottom: useSafeAreaBottom,
-        child: Column(
-          children: [
-            appBar ?? const SizedBox(),
-            Expanded(
-              child: singleSpageScrollable
-                  ? SingleChildScrollView(
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height -
-                            context.safeArea.vertical -
-                            (appBar?.preferredSize.height ?? 0),
-                        child: body,
-                      ),
-                    ) //
-                  : body,
-            ),
-          ],
-        ),
+        child: body,
       ),
     );
   }
