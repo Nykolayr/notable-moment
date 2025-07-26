@@ -80,7 +80,17 @@ class _AppImageState extends State<AppImage> {
     super.dispose();
   }
 
-  bool get isNetwork => _currentUrl?.startsWith('http') ?? false;
+  bool get isNetwork {
+    final url = _currentUrl ?? '';
+    
+    // Проверяем, не является ли это путем на Яндекс.Диске
+    if (url.contains('/notable_moments/')) {
+      Logger.e('isNetwork: Обнаружен путь Яндекс.Диска: $url, но файл должен быть скачан локально!');
+      return false; // Считаем, что это локальный файл, чтобы избежать ошибок
+    }
+    
+    return url.startsWith('http');
+  }
 
   Widget frame(Widget child) => Container(
         width: widget.width,

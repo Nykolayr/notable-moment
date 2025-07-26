@@ -2,6 +2,7 @@ import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
+import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/provider/routes_state.dart';
 import 'package:notable_moments/features/routes/service/routes_service.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
@@ -10,28 +11,54 @@ final routesProvider = StateNotifierProvider<RoutesNotifier, RoutesState>((ref) 
   return RoutesNotifier();
 });
 
+// Провайдер для хранения преобразованных маршрутов
+final convertedRoutesProvider = StateProvider<Map<String, RouteModel>>((ref) => {});
+
 class RoutesNotifier extends StateNotifier<RoutesState> {
   final _routesService = RoutesService();
 
   RoutesNotifier() : super(RoutesState.initial()) {
     state = state.copyWith(isLoading: true);
+
+    // Инициализируем сервис
+    _routesService.init().then((_) {}).catchError((e) {
+      Logger.e('routesProvider: Error initializing RoutesService: $e');
+    });
+
     _routesService.watchRoutes().listen(
       (routes) async {
         Logger.i('routesProvider watchRoutes: получено ${routes.length} маршрутов');
 
         // Проверяем, есть ли изменения в маршрутах
         final hasChanges = _checkForChanges(state.allRoutes, routes);
-        if (hasChanges) {
-          Logger.i('routesProvider: обнаружены изменения в маршрутах, обновляем состояние');
-
-          // Логируем информацию о подсказках в первом маршруте для отладки
-          if (routes.isNotEmpty && routes.first.points.isNotEmpty && routes.first.points.first.tests.isNotEmpty) {
-            final firstTest = routes.first.points.first.tests.first;
-            Logger.i('routesProvider: первый тест в первой точке имеет подсказку: "${firstTest.hint}"');
-          }
-        }
+        if (hasChanges) {}
 
         state = state.copyWith(allRoutes: routes, isLoading: false);
+
+        // Преобразуем первый маршрут в RouteModel для скачивания фотографий
+        if (routes.isNotEmpty) {
+          Logger.i('routesProvider: Преобразуем первый маршрут в RouteModel для скачивания фотографий');
+          try {
+            // Получаем текущее состояние convertedRoutesProvider
+            final convertedRoutes = ProviderContainer().read(convertedRoutesProvider);
+
+            // Преобразуем все маршруты и сохраняем их
+            for (final route in routes) {
+              Logger.i('routesProvider: Преобразуем маршрут ${route.id} (${route.title})');
+              final routeModel = await route.toRouteModel();
+
+              // Сохраняем преобразованный маршрут
+              convertedRoutes[route.id] = routeModel;
+            }
+
+            // Обновляем состояние convertedRoutesProvider
+            ProviderContainer().read(convertedRoutesProvider.notifier).state = Map.from(convertedRoutes);
+
+            Logger.i('routesProvider: Все маршруты преобразованы и сохранены');
+          } catch (e) {
+            Logger.e('routesProvider: Ошибка при преобразовании маршрутов: $e');
+          }
+        }
       },
       onError: (error) {
         Logger.e('routesProvider watchRoutes error: $error');
@@ -147,6 +174,23 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
       }
     } catch (e) {
       Logger.e('routesProvider reorderRoutes error: $e');
+      // Можно добавить уведомление пользователя об ошибке
+    }
+  }
+
+  Future<void> clearAllPhotos() async {
+    try {
+      await _routesService.clearAllPhotos();
+
+      // Обновляем состояние, чтобы отобразить изменения
+      final updatedRoutes = state.allRoutes.map((route) {
+        final updatedPoints = route.points.map((point) => point.copyWith(photos: [])).toList();
+        return route.copyWith(points: updatedPoints);
+      }).toList();
+
+      state = state.copyWith(allRoutes: updatedRoutes);
+    } catch (e) {
+      Logger.e('routesProvider clearAllPhotos error: $e');
       // Можно добавить уведомление пользователя об ошибке
     }
   }

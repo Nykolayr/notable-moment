@@ -8,6 +8,7 @@ class RouteModel {
   final String? whyThisRoute;
   final List<RoutePoint> points;
   final int taskCount;
+  final List<String> photos;
 
   RouteModel({
     required this.id,
@@ -16,6 +17,7 @@ class RouteModel {
     required this.points,
     required this.taskCount,
     this.whyThisRoute,
+    this.photos = const [],
   });
 
   factory RouteModel.fromMap(Map<String, dynamic> map, String id) {
@@ -27,6 +29,7 @@ class RouteModel {
       taskCount: map['taskCount'] ?? 0,
       points:
           (map['points'] as List<dynamic>? ?? []).map((e) => RoutePoint.fromMap(e as Map<String, dynamic>)).toList(),
+      photos: (map['photos'] as List<dynamic>? ?? const []).cast<String>().toList(),
     );
   }
 
@@ -37,6 +40,7 @@ class RouteModel {
       'whyThisRoute': whyThisRoute,
       'taskCount': taskCount,
       'points': points.map((p) => p.toJson()).toList(),
+      'photos': photos,
     };
   }
 }
@@ -48,6 +52,7 @@ class RoutePoint {
   final double? longitude;
   final bool isUnlocked;
   final List<QuestionTest> tests;
+  final List<String> photos;
 
   RoutePoint({
     required this.name,
@@ -56,6 +61,7 @@ class RoutePoint {
     this.longitude,
     this.isUnlocked = true,
     required this.tests,
+    this.photos = const [],
   });
 
   factory RoutePoint.fromMap(Map<String, dynamic> map) {
@@ -69,6 +75,7 @@ class RoutePoint {
         longitude: (map['longitude'] as num?)?.toDouble(),
         isUnlocked: map['isUnlocked'] ?? true,
         tests: [test],
+        photos: (map['photos'] as List<dynamic>? ?? const []).cast<String>().toList(),
       );
     }
 
@@ -82,6 +89,7 @@ class RoutePoint {
       tests: map['tests'] != null
           ? (map['tests'] as List<dynamic>).map((e) => QuestionTest.fromJson(e)).toList()
           : [SingleChoiceQuestion.init()],
+      photos: (map['photos'] as List<dynamic>? ?? const []).cast<String>().toList(),
     );
   }
 
@@ -93,6 +101,7 @@ class RoutePoint {
       'longitude': longitude,
       'isUnlocked': isUnlocked,
       'tests': tests.map((test) => test.toJson()).toList(),
+      'photos': photos,
     };
   }
 }

@@ -1,5 +1,11 @@
+import 'package:path_provider/path_provider.dart';
+import 'dart:io' as io;
+import 'dart:convert' as jsonDecode;
+import 'package:http/http.dart' as http;
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'package:notable_moments/features/routes/utils/yandex_disk_upload.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class RouteAdminModel {
@@ -104,22 +110,115 @@ class RouteAdminModel {
 
 /// ✅ Расширение: безопасно преобразует RouteAdminModel → RouteModel
 extension RouteAdminMapper on RouteAdminModel {
-  RouteModel toRouteModel() {
+  Future<RouteModel> toRouteModel() async {
+    Logger.i('toRouteModel: ВЫЗВАН метод toRouteModel для маршрута $id ($title)');
+
+    final List<RoutePoint> routePoints = [];
+
+    // Получаем токен один раз для всех запросов
+    final token = await YandexDiskUploader.getValidToken();
+
+    for (var p in points) {
+      final List<String> localPhotos = [];
+
+      for (var photoUrl in p.photos) {
+        Logger.i('toRouteModel: путь к фото: $photoUrl');
+        try {
+          // Извлекаем имя файла из пути на Яндекс.Диске
+          final fileName = photoUrl.split('/').last;
+          Logger.i('toRouteModel: имя файла: $fileName');
+          final directory = await getApplicationDocumentsDirectory();
+          final localFile = io.File('${directory.path}/$fileName');
+          Logger.i('toRouteModel: Локальный путь для файла: ${localFile.path}');
+
+          if (await localFile.exists()) {
+            // Если файл уже существует локально, используем его
+            final fileSize = await localFile.length();
+            localPhotos.add(localFile.path);
+            Logger.i('toRouteModel: Фото уже существует локально: ${localFile.path} (размер: $fileSize байт)');
+          } else {
+            try {
+              // Получаем ссылку для скачивания напрямую
+              Logger.i('toRouteModel: Запрашиваем ссылку для скачивания файла: $photoUrl');
+              final downloadUrlResponse = await http.get(
+                Uri.parse(
+                    'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(photoUrl)}'),
+                headers: {
+                  'Authorization': 'OAuth $token',
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'NotableMoments/1.0',
+                },
+              );
+
+              Logger.i('toRouteModel: Ответ на запрос ссылки для скачивания: ${downloadUrlResponse.statusCode}');
+              Logger.i('toRouteModel: Тело ответа: ${downloadUrlResponse.body}');
+
+              if (downloadUrlResponse.statusCode == 200) {
+                final downloadUrl = jsonDecode.jsonDecode(downloadUrlResponse.body)['href'];
+                Logger.i('toRouteModel: Получена ссылка для скачивания: $downloadUrl');
+
+                // Скачиваем файл
+                final fileResponse = await http.get(
+                  Uri.parse(downloadUrl),
+                  headers: {'User-Agent': 'NotableMoments/1.0'},
+                );
+
+                Logger.i('toRouteModel: Ответ на скачивание файла: ${fileResponse.statusCode}');
+
+                if (fileResponse.statusCode == 200) {
+                  final bytes = fileResponse.bodyBytes;
+                  Logger.i('toRouteModel: Получено ${bytes.length} байт');
+
+                  // Создаем директорию, если она не существует
+                  final directory = await getApplicationDocumentsDirectory();
+                  if (!await directory.exists()) {
+                    await directory.create(recursive: true);
+                  }
+
+                  // Сохраняем файл локально
+                  await localFile.writeAsBytes(bytes);
+                  final fileSize = await localFile.length();
+                  Logger.i('toRouteModel: Файл сохранен локально: ${localFile.path} (размер: $fileSize байт)');
+
+                  localPhotos.add(localFile.path);
+                  Logger.i('toRouteModel: Фото загружено и сохранено локально: ${localFile.path}');
+                } else {
+                  Logger.e('toRouteModel: Ошибка скачивания файла: ${fileResponse.statusCode}');
+                  // Если не удалось скачать, не добавляем фото
+                }
+              } else {
+                Logger.e('toRouteModel: Ошибка получения ссылки для скачивания: ${downloadUrlResponse.statusCode}');
+                // Если не удалось получить ссылку, не добавляем фото
+              }
+            } catch (e) {
+              Logger.e('toRouteModel: Ошибка загрузки фото: $e');
+              // При ошибке не добавляем фото
+            }
+          }
+        } catch (e) {
+          Logger.e('toRouteModel: Общая ошибка при обработке фото: $e');
+          // При ошибке не добавляем фото
+        }
+      }
+
+      routePoints.add(RoutePoint(
+        name: p.title,
+        description: p.description,
+        latitude: p.point.latitude,
+        longitude: p.point.longitude,
+        tests: p.tests,
+        photos: localPhotos,
+      ));
+    }
+
     return RouteModel(
       id: id,
       title: title,
       description: description,
       whyThisRoute: whyThisRoute,
-      points: points.map((p) {
-        return RoutePoint(
-          name: p.title,
-          description: p.description,
-          latitude: p.point.latitude,
-          longitude: p.point.longitude,
-          tests: p.tests,
-        );
-      }).toList(),
-      taskCount: points.length, // При необходимости можешь заменить на сумму заданий
+      points: routePoints,
+      taskCount: points.length,
     );
   }
 }

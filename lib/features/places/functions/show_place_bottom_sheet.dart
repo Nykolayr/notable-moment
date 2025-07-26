@@ -8,11 +8,12 @@ import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/core/widget/app_image.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
+import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class PlaceMapWidget extends StatefulWidget {
-  final PointAdminModel point;
+  final RoutePoint point;
 
   const PlaceMapWidget({
     super.key,
@@ -36,7 +37,7 @@ class _PlaceMapWidgetState extends State<PlaceMapWidget> {
           mapObjects: [
             PlacemarkMapObject(
               mapId: const MapObjectId('place_placemark'),
-              point: Point(latitude: widget.point.point.latitude, longitude: widget.point.point.longitude),
+              point: Point(latitude: widget.point.latitude!, longitude: widget.point.longitude!),
               opacity: 1,
               icon: PlacemarkIcon.single(
                 PlacemarkIconStyle(
@@ -52,7 +53,7 @@ class _PlaceMapWidgetState extends State<PlaceMapWidget> {
             await controller.moveCamera(
               CameraUpdate.newCameraPosition(
                 CameraPosition(
-                  target: Point(latitude: widget.point.point.latitude, longitude: widget.point.point.longitude),
+                  target: Point(latitude: widget.point.latitude!, longitude: widget.point.longitude!),
                   zoom: 15,
                 ),
               ),
@@ -66,7 +67,7 @@ class _PlaceMapWidgetState extends State<PlaceMapWidget> {
 
 void showPlaceBottomSheet({
   required BuildContext context,
-  required PointAdminModel point,
+  required RoutePoint point,
   required String routeTitle,
 }) =>
     showModalBottomSheet(
@@ -131,71 +132,29 @@ void showPlaceBottomSheet({
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(point.title, style: AppStyle.subheader1.bgText900),
+                    Text(point.name, style: AppStyle.subheader1.bgText900),
                     const SizedBox(height: 12),
                     Text('г. Красноярск', style: AppStyle.subtext.bgText600),
                     const SizedBox(height: 12),
                     // Кастомная карта с кнопками управления
                     PlaceMapWidget(point: point),
                     const SizedBox(height: 12),
-                    Text(point.description, style: AppStyle.roboto14w400.bgText900),
-                    if (point.schedule.periods.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text('Режим работы', style: AppStyle.subheader2.bgText900),
-                      const SizedBox(height: 8),
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: point.schedule.periods.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final period = point.schedule.periods[index];
-                          return Row(
-                            children: [
-                              SizedBox(
-                                width: 90,
-                                child: Text(
-                                  period.daysText,
-                                  style: AppStyle.roboto14w400.bgText900,
-                                ),
-                              ),
-                              Text(period.timeText, style: AppStyle.roboto14w400.bgText900),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
+                    Text(point.description ?? '', style: AppStyle.roboto14w400.bgText900),
                     const SizedBox(height: 12),
                     Text('Телефон', style: AppStyle.subheader2.bgText900),
                     const SizedBox(height: 12),
-                    if (point.phones.isEmpty)
-                      Text('Нет доступных', style: AppStyle.roboto14w400.bgText900)
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: point.phones.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) => AppGestureDetector(
-                          onTap: () => context.openTel(point.phones[index]),
-                          child: Text(
-                            point.phones[index],
-                            style: AppStyle.roboto14w400.bgText900,
-                          ),
-                        ),
-                      ),
-                    if (point.url.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      AppButton(
-                        title: 'Поделиться местом',
-                        onTap: () {
-                          final text = 'Родные штрихи\n${point.title}\n${point.url}';
-                          SharePlus.instance.share(
-                            ShareParams(text: text),
-                          );
-                        },
-                      ),
-                    ],
+                    Text('Нет доступных', style: AppStyle.roboto14w400.bgText900),
+                    const SizedBox(height: 12),
+                    AppButton(
+                      title: 'Поделиться местом',
+                      onTap: () {
+                        final name = point.name ?? '';
+                        final text = 'Родные штрихи\n$name\n';
+                        SharePlus.instance.share(
+                          ShareParams(text: text),
+                        );
+                      },
+                    ),
                     SizedBox(height: context.safeArea.bottom),
                   ],
                 ),

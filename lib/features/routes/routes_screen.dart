@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
+import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
@@ -22,7 +24,16 @@ import 'package:notable_moments/features/routes/utils/route_builder.dart';
 final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
 
 // Используем метод расширения из route_admin_model.dart
-RouteModel toRouteModel(RouteAdminModel admin) {
+Future<RouteModel> toRouteModel(RouteAdminModel admin) {
+  // Исправлено: если admin.toRouteModel() возвращает Future<RouteModel>, то функция должна быть async и возвращать Future<RouteModel>
+  Logger.i('routes_screen.toRouteModel: Начинаем преобразование RouteAdminModel в RouteModel');
+  Logger.i('routes_screen.toRouteModel: ID маршрута: ${admin.id}');
+  Logger.i('routes_screen.toRouteModel: Название маршрута: ${admin.title}');
+
+  if (admin.points.isNotEmpty && admin.points.first.photos.isNotEmpty) {
+    Logger.i('routes_screen.toRouteModel: Примеры путей фото: ${admin.points.first.photos.first}');
+  }
+
   return admin.toRouteModel();
 }
 
@@ -93,6 +104,13 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
     _previousRoutes.clear();
     _previousRoutes.addAll(routes);
 
+    // Преобразуем первый маршрут в RouteModel для скачивания фотографий
+    if (routes.isNotEmpty) {
+      Logger.i('_drawRoutesAndPoints: Преобразуем первый маршрут в RouteModel');
+      final routeModel = await toRouteModel(routes.first);
+      Logger.i('_drawRoutesAndPoints: Маршрут преобразован, количество точек: ${routeModel.points.length}');
+    }
+
     final List<MapObject> objects = [];
     final List<Point> allPoints = [];
 
@@ -119,9 +137,25 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                 scale: 1.0,
               ),
             ),
-            onTap: (_, __) {
+            onTap: (_, __) async {
               // При нажатии на точку показываем карточку маршрута
-              ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
+              final convertedRoutes = ref.read(convertedRoutesProvider);
+              RouteModel? routeModel = convertedRoutes[route.id];
+
+              // Если маршрут еще не был преобразован, делаем это сейчас
+              if (routeModel == null) {
+                Logger.i('routes_screen: Маршрут ${route.id} не найден в кэше, преобразуем');
+                routeModel = await toRouteModel(route);
+
+                // Сохраняем преобразованный маршрут
+                final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+                updatedRoutes[route.id] = routeModel;
+                ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+              } else {
+                Logger.i('routes_screen: Используем кэшированный маршрут ${route.id}');
+              }
+
+              ref.read(selectedRouteProvider.notifier).state = routeModel;
             },
           ),
         );
@@ -136,9 +170,25 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
             polyline: polyline,
             strokeColor: const Color(0xFF466BFF),
             strokeWidth: 3.0,
-            onTap: (_, __) {
+            onTap: (_, __) async {
               // При нажатии на линию показываем карточку маршрута
-              ref.read(selectedRouteProvider.notifier).state = toRouteModel(route);
+              final convertedRoutes = ref.read(convertedRoutesProvider);
+              RouteModel? routeModel = convertedRoutes[route.id];
+
+              // Если маршрут еще не был преобразован, делаем это сейчас
+              if (routeModel == null) {
+                Logger.i('routes_screen: Маршрут ${route.id} не найден в кэше, преобразуем');
+                routeModel = await toRouteModel(route);
+
+                // Сохраняем преобразованный маршрут
+                final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+                updatedRoutes[route.id] = routeModel;
+                ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+              } else {
+                Logger.i('routes_screen: Используем кэшированный маршрут ${route.id}');
+              }
+
+              ref.read(selectedRouteProvider.notifier).state = routeModel;
             },
           ),
         );
@@ -278,6 +328,31 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                         icon: AppIcon.edit,
                         onTap: () async {
                           await context.push(EditRoutesScreen());
+
+                          // После редактирования маршрутов, преобразуем первый маршрут для скачивания фотографий
+                          final routesState = ref.read(routesProvider);
+                          if (routesState.allRoutes.isNotEmpty) {
+                            Logger.i('routes_screen: Преобразуем маршруты после редактирования');
+                            try {
+                              final convertedRoutes = ref.read(convertedRoutesProvider);
+
+                              // Преобразуем все маршруты и сохраняем их
+                              for (final route in routesState.allRoutes) {
+                                Logger.i('routes_screen: Преобразуем маршрут ${route.id} (${route.title})');
+                                final routeModel = await toRouteModel(route);
+
+                                // Сохраняем преобразованный маршрут
+                                final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+                                updatedRoutes[route.id] = routeModel;
+                                ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+                              }
+
+                              Logger.i('routes_screen: Все маршруты преобразованы и сохранены после редактирования');
+                            } catch (e) {
+                              Logger.e('routes_screen: Ошибка при преобразовании маршрутов после редактирования: $e');
+                            }
+                          }
+
                           _drawRoutesAndPoints();
                         },
                       ),
@@ -307,26 +382,24 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                 ],
               ),
             ),
-          Positioned.fill(
-            child: DraggableScrollableSheet(
-              controller: controllerDrag,
-              initialChildSize: 0.12,
-              minChildSize: 0.12,
-              maxChildSize: 0.9,
-              snap: true,
-              snapSizes: const [0.12, 0.9],
-              expand: false,
-              builder: (context, scrollController) {
-                return RouteSearchModal(
-                  onRouteTap: (routeModel) {
-                    context.pop();
-                    context.push(RouteMapScreen(route: routeModel));
-                  },
-                  scrollController: scrollController,
-                  controllerDrag: controllerDrag,
-                );
-              },
-            ),
+          DraggableScrollableSheet(
+            controller: controllerDrag,
+            initialChildSize: 0.12,
+            minChildSize: 0.12,
+            maxChildSize: 0.9,
+            snap: true,
+            snapSizes: const [0.12, 0.9],
+            expand: false,
+            builder: (context, scrollController) {
+              return RouteSearchModal(
+                onRouteTap: (routeModel) {
+                  context.pop();
+                  context.push(RouteMapScreen(route: routeModel));
+                },
+                scrollController: scrollController,
+                controllerDrag: controllerDrag,
+              );
+            },
           ),
         ],
       ),

@@ -41,6 +41,7 @@ dependencies:
   timeline_tile_plus: ^0.0.3 #https://pub.dev/packages/timeline_tile_plus
   gap: ^3.0.1 #https://pub.dev/packages/gap
   yandex_mapkit: ^4.1.0 # https://pub.dev/packages/yandex_mapkit
+  flutter_image_compress: ^2.4.0 # https://pub.dev/packages/flutter_image_compress
   
   
 dev_dependencies:

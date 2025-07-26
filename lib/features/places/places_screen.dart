@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/theme/app_color.dart';
 import 'package:notable_moments/core/theme/app_style.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
@@ -9,24 +10,51 @@ import 'package:notable_moments/core/widget/app_image.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/features/places/functions/show_place_bottom_sheet.dart';
 import 'package:notable_moments/features/routes/provider/routes_provider.dart';
+import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 
 class PlacesScreen extends ConsumerWidget {
   const PlacesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activePlaces = ref
-        .watch(routesProvider)
-        .activeRoutes
-        .map(
-          (route) {
-            return route.points
-                .where((point) => !point.isDraft && point.photos.isNotEmpty)
-                .map((point) => (route, point));
-          },
-        )
-        .flattened
-        .toList();
+    // Получаем маршруты из провайдера
+    final routes = ref.watch(routesProvider).activeRoutes;
+    // Получаем преобразованные маршруты из кэша
+    final convertedRoutes = ref.watch(convertedRoutesProvider);
+
+    // Преобразуем маршруты, которых нет в кэше
+    for (final route in routes) {
+      if (!convertedRoutes.containsKey(route.id)) {
+        Logger.i('PlacesScreen: Маршрут ${route.id} не найден в кэше, преобразуем');
+        // Запускаем преобразование асинхронно
+        Future(() async {
+          try {
+            final routeModel = await route.toRouteModel();
+            // Сохраняем преобразованный маршрут
+            final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+            updatedRoutes[route.id] = routeModel;
+            ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+            Logger.i('PlacesScreen: Маршрут ${route.id} преобразован и сохранен в кэш');
+          } catch (e) {
+            Logger.e('PlacesScreen: Ошибка при преобразовании маршрута ${route.id}: $e');
+          }
+        });
+      }
+    }
+
+    // Собираем активные места из преобразованных маршрутов
+    final activePlaces = <(RouteModel, RoutePoint)>[];
+    for (final route in routes) {
+      final convertedRoute = convertedRoutes[route.id];
+      if (convertedRoute != null) {
+        for (final point in convertedRoute.points) {
+          if (point.photos.isNotEmpty) {
+            activePlaces.add((convertedRoute, point));
+          }
+        }
+      }
+    }
 
     return SafeArea(
       child: AppScaffold(
@@ -72,7 +100,7 @@ class PlacesScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Flexible(
                           child: Text(
-                            point.title,
+                            point.name,
                             style: AppStyle.subtext.bgText900,
                             overflow: TextOverflow.ellipsis,
                             maxLines: 3,

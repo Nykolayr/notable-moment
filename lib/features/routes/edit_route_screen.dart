@@ -145,6 +145,7 @@ class _EditRouteScreenState extends ConsumerState<EditRouteScreen> {
       appBar: AppAppBar(
         title: isNew ? 'Новый маршрут' : 'Редактирование маршрута',
         backButtonTap: handleBack,
+        actions: [],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 18),

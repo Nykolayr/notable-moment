@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/provider/routes_provider.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 
 class RouteSearchModal extends ConsumerStatefulWidget {
   final void Function(RouteModel) onRouteTap;
@@ -128,7 +130,26 @@ class _RouteSearchModalState extends ConsumerState<RouteSearchModal> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: _RouteCard(
                 route: route,
-                onTap: () => widget.onRouteTap(route.toRouteModel()),
+                onTap: () async {
+                  // Используем уже преобразованный маршрут из провайдера
+                  final convertedRoutes = ref.read(convertedRoutesProvider);
+                  RouteModel? routeModel = convertedRoutes[route.id];
+
+                  // Если маршрут еще не был преобразован, делаем это сейчас
+                  if (routeModel == null) {
+                    Logger.i('route_search_modal: Маршрут ${route.id} не найден в кэше, преобразуем');
+                    routeModel = await route.toRouteModel();
+
+                    // Сохраняем преобразованный маршрут
+                    final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+                    updatedRoutes[route.id] = routeModel;
+                    ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+                  } else {
+                    Logger.i('route_search_modal: Используем кэшированный маршрут ${route.id}');
+                  }
+
+                  widget.onRouteTap(routeModel);
+                },
               ),
             );
           },

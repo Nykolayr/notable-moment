@@ -6,6 +6,7 @@ import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/core/helpers/storage_helper.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
+import 'package:notable_moments/features/routes/utils/yandex_disk_upload.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class RoutesService {
@@ -13,6 +14,21 @@ class RoutesService {
   final String _collection = 'routes';
 
   CollectionReference<Map<String, dynamic>> get _routesCollection => _firestore.collection(_collection);
+
+  // Метод для инициализации сервиса
+  Future<void> init() async {
+    await ensureYandexDiskFolder();
+  }
+
+  // Проверяет наличие папки на Яндекс.Диске и делает её публичной
+  Future<void> ensureYandexDiskFolder() async {
+    try {
+      final token = await YandexDiskUploader.getValidToken();
+      await YandexDiskUploader.ensurePublicFolder(token);
+    } catch (e) {
+      Logger.e('routesService -- ensureYandexDiskFolder error: $e');
+    }
+  }
 
   Future<Either<String, RouteAdminModel>> createRoute({
     required String title,
@@ -51,31 +67,27 @@ class RoutesService {
   }
 
   Future<List<String>> _uploadPhotosIfNeeded(List<String> photos) async {
+    final token = await YandexDiskUploader.getValidToken();
+
     final photoUploads = photos.map((photo) async {
       if (photo.startsWith('http')) {
-        // Проверяем, не является ли это уже локальным путем (после обработки ошибки)
-        if (photo.contains('firebasestorage.googleapis.com')) {
-          // Для существующих Firebase URL проверяем, не нужно ли обновить токен
-          try {
-            final refreshedUrl = await StorageHelper.getRefreshedDownloadUrl(photo);
-            return refreshedUrl ?? photo;
-          } catch (e) {
-            Logger.e('routesService -- _uploadPhotosIfNeeded error refreshing URL: $e');
-            // При ошибке Firebase возвращаем исходный URL
-            return photo;
-          }
-        } else {
-          // Это уже не Firebase URL, возвращаем как есть
-          return photo;
-        }
+        // Если это уже URL, возвращаем его как есть
+        Logger.i('routesService -- Используем URL: $photo');
+        return photo;
       }
 
-      // Для локальных файлов пытаемся загрузить в Firebase
+      // Для локальных файлов пытаемся загрузить на Яндекс.Диск
       try {
-        return await StorageHelper.uploadFile(File(photo));
+        Logger.i('routesService -- Локальный путь к файлу: $photo');
+        final uploadedPath = await YandexDiskUploader.uploadPhotoToPublicFolder(
+          filePath: photo,
+          token: token,
+          pointId: DateTime.now().millisecondsSinceEpoch.toString(),
+        );
+        return uploadedPath ?? photo; // Если загрузка не удалась, возвращаем локальный путь
       } catch (e) {
         Logger.e('routesService -- _uploadPhotosIfNeeded error uploading file: $e');
-        // При ошибке Firebase возвращаем локальный путь
+        // При ошибке возвращаем локальный путь
         return photo;
       }
     }).toList();
@@ -180,5 +192,32 @@ class RoutesService {
   Future<List<RouteAdminModel>> getRoutes() async {
     final snapshot = await _routesCollection.orderBy('order', descending: true).get();
     return snapshot.docs.map((doc) => RouteAdminModel.fromMap(doc.data())).toList();
+  }
+
+  Future<void> clearAllPhotos() async {
+    try {
+      Logger.i('routesService -- clearAllPhotos: начало очистки всех фото');
+
+      // Получаем все маршруты
+      final routes = await getRoutes();
+
+      // Очищаем фото у всех точек
+      final updatedRoutes = routes.map((route) {
+        final updatedPoints = route.points.map((point) => point.copyWith(photos: [])).toList();
+        return route.copyWith(points: updatedPoints);
+      }).toList();
+
+      // Сохраняем изменения на бэкенде
+      final batch = _firestore.batch();
+      for (final route in updatedRoutes) {
+        batch.update(_routesCollection.doc(route.id), route.toMap());
+      }
+      await batch.commit();
+
+      Logger.i('routesService -- clearAllPhotos: все фото успешно очищены');
+    } catch (e) {
+      Logger.e('routesService -- clearAllPhotos error: $e');
+      rethrow;
+    }
   }
 }
