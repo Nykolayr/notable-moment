@@ -15,7 +15,6 @@ class EnergyRechargeWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: реализовать UI по макету фигмы
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

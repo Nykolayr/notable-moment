@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
-import 'package:gap/gap.dart';
 import 'package:notable_moments/core/widget/app_scaffold.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
@@ -47,7 +46,6 @@ class RoutesScreen extends ConsumerStatefulWidget {
 
 class _RoutesScreenState extends ConsumerState<RoutesScreen>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin, RouteAware {
-  static const double _collapsedHeightFactor = 0.12;
   static const double _expandedHeightFactor = 0.5;
   bool isExpanded = false;
   DraggableScrollableController controllerDrag = DraggableScrollableController();
@@ -268,7 +266,6 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
     }
 
     final screenHeight = MediaQuery.of(context).size.height;
-    final minHeight = screenHeight * _collapsedHeightFactor;
     final maxHeight = screenHeight * _expandedHeightFactor;
 
     return AppScaffold(

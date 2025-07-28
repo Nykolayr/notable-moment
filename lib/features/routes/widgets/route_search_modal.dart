@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/provider/routes_provider.dart';

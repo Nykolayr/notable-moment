@@ -1,6 +1,8 @@
 import 'package:path_provider/path_provider.dart';
 import 'dart:io' as io;
+// ignore: library_prefixes
 import 'dart:convert' as jsonDecode;
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:notable_moments/features/routes/model/point_admin_model.dart';
@@ -142,7 +144,8 @@ extension RouteAdminMapper on RouteAdminModel {
               Logger.i('toRouteModel: Запрашиваем ссылку для скачивания файла: $photoUrl');
               final downloadUrlResponse = await http.get(
                 Uri.parse(
-                    'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(photoUrl)}'),
+                  'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(photoUrl)}',
+                ),
                 headers: {
                   'Authorization': 'OAuth $token',
                   'Accept': 'application/json',
@@ -202,14 +205,16 @@ extension RouteAdminMapper on RouteAdminModel {
         }
       }
 
-      routePoints.add(RoutePoint(
-        name: p.title,
-        description: p.description,
-        latitude: p.point.latitude,
-        longitude: p.point.longitude,
-        tests: p.tests,
-        photos: localPhotos,
-      ));
+      routePoints.add(
+        RoutePoint(
+          name: p.title,
+          description: p.description,
+          latitude: p.point.latitude,
+          longitude: p.point.longitude,
+          tests: p.tests,
+          photos: localPhotos,
+        ),
+      );
     }
 
     return RouteModel(

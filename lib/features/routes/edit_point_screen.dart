@@ -187,7 +187,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
   }
 
   // Функция для загрузки фотографий на Яндекс.Диск
-  Future<List<String>> _uploadPhotosToYandexDisk() async {
+  Future<List<String>> uploadPhotosToYandexDisk() async {
     final List<String> uploadedPhotoPaths = [];
 
     // Загружаем только новые фотографии (локальные пути)
@@ -224,7 +224,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
 
       return uploadedPhotoPaths;
     } catch (e) {
-      print('Ошибка при загрузке фотографий на Яндекс.Диск: $e');
+      Logger.e('Ошибка при загрузке фотографий на Яндекс.Диск: $e');
       // В случае ошибки возвращаем локальные пути
       return _pickedPhotos.map((photo) => photo.path).toList();
     }
@@ -463,6 +463,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         Logger.i('Создаем объект PointAdminModel с ${uploadedPhotos.length} фотографиями');
 
                         // Создаем и возвращаем объект PointAdminModel
+                        // ignore: use_build_context_synchronously
                         Navigator.of(context).pop(
                           PointAdminModel(
                             id: widget.pointAdmin?.id ?? 'temp-2${DateTime.now().millisecondsSinceEpoch}',
@@ -487,7 +488,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
           // Индикатор загрузки
           if (isUploading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

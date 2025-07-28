@@ -3,7 +3,7 @@ import 'package:notable_moments/core/theme/app_color.dart';
 
 abstract class AppStyle {
   static const TextStyle suslik = TextStyle(
-    fontFamily: 'Roboto', // TODO set right font
+    fontFamily: 'Roboto',
     fontSize: 16,
     height: 16 / 16,
     fontWeight: FontWeight.w700,

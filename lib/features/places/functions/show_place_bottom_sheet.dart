@@ -5,9 +5,7 @@ import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/theme/app_color.dart';
 import 'package:notable_moments/core/theme/app_style.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
-import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/core/widget/app_image.dart';
-import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
@@ -148,7 +146,7 @@ void showPlaceBottomSheet({
                     AppButton(
                       title: 'Поделиться местом',
                       onTap: () {
-                        final name = point.name ?? '';
+                        final name = point.name;
                         final text = 'Родные штрихи\n$name\n';
                         SharePlus.instance.share(
                           ShareParams(text: text),

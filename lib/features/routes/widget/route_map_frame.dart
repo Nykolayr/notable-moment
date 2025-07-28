@@ -117,7 +117,7 @@ class _RouteMapFrameState extends State<RouteMapFrame> {
     });
   }
 
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     const double earthRadius = 6371; // радиус Земли в километрах
     final double dLat = _degreesToRadians(lat2 - lat1);
     final double dLon = _degreesToRadians(lon2 - lon1);

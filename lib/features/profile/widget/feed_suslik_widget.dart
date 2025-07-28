@@ -78,7 +78,7 @@ class FeedSuslikWidget extends StatelessWidget {
                       3,
                       (index) => SvgPicture.asset(
                         AppIcon.energy,
-                        color: energy > index ? AppColor.orange : AppColor.bgText300,
+                        colorFilter: energy > index ? const ColorFilter.mode(AppColor.orange, BlendMode.srcIn) : null,
                       ),
                     ),
                   ),

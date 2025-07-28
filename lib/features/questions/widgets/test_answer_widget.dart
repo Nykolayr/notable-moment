@@ -25,7 +25,6 @@ class TestAnswerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: реализовать UI и логику выбора вариантов и кнопки
     return Column(
       children: [
         ...options.asMap().entries.map((entry) {

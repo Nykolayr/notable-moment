@@ -19,8 +19,6 @@ import 'package:notable_moments/features/questions/model/question_type.dart';
 import 'package:notable_moments/features/questions/model/sentence_order_question.dart';
 import 'package:notable_moments/features/questions/model/single_choice_question.dart';
 import 'package:notable_moments/features/questions/model/true_false_question.dart';
-import 'package:notable_moments/features/questions/page_type_question/anagram_test_widget.dart';
-import 'package:notable_moments/features/questions/page_type_question/order_test_widget.dart';
 import 'package:notable_moments/features/questions/widgets/answer_result_chip.dart';
 import 'package:notable_moments/features/questions/widgets/energy_recharge_page.dart';
 import 'package:notable_moments/features/questions/widgets/modals.dart';
@@ -183,7 +181,6 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
 
     // Добавляем обработчик физической кнопки назад
     SystemChannels.navigation.setMethodCallHandler((MethodCall call) async {
-      print('>>> SystemChannels.navigation: ${call.method}');
       if (call.method == 'popRoute') {
         final shouldPop = await _showExitConfirmationDialog();
         if (shouldPop && mounted) {
@@ -429,7 +426,6 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
-        print('>>> onPopInvokedWithResult: $didPop, $result');
         if (didPop) return;
         final shouldPop = await _showExitConfirmationDialog();
         if (shouldPop && context.mounted) {
@@ -476,9 +472,11 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                       onHintPressed: () async {
                         // Если подсказка уже была использована на этом тесте, показываем сообщение
                         if (hintUsedThisTest) {
-                          await showNoHintModal(context,
-                              text:
-                                  'Вы уже использовали подсказку для этого вопроса. Можно использовать только одну подсказку на каждый вопрос.',);
+                          await showNoHintModal(
+                            context,
+                            text:
+                                'Вы уже использовали подсказку для этого вопроса. Можно использовать только одну подсказку на каждый вопрос.',
+                          );
                           return;
                         }
 
@@ -486,12 +484,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
                         final tests = points[widget.currentIndex].tests;
                         final currentTest = tests.isNotEmpty ? tests[currentTestIndex] : null;
                         final hintText = currentTest?.hint ?? '';
-
-                        print('Запрошена подсказка для теста: ${currentTest?.text}');
-                        print('Текст подсказки: "$hintText"');
-
                         if (hintText.trim().isEmpty) {
-                          print('Подсказка пуста, показываем сообщение "Нет подсказки"');
                           await showNoHintModal(context);
                           return;
                         }

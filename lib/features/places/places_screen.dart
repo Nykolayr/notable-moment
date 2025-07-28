@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
@@ -61,8 +60,11 @@ class PlacesScreen extends ConsumerWidget {
         appBar: AppAppBar(title: 'Открытые места', hideLeading: true),
         body: (() {
           final filteredPlaces = activePlaces
-              .where((data) =>
-                  data.$2.photos.isNotEmpty && !data.$2.photos.first.contains('https://firebasestorage.googleapis.com'))
+              .where(
+                (data) =>
+                    data.$2.photos.isNotEmpty &&
+                    !data.$2.photos.first.contains('https://firebasestorage.googleapis.com'),
+              )
               .toList();
           if (filteredPlaces.isEmpty) {
             return const Center(

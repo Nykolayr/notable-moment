@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_easylogger/flutter_logger.dart';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
+// ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as path;
 
 class YandexDiskUploader {
@@ -20,13 +22,15 @@ class YandexDiskUploader {
 
     // Проверяем существование папки
     final checkResponse = await http.get(
-      Uri.parse('https://cloud-api.yandex.net/v1/disk/resources?path=${Uri.encodeComponent(folderPath)}'),
+      Uri.parse(
+        'https://cloud-api.yandex.net/v1/disk/resources?path=${Uri.encodeComponent(folderPath)}',
+      ),
       headers: {
         'Authorization': 'OAuth $accessToken',
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'User-Agent': 'NotableMoments/1.0',
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest',
       },
     );
 
@@ -38,13 +42,15 @@ class YandexDiskUploader {
       Logger.i('Папка не найдена, создаём новую');
 
       final createResponse = await http.put(
-        Uri.parse('https://cloud-api.yandex.net/v1/disk/resources?path=${Uri.encodeComponent(folderPath)}'),
+        Uri.parse(
+          'https://cloud-api.yandex.net/v1/disk/resources?path=${Uri.encodeComponent(folderPath)}',
+        ),
         headers: {
           'Authorization': 'OAuth $accessToken',
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'User-Agent': 'NotableMoments/1.0',
-          'X-Requested-With': 'XMLHttpRequest'
+          'X-Requested-With': 'XMLHttpRequest',
         },
       );
 
@@ -93,7 +99,7 @@ class YandexDiskUploader {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'User-Agent': 'NotableMoments/1.0',
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest',
       },
     );
 
@@ -157,7 +163,7 @@ class YandexDiskUploader {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'User-Agent': 'NotableMoments/1.0',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
           },
         );
 
@@ -200,7 +206,7 @@ class YandexDiskUploader {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'User-Agent': 'NotableMoments/1.0',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
           },
         );
 

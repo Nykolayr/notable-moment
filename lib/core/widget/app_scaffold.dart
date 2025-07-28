@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/theme/app_color.dart';
 
 class AppScaffold extends StatelessWidget {

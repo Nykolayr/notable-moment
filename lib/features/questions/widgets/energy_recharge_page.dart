@@ -109,10 +109,10 @@ class StreakBar extends StatelessWidget {
   }
 }
 
-class _EnergyAndSuscoinBar extends StatelessWidget {
+class EnergyAndSuscoinBar extends StatelessWidget {
   final int energy;
   final int suscoins;
-  const _EnergyAndSuscoinBar({required this.energy, required this.suscoins});
+  const EnergyAndSuscoinBar({super.key, required this.energy, required this.suscoins});
 
   @override
   Widget build(BuildContext context) {

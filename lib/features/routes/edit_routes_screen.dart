@@ -29,7 +29,8 @@ class EditRoutesScreen extends ConsumerWidget {
                 builder: (context) => AlertDialog(
                   title: const Text('Удаление всех фотографий'),
                   content: const Text(
-                      'Вы уверены, что хотите удалить все фотографии со всех маршрутов? Это действие нельзя отменить.'),
+                    'Вы уверены, что хотите удалить все фотографии со всех маршрутов? Это действие нельзя отменить.',
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
@@ -46,6 +47,7 @@ class EditRoutesScreen extends ConsumerWidget {
               // Если пользователь подтвердил удаление
               if (shouldDelete == true) {
                 // Показываем индикатор загрузки
+                // ignore: use_build_context_synchronously
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
                 scaffoldMessenger.showSnackBar(
                   const SnackBar(
