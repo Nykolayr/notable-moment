@@ -61,9 +61,7 @@ class PlacesScreen extends ConsumerWidget {
         body: (() {
           final filteredPlaces = activePlaces
               .where(
-                (data) =>
-                    data.$2.photos.isNotEmpty &&
-                    !data.$2.photos.first.contains('https://firebasestorage.googleapis.com'),
+                (data) => data.$2.photos.isNotEmpty,
               )
               .toList();
           if (filteredPlaces.isEmpty) {
@@ -88,35 +86,61 @@ class PlacesScreen extends ConsumerWidget {
                   point: point,
                   routeTitle: route.title,
                 ),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: AppColor.bgText200, borderRadius: BorderRadius.circular(8)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 1,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: AppImage(
-                            point.photos.first,
-                            backgroundColor: AppColor.bgText00,
-                            key: ValueKey(
-                                '${route.id}_${point.name}_${point.photos.first}',), // Уникальный ключ для кэширования
+                child: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: AppColor.bgText200, borderRadius: BorderRadius.circular(8)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 1,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: AppImage(
+                                point.photos.first,
+                                backgroundColor: AppColor.bgText00,
+                                key: ValueKey('${route.id}_${point.name}_${point.photos.first}'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Flexible(
+                            child: Text(
+                              point.name,
+                              style: AppStyle.subtext.bgText900,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (point.photos.length > 1)
+                      Positioned(
+                        top: 14,
+                        right: 14,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${point.photos.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Flexible(
-                        child: Text(
-                          point.name,
-                          style: AppStyle.subtext.bgText900,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 3,
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               );
             },

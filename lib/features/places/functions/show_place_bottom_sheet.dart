@@ -7,6 +7,7 @@ import 'package:notable_moments/core/theme/app_style.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_image.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'package:notable_moments/features/places/widgets/photo_carousel_widget.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
@@ -98,32 +99,14 @@ void showPlaceBottomSheet({
                   ),
                 ),
               ),
-              // Картинка места сверху как в открытых местах
-              if (point.photos.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: AppImage(point.photos.first, backgroundColor: AppColor.bgText00),
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    height: 200,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColor.bgText200,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Фотографии места еще нет,\nно скоро появится',
-                      style: AppStyle.subtext.bgText500,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+              // Карусель фотографий места
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: PhotoCarouselWidget(
+                  photos: point.photos,
+                  height: 200,
                 ),
+              ),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
