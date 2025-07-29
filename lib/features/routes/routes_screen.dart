@@ -126,10 +126,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
             point: mapPoint,
             opacity: 1.0,
             icon: PlacemarkIcon.single(
-              PlacemarkIconStyle(
-                image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'),
-                scale: 1.0,
-              ),
+              PlacemarkIconStyle(image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'), scale: 1.0),
             ),
             onTap: (_, __) async {
               // При нажатии на точку показываем карточку маршрута
@@ -294,24 +291,15 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AppButton.icon(
-                      icon: AppIcon.plus,
-                      onTap: () => mapController?.moveCamera(CameraUpdate.zoomIn()),
-                    ),
+                    AppButton.icon(icon: AppIcon.plus, onTap: () => mapController?.moveCamera(CameraUpdate.zoomIn())),
                     const SizedBox(height: 8),
-                    AppButton.icon(
-                      icon: AppIcon.minus,
-                      onTap: () => mapController?.moveCamera(CameraUpdate.zoomOut()),
-                    ),
+                    AppButton.icon(icon: AppIcon.minus, onTap: () => mapController?.moveCamera(CameraUpdate.zoomOut())),
                     const SizedBox(height: 8),
                     AppButton.icon(
                       icon: AppIcon.location,
                       onTap: () => mapController?.moveCamera(
                         CameraUpdate.newCameraPosition(
-                          const CameraPosition(
-                            target: Point(latitude: 56.0267294, longitude: 92.865734),
-                            zoom: 12,
-                          ),
+                          const CameraPosition(target: Point(latitude: 56.0267294, longitude: 92.865734), zoom: 12),
                         ),
                       ),
                     ),
@@ -375,24 +363,27 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
                 ],
               ),
             ),
-          DraggableScrollableSheet(
-            controller: controllerDrag,
-            initialChildSize: 0.12,
-            minChildSize: 0.12,
-            maxChildSize: 0.9,
-            snap: true,
-            snapSizes: const [0.12, 0.9],
-            expand: false,
-            builder: (context, scrollController) {
-              return RouteSearchModal(
-                onRouteTap: (routeModel) {
-                  context.pop();
-                  context.push(RouteMapScreen(route: routeModel));
-                },
-                scrollController: scrollController,
-                controllerDrag: controllerDrag,
-              );
-            },
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: DraggableScrollableSheet(
+              controller: controllerDrag,
+              initialChildSize: 0.12,
+              minChildSize: 0.12,
+              maxChildSize: 0.9,
+              snap: true,
+              snapSizes: const [0.12, 0.9],
+              expand: false,
+              builder: (context, scrollController) {
+                return RouteSearchModal(
+                  onRouteTap: (routeModel) {
+                    context.pop();
+                    context.push(RouteMapScreen(route: routeModel));
+                  },
+                  scrollController: scrollController,
+                  controllerDrag: controllerDrag,
+                );
+              },
+            ),
           ),
         ],
       ),

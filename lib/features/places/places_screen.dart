@@ -102,7 +102,7 @@ class PlacesScreen extends ConsumerWidget {
                             point.photos.first,
                             backgroundColor: AppColor.bgText00,
                             key: ValueKey(
-                                '${route.id}_${point.name}_${point.photos.first}'), // Уникальный ключ для кэширования
+                                '${route.id}_${point.name}_${point.photos.first}',), // Уникальный ключ для кэширования
                           ),
                         ),
                       ),

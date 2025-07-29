@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/core/widget/app_image.dart';

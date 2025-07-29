@@ -295,20 +295,4 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
     // Оборачиваем в RepaintBoundary для оптимизации отрисовки
     return RepaintBoundary(child: imageWidget);
   }
-
-  // Статический метод для очистки кэша изображений
-  static void clearImageCache() {
-    _imageBytesCache.clear();
-    _imageCache.clear();
-    Logger.i('AppImage: Кэш изображений очищен');
-  }
-
-  // Статический метод для получения статистики кэша
-  static Map<String, dynamic> getCacheStats() {
-    return {
-      'cachedBytes': _imageBytesCache.length,
-      'cachedImages': _imageCache.length,
-      'cacheKeys': _imageBytesCache.keys.toList(),
-    };
-  }
 }
