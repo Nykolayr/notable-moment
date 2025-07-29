@@ -19,58 +19,6 @@ class EditRoutesScreen extends ConsumerWidget {
       appBar: AppAppBar(
         title: 'Редактирование маршрутов',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_forever),
-            tooltip: 'Удалить все фотографии',
-            onPressed: () async {
-              // Показываем диалог подтверждения
-              final shouldDelete = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Удаление всех фотографий'),
-                  content: const Text(
-                    'Вы уверены, что хотите удалить все фотографии со всех маршрутов? Это действие нельзя отменить.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Отмена'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Удалить', style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
-                ),
-              );
-
-              // Если пользователь подтвердил удаление
-              if (shouldDelete == true) {
-                // Показываем индикатор загрузки
-                // ignore: use_build_context_synchronously
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                scaffoldMessenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Удаление фотографий...'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-
-                // Вызываем функцию очистки фотографий
-                await ref.read(routesProvider.notifier).clearAllPhotos();
-
-                // Показываем сообщение об успешном удалении
-                if (context.mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Все фотографии успешно удалены'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              }
-            },
-          ),
           AppButton.icon(
             icon: AppIcon.plus,
             onTap: () => context.push(EditRouteScreen(routeId: null)),
