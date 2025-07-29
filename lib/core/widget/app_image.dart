@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -33,15 +34,20 @@ class AppImage extends StatefulWidget {
   State<AppImage> createState() => _AppImageState();
 }
 
-class _AppImageState extends State<AppImage> {
+class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin {
   String? _currentUrl;
   bool _isRetrying = false;
   bool _hasTimedOut = false;
   Timer? _timeoutTimer;
   Object? _timeoutError;
+  Widget? _cachedWidget;
 
-  // Кэш для локальных изображений
-  static final Map<String, Image> _localImageCache = {};
+  // Глобальный кэш для локальных изображений
+  static final Map<String, Uint8List> _imageBytesCache = {};
+  static final Map<String, Image> _imageCache = {};
+
+  @override
+  bool get wantKeepAlive => true; // Сохраняем состояние виджета при прокрутке
 
   @override
   void initState() {
@@ -58,6 +64,7 @@ class _AppImageState extends State<AppImage> {
       _isRetrying = false;
       _hasTimedOut = false;
       _timeoutError = null;
+      _cachedWidget = null; // Сбрасываем кэшированный виджет при изменении URL
       _startTimeout();
     }
   }
@@ -86,7 +93,7 @@ class _AppImageState extends State<AppImage> {
   bool get isNetwork {
     final url = _currentUrl ?? '';
 
-    // Проверяем, не является ли это путем на Яндекс.Диске
+    // Проверяем, не является ли это путем на Яндекс.Диска
     if (url.contains('/notable_moments/')) {
       Logger.e('isNetwork: Обнаружен путь Яндекс.Диска: $url, но файл должен быть скачан локально!');
       return false; // Считаем, что это локальный файл, чтобы избежать ошибок
@@ -96,46 +103,78 @@ class _AppImageState extends State<AppImage> {
   }
 
   // Метод для получения кэшированного локального изображения
-  Image _getCachedLocalImage(String filePath) {
-    if (_localImageCache.containsKey(filePath)) {
-      Logger.d('AppImage: Используем кэшированное локальное изображение: $filePath');
-      return _localImageCache[filePath]!;
+  Future<Widget> _getCachedLocalImage(String filePath) async {
+    // Проверяем кэш изображений
+    if (_imageCache.containsKey(filePath)) {
+      Logger.d('AppImage: Используем кэшированное изображение: $filePath');
+      return _imageCache[filePath]!;
     }
 
-    Logger.d('AppImage: Загружаем новое локальное изображение: $filePath');
-    final image = Image.file(
-      File(filePath),
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      errorBuilder: errorBuilder,
+    // Проверяем кэш байтов
+    if (_imageBytesCache.containsKey(filePath)) {
+      Logger.d('AppImage: Создаем изображение из кэшированных байтов: $filePath');
+      final image = Image.memory(
+        _imageBytesCache[filePath]!,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+        errorBuilder: errorBuilder,
+      );
+      _imageCache[filePath] = image;
+      return image;
+    }
+
+    // Загружаем новое изображение
+    Logger.d('AppImage: Загружаем новое изображение: $filePath');
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        final bytes = await file.readAsBytes();
+
+        // Кэшируем байты
+        _imageBytesCache[filePath] = bytes;
+
+        // Создаем изображение
+        final image = Image.memory(
+          bytes,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          errorBuilder: errorBuilder,
+        );
+
+        // Кэшируем изображение
+        _imageCache[filePath] = image;
+
+        // Ограничиваем размер кэша (максимум 50 изображений)
+        if (_imageBytesCache.length > 50) {
+          final firstKey = _imageBytesCache.keys.first;
+          _imageBytesCache.remove(firstKey);
+          _imageCache.remove(firstKey);
+          Logger.d('AppImage: Удален старый элемент из кэша изображений');
+        }
+
+        return image;
+      } else {
+        Logger.e('AppImage: Файл не существует: $filePath');
+        return _getErrorImage();
+      }
+    } catch (e) {
+      Logger.e('AppImage: Ошибка загрузки изображения: $e');
+      return _getErrorImage();
+    }
+  }
+
+  // Метод для получения изображения ошибки
+  Widget _getErrorImage() {
+    return Center(
+      child: SvgPicture.asset(
+        AppIcon.imageNo,
+        width: 64,
+        height: 64,
+        colorFilter: const ColorFilter.mode(Color(0xFFF4F4F6), BlendMode.srcIn),
+      ),
     );
-
-    // Кэшируем изображение
-    _localImageCache[filePath] = image;
-
-    // Ограничиваем размер кэша (максимум 50 изображений)
-    if (_localImageCache.length > 50) {
-      final firstKey = _localImageCache.keys.first;
-      _localImageCache.remove(firstKey);
-      Logger.d('AppImage: Удален старый элемент из кэша локальных изображений');
-    }
-
-    return image;
-  }
-
-  // Статический метод для очистки кэша изображений
-  static void clearImageCache() {
-    _localImageCache.clear();
-    Logger.i('AppImage: Кэш локальных изображений очищен');
-  }
-
-  // Статический метод для получения статистики кэша
-  static Map<String, dynamic> getCacheStats() {
-    return {
-      'cachedImages': _localImageCache.length,
-      'cacheKeys': _localImageCache.keys.toList(),
-    };
   }
 
   Widget frame(Widget child) => Container(
@@ -200,33 +239,76 @@ class _AppImageState extends State<AppImage> {
     );
   }
 
-  Widget get image => frame(
-        _hasTimedOut
-            ? errorBuilder(context, _timeoutError ?? 'Timeout', null)
-            : (isNetwork
-                ? CachedNetworkImage(
-                    imageUrl: _currentUrl!,
-                    fit: widget.fit,
-                    width: widget.width,
-                    height: widget.height,
-                    placeholder: (BuildContext context, String url) => AppLoadingIcon(size: widget.loadingSize),
-                    errorWidget: _errorWidget,
-                    httpHeaders: const {
-                      'Cache-Control': 'max-age=3600',
-                    },
-                    maxWidthDiskCache: 1000,
-                    maxHeightDiskCache: 1000,
-                  )
-                : _getCachedLocalImage(_currentUrl!)),
-      );
+  Widget get image {
+    // Если у нас есть кэшированный виджет, возвращаем его
+    if (_cachedWidget != null) {
+      return frame(_cachedWidget!);
+    }
+
+    final widget = _hasTimedOut
+        ? errorBuilder(context, _timeoutError ?? 'Timeout', null)
+        : (isNetwork
+            ? CachedNetworkImage(
+                imageUrl: _currentUrl!,
+                fit: this.widget.fit,
+                width: this.widget.width,
+                height: this.widget.height,
+                placeholder: (BuildContext context, String url) => AppLoadingIcon(size: this.widget.loadingSize),
+                errorWidget: _errorWidget,
+                httpHeaders: const {
+                  'Cache-Control': 'max-age=3600',
+                },
+                maxWidthDiskCache: 1000,
+                maxHeightDiskCache: 1000,
+              )
+            : FutureBuilder<Widget>(
+                future: _getCachedLocalImage(_currentUrl!),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return AppLoadingIcon(size: this.widget.loadingSize);
+                  } else if (snapshot.hasError) {
+                    return errorBuilder(context, snapshot.error!, null);
+                  } else if (snapshot.hasData) {
+                    // Кэшируем готовый виджет
+                    _cachedWidget = snapshot.data!;
+                    return snapshot.data!;
+                  } else {
+                    return errorBuilder(context, 'Не удалось загрузить изображение', null);
+                  }
+                },
+              ));
+
+    return frame(widget);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return widget.borderRadius == null
+    super.build(context); // Необходимо для AutomaticKeepAliveClientMixin
+
+    final imageWidget = widget.borderRadius == null
         ? image
         : ClipRRect(
             borderRadius: BorderRadius.circular(widget.borderRadius!), //
             child: image,
           );
+
+    // Оборачиваем в RepaintBoundary для оптимизации отрисовки
+    return RepaintBoundary(child: imageWidget);
+  }
+
+  // Статический метод для очистки кэша изображений
+  static void clearImageCache() {
+    _imageBytesCache.clear();
+    _imageCache.clear();
+    Logger.i('AppImage: Кэш изображений очищен');
+  }
+
+  // Статический метод для получения статистики кэша
+  static Map<String, dynamic> getCacheStats() {
+    return {
+      'cachedBytes': _imageBytesCache.length,
+      'cachedImages': _imageCache.length,
+      'cacheKeys': _imageBytesCache.keys.toList(),
+    };
   }
 }
