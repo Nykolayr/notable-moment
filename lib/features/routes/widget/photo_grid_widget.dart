@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/core/widget/app_image.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 
 class PhotoGridWidget extends StatefulWidget {
   final List<XFile> photos;
@@ -26,6 +29,7 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
   void initState() {
     super.initState();
     _photos = List.from(widget.photos);
+    Logger.d('PhotoGridWidget: Инициализация с ${_photos.length} фото');
   }
 
   @override
@@ -46,7 +50,45 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
     }
   }
 
+  // Метод для получения локального пути файла
+  String _getLocalPath(String photoPath) {
+    // Если это уже локальный путь, возвращаем как есть
+    if (photoPath.startsWith('/data/') || photoPath.startsWith('/storage/')) {
+      return photoPath;
+    }
+
+    // Если это путь Яндекс.Диска, извлекаем имя файла и возвращаем локальный путь
+    if (photoPath.contains('/notable_moments/')) {
+      final fileName = photoPath.split('/').last;
+      return '/data/user/0/com.notablemoments.app/app_flutter/$fileName';
+    }
+
+    // Если это URL, возвращаем как есть (для сетевых изображений)
+    return photoPath;
+  }
+
+  // Метод для удаления локального файла
+  Future<void> _deleteLocalFile(String photoPath) async {
+    try {
+      // Если это локальный файл (не с Яндекс.Диска), удаляем его
+      if (photoPath.startsWith('/data/') || photoPath.startsWith('/storage/')) {
+        final file = File(photoPath);
+        if (await file.exists()) {
+          await file.delete();
+          Logger.d('PhotoGridWidget: Удален локальный файл: $photoPath');
+        }
+      }
+    } catch (e) {
+      Logger.e('PhotoGridWidget: Ошибка при удалении локального файла: $e');
+    }
+  }
+
   void _showPhotoModal(int index) {
+    final photoPath = _photos[index].path;
+    final localPath = _getLocalPath(photoPath);
+
+    Logger.d('PhotoGridWidget: Показываем фото - оригинальный путь: $photoPath, локальный путь: $localPath');
+
     showDialog(
       context: context,
       builder: (context) => Material(
@@ -57,7 +99,7 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
             Center(
               child: SizedBox.expand(
                 child: AppImage(
-                  _photos[index].path,
+                  localPath,
                   fit: BoxFit.contain,
                 ),
               ),
@@ -68,11 +110,18 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
               left: 16,
               child: IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red, size: 32),
-                onPressed: () {
+                onPressed: () async {
+                  final photoToDelete = _photos[index];
+                  final photoPathToDelete = photoToDelete.path;
+
                   setState(() {
                     _photos.removeAt(index);
                   });
                   widget.onPhotosChanged(_photos);
+
+                  // Удаляем локальный файл, если это локальный путь
+                  await _deleteLocalFile(photoPathToDelete);
+
                   Navigator.of(context).pop();
                 },
               ),
@@ -107,16 +156,21 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
             ),
-            itemBuilder: (context, index) => AppGestureDetector(
-              onTap: () => _showPhotoModal(index),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: AppImage(
-                  _photos[index].path,
-                  fit: BoxFit.cover,
+            itemBuilder: (context, index) {
+              final photoPath = _photos[index].path;
+              final localPath = _getLocalPath(photoPath);
+
+              return AppGestureDetector(
+                onTap: () => _showPhotoModal(index),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: AppImage(
+                    localPath,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         const SizedBox(height: 12),
         AppButton(

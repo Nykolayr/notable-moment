@@ -40,6 +40,9 @@ class _AppImageState extends State<AppImage> {
   Timer? _timeoutTimer;
   Object? _timeoutError;
 
+  // Кэш для локальных изображений
+  static final Map<String, Image> _localImageCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -82,14 +85,57 @@ class _AppImageState extends State<AppImage> {
 
   bool get isNetwork {
     final url = _currentUrl ?? '';
-    
+
     // Проверяем, не является ли это путем на Яндекс.Диске
     if (url.contains('/notable_moments/')) {
       Logger.e('isNetwork: Обнаружен путь Яндекс.Диска: $url, но файл должен быть скачан локально!');
       return false; // Считаем, что это локальный файл, чтобы избежать ошибок
     }
-    
+
     return url.startsWith('http');
+  }
+
+  // Метод для получения кэшированного локального изображения
+  Image _getCachedLocalImage(String filePath) {
+    if (_localImageCache.containsKey(filePath)) {
+      Logger.d('AppImage: Используем кэшированное локальное изображение: $filePath');
+      return _localImageCache[filePath]!;
+    }
+
+    Logger.d('AppImage: Загружаем новое локальное изображение: $filePath');
+    final image = Image.file(
+      File(filePath),
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      errorBuilder: errorBuilder,
+    );
+
+    // Кэшируем изображение
+    _localImageCache[filePath] = image;
+
+    // Ограничиваем размер кэша (максимум 50 изображений)
+    if (_localImageCache.length > 50) {
+      final firstKey = _localImageCache.keys.first;
+      _localImageCache.remove(firstKey);
+      Logger.d('AppImage: Удален старый элемент из кэша локальных изображений');
+    }
+
+    return image;
+  }
+
+  // Статический метод для очистки кэша изображений
+  static void clearImageCache() {
+    _localImageCache.clear();
+    Logger.i('AppImage: Кэш локальных изображений очищен');
+  }
+
+  // Статический метод для получения статистики кэша
+  static Map<String, dynamic> getCacheStats() {
+    return {
+      'cachedImages': _localImageCache.length,
+      'cacheKeys': _localImageCache.keys.toList(),
+    };
   }
 
   Widget frame(Widget child) => Container(
@@ -171,13 +217,7 @@ class _AppImageState extends State<AppImage> {
                     maxWidthDiskCache: 1000,
                     maxHeightDiskCache: 1000,
                   )
-                : Image.file(
-                    File(_currentUrl!),
-                    width: widget.width,
-                    height: widget.height,
-                    fit: widget.fit,
-                    errorBuilder: errorBuilder,
-                  )),
+                : _getCachedLocalImage(_currentUrl!)),
       );
 
   @override

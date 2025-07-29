@@ -39,46 +39,6 @@ class PlacesScreen extends ConsumerWidget {
             Logger.e('PlacesScreen: Ошибка при преобразовании маршрута ${route.id}: $e');
           }
         });
-      } else {
-        // Проверяем, есть ли изменения в фотографиях
-        final cachedRoute = convertedRoutes[route.id]!;
-        bool hasPhotoChanges = false;
-
-        // Сравниваем количество точек и фотографий
-        if (route.points.length != cachedRoute.points.length) {
-          hasPhotoChanges = true;
-        } else {
-          for (int i = 0; i < route.points.length; i++) {
-            final adminPoint = route.points[i];
-            final cachedPoint = cachedRoute.points[i];
-
-            if (adminPoint.photos.length != cachedPoint.photos.length) {
-              hasPhotoChanges = true;
-              break;
-            }
-          }
-        }
-
-        if (hasPhotoChanges) {
-          Logger.i('PlacesScreen: Обнаружены изменения в фотографиях маршрута ${route.id}, пересоздаем');
-          // Удаляем из кэша и пересоздаем
-          final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
-          updatedRoutes.remove(route.id);
-          ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
-
-          // Пересоздаем маршрут
-          Future(() async {
-            try {
-              final routeModel = await route.toRouteModel();
-              final newUpdatedRoutes = Map<String, RouteModel>.from(updatedRoutes);
-              newUpdatedRoutes[route.id] = routeModel;
-              ref.read(convertedRoutesProvider.notifier).state = newUpdatedRoutes;
-              Logger.i('PlacesScreen: Маршрут ${route.id} пересоздан с новыми фотографиями');
-            } catch (e) {
-              Logger.e('PlacesScreen: Ошибка при пересоздании маршрута ${route.id}: $e');
-            }
-          });
-        }
       }
     }
 
@@ -111,49 +71,55 @@ class PlacesScreen extends ConsumerWidget {
               child: Text('Ещё нет фото для мест', style: TextStyle(fontSize: 18)),
             );
           }
-          return GridView.count(
+          return GridView.builder(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 8,
-            childAspectRatio: 158 / 213,
-            children: filteredPlaces.map(
-              (data) {
-                final (route, point) = data;
-                return AppGestureDetector(
-                  onTap: () => showPlaceBottomSheet(
-                    context: context,
-                    point: point,
-                    routeTitle: route.title,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColor.bgText200, borderRadius: BorderRadius.circular(8)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: AppImage(point.photos.first, backgroundColor: AppColor.bgText00),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 8,
+              childAspectRatio: 158 / 213,
+            ),
+            itemCount: filteredPlaces.length,
+            itemBuilder: (context, index) {
+              final (route, point) = filteredPlaces[index];
+              return AppGestureDetector(
+                onTap: () => showPlaceBottomSheet(
+                  context: context,
+                  point: point,
+                  routeTitle: route.title,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: AppColor.bgText200, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 1,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: AppImage(
+                            point.photos.first,
+                            backgroundColor: AppColor.bgText00,
+                            key: ValueKey(
+                                '${route.id}_${point.name}_${point.photos.first}'), // Уникальный ключ для кэширования
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Flexible(
-                          child: Text(
-                            point.name,
-                            style: AppStyle.subtext.bgText900,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 3,
-                          ),
+                      ),
+                      const SizedBox(height: 8),
+                      Flexible(
+                        child: Text(
+                          point.name,
+                          style: AppStyle.subtext.bgText900,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 3,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ).toList(),
+                ),
+              );
+            },
           );
         })(),
       ),

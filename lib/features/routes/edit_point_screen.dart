@@ -20,6 +20,7 @@ import 'package:notable_moments/features/questions/edit_test_screen.dart';
 import 'package:notable_moments/features/routes/widget/photo_grid_widget.dart';
 import 'package:notable_moments/features/routes/utils/yandex_disk_upload.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
+import 'dart:io'; // Added for File
 
 class EditPointScreen extends StatefulWidget {
   const EditPointScreen({super.key, required this.pointAdmin});
@@ -35,6 +36,9 @@ class _EditPointScreenState extends State<EditPointScreen> {
   final _imagePicker = ImagePicker();
   bool _enableListViewScroll = true;
   List<XFile> _pickedPhotos = [];
+
+  // Локальная переменная для хранения текущих фотографий
+  List<String> _currentPhotoPaths = [];
 
   late final titleController = TextEditingController(text: widget.pointAdmin?.title);
   late final descriptionController = TextEditingController(text: widget.pointAdmin?.description);
@@ -57,8 +61,13 @@ class _EditPointScreenState extends State<EditPointScreen> {
       point = widget.pointAdmin?.point;
       tests = widget.pointAdmin!.tests;
 
-      // Инициализируем _pickedPhotos с существующими фотографиями
-      _pickedPhotos = widget.pointAdmin!.photos.map((photoPath) => XFile(photoPath)).toList();
+      // Инициализируем _pickedPhotos и _currentPhotoPaths с существующими фотографиями
+      _currentPhotoPaths = List.from(widget.pointAdmin!.photos);
+      _pickedPhotos = _currentPhotoPaths.map((photoPath) => XFile(photoPath)).toList();
+      Logger.d('EditPointScreen: Инициализация с ${_pickedPhotos.length} фотографиями');
+      for (var photo in _pickedPhotos) {
+        Logger.d('EditPointScreen: Фото: ${photo.path}');
+      }
     }
 
     titleController.addListener(() => setState(() {}));
@@ -77,7 +86,35 @@ class _EditPointScreenState extends State<EditPointScreen> {
     for (var controller in phoneControllers) {
       controller.dispose();
     }
+
+    // Очищаем новые локальные файлы, если экран закрывается без сохранения
+    _cleanupNewLocalFiles();
+
     super.dispose();
+  }
+
+  // Метод для очистки новых локальных файлов
+  Future<void> _cleanupNewLocalFiles() async {
+    try {
+      final originalPhotoPaths = widget.pointAdmin?.photos ?? [];
+      final originalPhotoNames = originalPhotoPaths.map((path) => path.split('/').last).toSet();
+
+      for (var photoPath in _currentPhotoPaths) {
+        final photoName = photoPath.split('/').last;
+
+        // Если это новый файл (не был в оригинальных фотографиях) и это локальный файл
+        if (!originalPhotoNames.contains(photoName) &&
+            (photoPath.startsWith('/data/') || photoPath.startsWith('/storage/'))) {
+          final file = File(photoPath);
+          if (await file.exists()) {
+            await file.delete();
+            Logger.d('EditPointScreen: Удален новый локальный файл при закрытии: $photoPath');
+          }
+        }
+      }
+    } catch (e) {
+      Logger.e('EditPointScreen: Ошибка при очистке локальных файлов: $e');
+    }
   }
 
   void addPhoneField() {
@@ -104,7 +141,10 @@ class _EditPointScreenState extends State<EditPointScreen> {
     if (image != null) {
       setState(() {
         _pickedPhotos.add(image);
+        _currentPhotoPaths.add(image.path);
       });
+
+      Logger.d('EditPointScreen: Добавлена новая фотография: ${image.path}');
     }
   }
 
@@ -114,8 +154,48 @@ class _EditPointScreenState extends State<EditPointScreen> {
       title: 'Удалить фото',
       okText: 'Удалить',
       okStyle: AppButtonStyle.red,
-      okCallBack: () => setState(() => _pickedPhotos.removeAt(index)),
+      okCallBack: () async {
+        final photoToDelete = _pickedPhotos[index];
+        setState(() {
+          _pickedPhotos.removeAt(index);
+          _currentPhotoPaths.removeAt(index);
+        });
+
+        // Удаляем локальный файл, если это новый файл
+        await _deleteLocalFile(photoToDelete.path);
+
+        Logger.d('EditPointScreen: Удалена фотография: ${photoToDelete.path}');
+      },
     );
+  }
+
+  // Метод для удаления локального файла
+  Future<void> _deleteLocalFile(String photoPath) async {
+    try {
+      // Если это локальный файл (не с Яндекс.Диска), удаляем его
+      if (photoPath.startsWith('/data/') || photoPath.startsWith('/storage/')) {
+        final file = File(photoPath);
+        if (await file.exists()) {
+          await file.delete();
+          Logger.d('EditPointScreen: Удален локальный файл: $photoPath');
+        }
+      }
+    } catch (e) {
+      Logger.e('EditPointScreen: Ошибка при удалении локального файла: $e');
+    }
+  }
+
+  // Метод для обработки изменений в фотографиях
+  void _onPhotosChanged(List<XFile> newPhotos) {
+    setState(() {
+      _pickedPhotos = newPhotos;
+      _currentPhotoPaths = newPhotos.map((photo) => photo.path).toList();
+    });
+
+    // Логируем изменения для отладки
+    Logger.d('EditPointScreen: Изменения в фотографиях:');
+    Logger.d('  Оригинальные: ${widget.pointAdmin?.photos ?? []}');
+    Logger.d('  Текущие: $_currentPhotoPaths');
   }
 
   void updatePoint(Point p) {
@@ -153,10 +233,9 @@ class _EditPointScreenState extends State<EditPointScreen> {
       return true;
     }
 
-    // Проверяем изменения в фотографиях, используя _pickedPhotos
-    final currentPhotoPaths = _pickedPhotos.map((photo) => photo.path).toList();
+    // Проверяем изменения в фотографиях, используя _currentPhotoPaths
     final originalPhotoPaths = widget.pointAdmin?.photos ?? [];
-    if (!ListEquality().equals(currentPhotoPaths, originalPhotoPaths)) return true;
+    if (!ListEquality().equals(_currentPhotoPaths, originalPhotoPaths)) return true;
 
     if (schedule != (widget.pointAdmin?.schedule ?? WorkingHours(periods: []))) return true;
     if (isDraft != (widget.pointAdmin?.isDraft ?? true)) return true;
@@ -349,11 +428,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
               const SizedBox(height: 12),
               PhotoGridWidget(
                 photos: _pickedPhotos,
-                onPhotosChanged: (newPhotos) {
-                  setState(() {
-                    _pickedPhotos = newPhotos;
-                  });
-                },
+                onPhotosChanged: _onPhotosChanged,
               ),
               const SizedBox(height: 12),
 
@@ -399,10 +474,10 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         });
 
                         Logger.i('Начинаем сохранение точки с фотографиями');
-                        Logger.i('Количество выбранных фотографий: ${_pickedPhotos.length}');
+                        Logger.i('Количество выбранных фотографий: ${_currentPhotoPaths.length}');
 
                         List<String> uploadedPhotos = [];
-                        int totalPhotos = _pickedPhotos.length;
+                        int totalPhotos = _currentPhotoPaths.length;
                         int uploadedCount = 0;
                         int failedCount = 0;
 
@@ -422,16 +497,23 @@ class _EditPointScreenState extends State<EditPointScreen> {
 
                           // Загружаем только новые фотографии (локальные пути)
                           int photoIndex = 0;
-                          for (var photo in _pickedPhotos) {
+                          for (var photoPath in _currentPhotoPaths) {
                             photoIndex++;
                             setState(() {
                               uploadingMessage = 'Загрузка фото $photoIndex из $totalPhotos...';
                             });
 
-                            if (!photo.path.startsWith('http')) {
-                              Logger.i('Загружаем фото #$photoIndex: ${photo.path}');
+                            // Проверяем, является ли путь путем на Яндекс.Диск
+                            if (photoPath.contains('/notable_moments/')) {
+                              // Если это уже путь на Яндекс.Диск, добавляем его как есть
+                              Logger.i('Фото #$photoIndex уже на Яндекс.Диске: $photoPath');
+                              uploadedPhotos.add(photoPath);
+                              uploadedCount++;
+                            } else if (!photoPath.startsWith('http')) {
+                              // Если это локальный файл, загружаем его на Яндекс.Диск
+                              Logger.i('Загружаем фото #$photoIndex: $photoPath');
                               final uploadedPath = await YandexDiskUploader.uploadPhotoToPublicFolder(
-                                filePath: photo.path,
+                                filePath: photoPath,
                                 token: token,
                                 pointId: pointId,
                               );
@@ -445,9 +527,9 @@ class _EditPointScreenState extends State<EditPointScreen> {
                                 failedCount++;
                               }
                             } else {
-                              // Если это уже URL, добавляем его как есть
-                              Logger.i('Фото #$photoIndex уже загружено: ${photo.path}');
-                              uploadedPhotos.add(photo.path);
+                              // Если это URL, добавляем его как есть
+                              Logger.i('Фото #$photoIndex уже загружено: $photoPath');
+                              uploadedPhotos.add(photoPath);
                               uploadedCount++;
                             }
                           }
@@ -459,7 +541,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         } catch (e) {
                           Logger.e('Ошибка при загрузке фотографий на Яндекс.Диск: $e');
                           // В случае ошибки используем локальные пути
-                          uploadedPhotos = _pickedPhotos.map((photo) => photo.path).toList();
+                          uploadedPhotos = List.from(_currentPhotoPaths);
                         }
 
                         // Скрываем индикатор загрузки
