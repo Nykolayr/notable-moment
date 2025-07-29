@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
-import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,18 +20,29 @@ class EnergyRechargePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(profileProvider);
-    final userProgress = ref.watch(userProgressProvider);
-    final energy = profile.energy;
-    final suscoins = profile.suscoins;
-    final visitsInARow = userProgress.daysInARow;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            const Gap(32),
+            // Кнопка "Назад"
+            Padding(
+              padding: const EdgeInsets.only(left: 16, top: 8),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back, size: 24),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey.shade100,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Gap(24),
             Text(
               'Не удалось открыть новое место',
               style: const TextStyle(
@@ -55,28 +65,31 @@ class EnergyRechargePage extends ConsumerWidget {
             const Gap(24),
             Expanded(
               child: FeedSuslikWidget(
-                streak: visitsInARow,
-                energy: energy,
-                suscoins: suscoins,
-                onFeed: () {
-                  ref.read(profileProvider.notifier).spendSuscoins(1);
-                  ref.read(profileProvider.notifier).addEnergy(1);
+                onFeed: () async {
+                  await ref.read(profileProvider.notifier).spendSuscoins(1);
+                  await ref.read(profileProvider.notifier).addEnergy(1);
                 },
               ),
             ),
             const Gap(18),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: energy > 1
-                  ? AppButton(
-                      title: 'Вернуться к маршруту',
-                      onTap: () => Navigator.of(context).pop(),
-                    )
-                  : AppButton(
-                      title: 'Завершить маршрут',
-                      onTap: null,
-                      style: AppButtonStyle.white,
-                    ),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final profile = ref.watch(profileProvider);
+                  final energy = profile.energy;
+                  return energy > 1
+                      ? AppButton(
+                          title: 'Вернуться к маршруту',
+                          onTap: () => Navigator.of(context).pop(),
+                        )
+                      : AppButton(
+                          title: 'Завершить маршрут',
+                          onTap: null,
+                          style: AppButtonStyle.white,
+                        );
+                },
+              ),
             ),
             const Gap(18),
           ],

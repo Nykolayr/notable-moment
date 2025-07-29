@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:notable_moments/core/theme/app_color.dart';
 import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/core/theme/app_images.dart';
 import 'package:notable_moments/core/theme/app_style.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
+import 'package:notable_moments/features/profile/provider/profile_provider.dart';
 import 'info_widget.dart';
 
-class FeedSuslikWidget extends StatelessWidget {
-  final int streak;
-  final int energy;
-  final int suscoins;
+class FeedSuslikWidget extends ConsumerWidget {
   final VoidCallback onFeed;
   final String energyInfo;
   final String suscoinInfo;
@@ -18,9 +17,6 @@ class FeedSuslikWidget extends StatelessWidget {
 
   const FeedSuslikWidget({
     super.key,
-    required this.streak,
-    required this.energy,
-    required this.suscoins,
     required this.onFeed,
     this.energyInfo = 'Покупай суслику еду и пополняй энергию.',
     this.suscoinInfo = 'Заходи 7 дней подряд в приложение и получай сускоины.',
@@ -28,7 +24,12 @@ class FeedSuslikWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(profileProvider);
+    final energy = profile.energy;
+    final suscoins = profile.suscoins;
+    final streak = profile.streak;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
       decoration: BoxDecoration(color: AppColor.bgText100, borderRadius: BorderRadius.circular(12)),
@@ -66,19 +67,19 @@ class FeedSuslikWidget extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
-                    children: [
-                      Text('Энергия', style: AppStyle.subtext.bgText900),
-                      const SizedBox(width: 4),
-                      AppInfoWidget(text: energyInfo),
-                    ],
-                  ),
-                  const SizedBox(height: 5.5),
-                  Row(
                     children: List.generate(
                       3,
-                      (index) => SvgPicture.asset(
-                        AppIcon.energy,
-                        colorFilter: energy > index ? const ColorFilter.mode(AppColor.orange, BlendMode.srcIn) : null,
+                      (i) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: SvgPicture.asset(
+                          'assets/svg/energy.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: ColorFilter.mode(
+                            i < energy ? const Color(0xFFFFB800) : const Color(0xFFE1E9F4),
+                            BlendMode.srcIn,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -110,7 +111,7 @@ class FeedSuslikWidget extends StatelessWidget {
           const SizedBox(height: 16),
           AppButton(
             title: 'Покормить',
-            onTap: energy >= 3 || suscoins == 0 ? null : onFeed,
+            onTap: energy >= 3 || suscoins < 1 ? null : onFeed,
           ),
         ],
       ),

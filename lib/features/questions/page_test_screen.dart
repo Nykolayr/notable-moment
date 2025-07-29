@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:gap/gap.dart';
@@ -167,17 +168,18 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
   @override
   void initState() {
     super.initState();
-    final profile = ref.read(profileProvider);
-    final userProgress = ref.read(userProgressProvider);
-    if (profile.energy == 0) {
-      Future.microtask(() async {
-        await Navigator.of(context).push(
+
+    // Проверяем энергию при загрузке экрана
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(profileProvider);
+      if (profile.energy == 0) {
+        Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => EnergyRechargePage(routeId: widget.route.id),
           ),
         );
-      });
-    }
+      }
+    });
 
     // Добавляем обработчик физической кнопки назад
     SystemChannels.navigation.setMethodCallHandler((MethodCall call) async {
@@ -196,7 +198,7 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
 
     // --- Инициализация подсказок на маршрут ---
     final routeId = widget.route.id;
-    final routeProgress = userProgress.routes[routeId];
+    final routeProgress = ref.read(userProgressProvider).routes[routeId];
     if (routeProgress == null) {
       Future.microtask(() {
         final userProgressNotifier = ref.read(userProgressProvider.notifier);
@@ -415,13 +417,15 @@ class _PageTestScreenState extends ConsumerState<PageTestScreen> {
     if (type == QuestionTypeTest.anagram && (anagramUserAnswer == null || anagramBank == null)) {
       _initAnagramState(currentTest as AnagramQuestion);
     }
+    final profile = ref.watch(profileProvider);
+    final suscoins = profile.suscoins;
+    final energy = profile.energy;
+
+    // Переменные для работы с подсказками
     final routeId = widget.route.id;
     final userProgress = ref.watch(userProgressProvider);
     final routeProgress = userProgress.routes[routeId];
     final hintsLeft = routeProgress?.hintsLeft ?? 3;
-    final profile = ref.watch(profileProvider);
-    final suscoins = profile.suscoins;
-    final energy = profile.energy;
 
     return PopScope(
       canPop: false,

@@ -73,9 +73,6 @@ class ProfileScreen extends ConsumerWidget {
               padding: EdgeInsets.symmetric(horizontal: 18),
               children: [
                 FeedSuslikWidget(
-                  streak: streak,
-                  energy: profile.energy,
-                  suscoins: profile.suscoins,
                   onFeed: () async {
                     await ref.read(profileProvider.notifier).spendSuscoins(1);
                     await ref.read(profileProvider.notifier).addEnergy(1);
