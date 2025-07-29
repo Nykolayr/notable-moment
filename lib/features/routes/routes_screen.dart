@@ -102,12 +102,8 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
     _previousRoutes.clear();
     _previousRoutes.addAll(routes);
 
-    // Преобразуем первый маршрут в RouteModel для скачивания фотографий
-    if (routes.isNotEmpty) {
-      Logger.i('_drawRoutesAndPoints: Преобразуем первый маршрут в RouteModel');
-      final routeModel = await toRouteModel(routes.first);
-      Logger.i('_drawRoutesAndPoints: Маршрут преобразован, количество точек: ${routeModel.points.length}');
-    }
+    // Убираем автоматическое преобразование - теперь это делается только по требованию
+    Logger.d('_drawRoutesAndPoints: Отрисовываем ${routes.length} маршрутов');
 
     final List<MapObject> objects = [];
     final List<Point> allPoints = [];

@@ -39,6 +39,46 @@ class PlacesScreen extends ConsumerWidget {
             Logger.e('PlacesScreen: Ошибка при преобразовании маршрута ${route.id}: $e');
           }
         });
+      } else {
+        // Проверяем, есть ли изменения в фотографиях
+        final cachedRoute = convertedRoutes[route.id]!;
+        bool hasPhotoChanges = false;
+
+        // Сравниваем количество точек и фотографий
+        if (route.points.length != cachedRoute.points.length) {
+          hasPhotoChanges = true;
+        } else {
+          for (int i = 0; i < route.points.length; i++) {
+            final adminPoint = route.points[i];
+            final cachedPoint = cachedRoute.points[i];
+
+            if (adminPoint.photos.length != cachedPoint.photos.length) {
+              hasPhotoChanges = true;
+              break;
+            }
+          }
+        }
+
+        if (hasPhotoChanges) {
+          Logger.i('PlacesScreen: Обнаружены изменения в фотографиях маршрута ${route.id}, пересоздаем');
+          // Удаляем из кэша и пересоздаем
+          final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+          updatedRoutes.remove(route.id);
+          ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+
+          // Пересоздаем маршрут
+          Future(() async {
+            try {
+              final routeModel = await route.toRouteModel();
+              final newUpdatedRoutes = Map<String, RouteModel>.from(updatedRoutes);
+              newUpdatedRoutes[route.id] = routeModel;
+              ref.read(convertedRoutesProvider.notifier).state = newUpdatedRoutes;
+              Logger.i('PlacesScreen: Маршрут ${route.id} пересоздан с новыми фотографиями');
+            } catch (e) {
+              Logger.e('PlacesScreen: Ошибка при пересоздании маршрута ${route.id}: $e');
+            }
+          });
+        }
       }
     }
 

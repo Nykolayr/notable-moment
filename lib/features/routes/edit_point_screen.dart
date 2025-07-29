@@ -42,7 +42,6 @@ class _EditPointScreenState extends State<EditPointScreen> {
   late final List<TextEditingController> phoneControllers =
       widget.pointAdmin?.phones.map((phone) => TextEditingController(text: phone)).toList() ??
           [TextEditingController()];
-  late final List<String> photos = List.from(widget.pointAdmin?.photos ?? []);
   late WorkingHours schedule = widget.pointAdmin?.schedule ?? WorkingHours(periods: []);
   late bool isDraft = widget.pointAdmin?.isDraft ?? false;
   late List<QuestionTest> tests = widget.pointAdmin?.tests ?? [];
@@ -57,6 +56,9 @@ class _EditPointScreenState extends State<EditPointScreen> {
     if (!isNew) {
       point = widget.pointAdmin?.point;
       tests = widget.pointAdmin!.tests;
+
+      // Инициализируем _pickedPhotos с существующими фотографиями
+      _pickedPhotos = widget.pointAdmin!.photos.map((photoPath) => XFile(photoPath)).toList();
     }
 
     titleController.addListener(() => setState(() {}));
@@ -94,14 +96,14 @@ class _EditPointScreenState extends State<EditPointScreen> {
   }
 
   Future<void> pickImage() async {
-    if (photos.length >= 3) {
+    if (_pickedPhotos.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Максимум 3 фотографии')));
       return;
     }
     final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       setState(() {
-        photos.add(image.path);
+        _pickedPhotos.add(image);
       });
     }
   }
@@ -112,7 +114,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
       title: 'Удалить фото',
       okText: 'Удалить',
       okStyle: AppButtonStyle.red,
-      okCallBack: () => setState(() => photos.removeAt(index)),
+      okCallBack: () => setState(() => _pickedPhotos.removeAt(index)),
     );
   }
 
@@ -150,7 +152,12 @@ class _EditPointScreenState extends State<EditPointScreen> {
     )) {
       return true;
     }
-    if (!ListEquality().equals(photos, widget.pointAdmin?.photos ?? [])) return true;
+
+    // Проверяем изменения в фотографиях, используя _pickedPhotos
+    final currentPhotoPaths = _pickedPhotos.map((photo) => photo.path).toList();
+    final originalPhotoPaths = widget.pointAdmin?.photos ?? [];
+    if (!ListEquality().equals(currentPhotoPaths, originalPhotoPaths)) return true;
+
     if (schedule != (widget.pointAdmin?.schedule ?? WorkingHours(periods: []))) return true;
     if (isDraft != (widget.pointAdmin?.isDraft ?? true)) return true;
     if (point != widget.pointAdmin?.point) return true;

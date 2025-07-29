@@ -14,6 +14,26 @@ final routesProvider = StateNotifierProvider<RoutesNotifier, RoutesState>((ref) 
 // Провайдер для хранения преобразованных маршрутов
 final convertedRoutesProvider = StateProvider<Map<String, RouteModel>>((ref) => {});
 
+// Глобальный провайдер для управления кэшем
+final globalConvertedRoutesProvider = StateProvider<Map<String, RouteModel>>((ref) => {});
+
+// Метод для очистки кэша маршрута
+void clearRouteCache(String routeId) {
+  try {
+    final container = ProviderContainer();
+    final convertedRoutes = container.read(globalConvertedRoutesProvider);
+    if (convertedRoutes.containsKey(routeId)) {
+      final updatedConvertedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+      updatedConvertedRoutes.remove(routeId);
+      container.read(globalConvertedRoutesProvider.notifier).state = updatedConvertedRoutes;
+      Logger.i('clearRouteCache: Кэш для маршрута $routeId очищен');
+    }
+    container.dispose();
+  } catch (e) {
+    Logger.e('clearRouteCache: Ошибка при очистке кэша: $e');
+  }
+}
+
 class RoutesNotifier extends StateNotifier<RoutesState> {
   final _routesService = RoutesService();
 
@@ -35,28 +55,16 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
 
         state = state.copyWith(allRoutes: routes, isLoading: false);
 
-        // Преобразуем первый маршрут в RouteModel для скачивания фотографий
+        // Преобразуем только первый маршрут для предварительной загрузки фотографий
         if (routes.isNotEmpty) {
-          Logger.i('routesProvider: Преобразуем первый маршрут в RouteModel для скачивания фотографий');
+          Logger.i('routesProvider: Предварительно загружаем фотографии для первого маршрута');
           try {
-            // Получаем текущее состояние convertedRoutesProvider
-            final convertedRoutes = ProviderContainer().read(convertedRoutesProvider);
-
-            // Преобразуем все маршруты и сохраняем их
-            for (final route in routes) {
-              Logger.i('routesProvider: Преобразуем маршрут ${route.id} (${route.title})');
-              final routeModel = await route.toRouteModel();
-
-              // Сохраняем преобразованный маршрут
-              convertedRoutes[route.id] = routeModel;
-            }
-
-            // Обновляем состояние convertedRoutesProvider
-            ProviderContainer().read(convertedRoutesProvider.notifier).state = Map.from(convertedRoutes);
-
-            Logger.i('routesProvider: Все маршруты преобразованы и сохранены');
+            // Преобразуем только первый маршрут для предварительной загрузки
+            final firstRoute = routes.first;
+            await firstRoute.toRouteModel();
+            Logger.i('routesProvider: Предварительная загрузка завершена для маршрута ${firstRoute.id}');
           } catch (e) {
-            Logger.e('routesProvider: Ошибка при преобразовании маршрутов: $e');
+            Logger.e('routesProvider: Ошибка при предварительной загрузке: $e');
           }
         }
       },
@@ -84,6 +92,21 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
 
         // Проверяем изменения в тестах
         if (oldPoint.tests.length != newPoint.tests.length) return true;
+
+        // Проверяем изменения в фотографиях
+        if (oldPoint.photos.length != newPoint.photos.length) return true;
+
+        // Проверяем, изменились ли сами фотографии
+        for (int k = 0; k < oldPoint.photos.length; k++) {
+          if (k >= newPoint.photos.length || oldPoint.photos[k] != newPoint.photos[k]) {
+            return true;
+          }
+        }
+
+        // Проверяем, добавились ли новые фотографии
+        for (int k = oldPoint.photos.length; k < newPoint.photos.length; k++) {
+          return true;
+        }
       }
     }
 
@@ -139,6 +162,10 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
       // Обновляем маршрут в локальном состоянии
       final updatedRoutes = state.allRoutes.map((r) => r.id == route.id ? route : r).toList();
       state = state.copyWith(allRoutes: updatedRoutes);
+
+      // Очищаем кэш преобразованных маршрутов для этого маршрута
+      // чтобы принудительно пересоздать RouteModel с новыми фотографиями
+      clearRouteCache();
     } catch (e) {
       Logger.e('routesProvider updateRoute error: $e');
       // Можно добавить уведомление пользователя об ошибке
@@ -192,6 +219,17 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
     } catch (e) {
       Logger.e('routesProvider clearAllPhotos error: $e');
       // Можно добавить уведомление пользователя об ошибке
+    }
+  }
+
+  // Метод для очистки кэша маршрутов
+  void clearRouteCache() {
+    try {
+      // Вызываем статический метод из расширения
+      RouteAdminMapper.clearCache();
+      Logger.i('routesProvider: Кэш маршрутов очищен');
+    } catch (e) {
+      Logger.e('routesProvider clearRouteCache error: $e');
     }
   }
 }
