@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:notable_moments/core/theme/app_color.dart';
-import 'package:notable_moments/core/theme/app_icon.dart';
 import 'package:notable_moments/core/theme/app_images.dart';
 import 'package:notable_moments/core/theme/app_style.dart';
 import 'package:notable_moments/core/widget/app_button.dart';

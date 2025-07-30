@@ -5,7 +5,6 @@ import 'package:notable_moments/core/extension/build_context_extension.dart';
 import 'package:notable_moments/core/theme/app_color.dart';
 import 'package:notable_moments/core/theme/app_style.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
-import 'package:notable_moments/core/widget/app_image.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/places/widgets/photo_carousel_widget.dart';
 import 'package:share_plus/share_plus.dart';
