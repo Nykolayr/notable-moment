@@ -93,10 +93,10 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
   bool get isNetwork {
     final url = _currentUrl ?? '';
 
-    // Проверяем, не является ли это путем на Яндекс.Диска
-    if (url.contains('/notable_moments/')) {
-      Logger.e('isNetwork: Обнаружен путь Яндекс.Диска: $url, но файл должен быть скачан локально!');
-      return false; // Считаем, что это локальный файл, чтобы избежать ошибок
+    // Проверяем, не является ли это локальным файлом в папке notable_moments
+    if (url.contains('/notable_moments/') || url.contains('/app_flutter/notable_moments/')) {
+      Logger.d('isNetwork: Обнаружен локальный файл в папке notable_moments: $url');
+      return false; // Считаем, что это локальный файл
     }
 
     return url.startsWith('http');
@@ -104,13 +104,17 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
 
   // Метод для получения кэшированного локального изображения
   Future<Widget> _getCachedLocalImage(String filePath) async {
+    Logger.d('AppImage: Ищем локальный файл: $filePath');
+
     // Проверяем кэш изображений
     if (_imageCache.containsKey(filePath)) {
+      Logger.d('AppImage: Файл найден в кэше изображений: $filePath');
       return _imageCache[filePath]!;
     }
 
     // Проверяем кэш байтов
     if (_imageBytesCache.containsKey(filePath)) {
+      Logger.d('AppImage: Файл найден в кэше байтов: $filePath');
       final image = Image.memory(
         _imageBytesCache[filePath]!,
         width: widget.width,
@@ -125,7 +129,10 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
     // Загружаем новое изображение
     try {
       final file = File(filePath);
+      Logger.d('AppImage: Проверяем существование файла: $filePath');
       if (await file.exists()) {
+        final fileSize = await file.length();
+        Logger.d('AppImage: Файл существует, размер: $fileSize байт');
         final bytes = await file.readAsBytes();
 
         // Кэшируем байты

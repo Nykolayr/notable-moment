@@ -25,11 +25,6 @@ class RouteAdminModel {
   int get visiblePoints => points.where((point) => !point.isDraft).length;
   int get draftPoints => points.where((point) => point.isDraft).length;
 
-  // Кэш для преобразованных маршрутов
-  static final Map<String, RouteModel> _routeCache = {};
-  static final Map<String, DateTime> _cacheTimestamps = {};
-  static const Duration _cacheExpiration = Duration(minutes: 30); // Кэш на 30 минут
-
   const RouteAdminModel({
     required this.id,
     required this.order,
@@ -118,21 +113,6 @@ class RouteAdminModel {
 /// ✅ Расширение: безопасно преобразует RouteAdminModel → RouteModel
 extension RouteAdminMapper on RouteAdminModel {
   Future<RouteModel> toRouteModel() async {
-    // Проверяем кэш
-    final now = DateTime.now();
-    final cacheKey = '${id}_${points.length}_${points.fold(0, (sum, p) => sum + p.photos.length)}';
-
-    if (RouteAdminModel._routeCache.containsKey(cacheKey)) {
-      final timestamp = RouteAdminModel._cacheTimestamps[cacheKey];
-      if (timestamp != null && now.difference(timestamp) < RouteAdminModel._cacheExpiration) {
-        return RouteAdminModel._routeCache[cacheKey]!;
-      } else {
-        // Кэш устарел, удаляем
-        RouteAdminModel._routeCache.remove(cacheKey);
-        RouteAdminModel._cacheTimestamps.remove(cacheKey);
-      }
-    }
-
     final List<RoutePoint> routePoints = [];
 
     // Получаем токен один раз для всех запросов
@@ -143,24 +123,50 @@ extension RouteAdminMapper on RouteAdminModel {
 
       for (var photoUrl in p.photos) {
         try {
+          // Проверяем, что путь к фото не пустой
+          if (photoUrl.isEmpty) {
+            Logger.w('toRouteModel: Пустой путь к фото, пропускаем');
+            continue;
+          }
+
           // Извлекаем имя файла из пути на Яндекс.Диске
           final fileName = photoUrl.split('/').last;
           final directory = await getApplicationDocumentsDirectory();
-          final localFile = io.File('${directory.path}/$fileName');
+
+          // Проверяем файл в папке notable_moments (где сохраняются локальные копии)
+          final localFile = io.File('${directory.path}/notable_moments/$fileName');
+
+          // Также проверяем файл в корневой папке (для обратной совместимости)
+          final rootFile = io.File('${directory.path}/$fileName');
+
+          Logger.d('toRouteModel: Ищем файл: $fileName');
+          Logger.d('toRouteModel: Путь в notable_moments: ${localFile.path}');
+          Logger.d('toRouteModel: Путь в корневой папке: ${rootFile.path}');
 
           if (await localFile.exists()) {
-            // Если файл уже существует локально, используем его
+            // Если файл существует в папке notable_moments, используем его
             final fileSize = await localFile.length();
             localPhotos.add(localFile.path);
-            Logger.d('toRouteModel: Фото уже существует: $fileName ($fileSize байт)');
+            Logger.d('toRouteModel: Фото найдено в notable_moments: $fileName ($fileSize байт)');
+          } else if (await rootFile.exists()) {
+            // Если файл существует в корневой папке, используем его
+            final fileSize = await rootFile.length();
+            localPhotos.add(rootFile.path);
+            Logger.d('toRouteModel: Фото найдено в корневой папке: $fileName ($fileSize байт)');
           } else {
+            Logger.d('toRouteModel: Файл не найден локально, скачиваем с Яндекс.Диска: $fileName');
+            Logger.d('toRouteModel: Полный путь на Яндекс.Диске: $photoUrl');
             try {
               // Получаем ссылку для скачивания напрямую
               Logger.d('toRouteModel: Скачиваем фото: $fileName');
+              Logger.d('toRouteModel: Используем токен: ${token.substring(0, 10)}...');
+
+              final requestUrl =
+                  'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(photoUrl)}';
+              Logger.d('toRouteModel: URL запроса: $requestUrl');
+
               final downloadUrlResponse = await http.get(
-                Uri.parse(
-                  'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(photoUrl)}',
-                ),
+                Uri.parse(requestUrl),
                 headers: {
                   'Authorization': 'OAuth $token',
                   'Accept': 'application/json',
@@ -169,8 +175,13 @@ extension RouteAdminMapper on RouteAdminModel {
                 },
               );
 
+              Logger.d('toRouteModel: Ответ на запрос ссылки для скачивания: ${downloadUrlResponse.statusCode}');
+              Logger.d('toRouteModel: Тело ответа: ${downloadUrlResponse.body}');
+
               if (downloadUrlResponse.statusCode == 200) {
-                final downloadUrl = jsonDecode.jsonDecode(downloadUrlResponse.body)['href'];
+                final responseData = jsonDecode.jsonDecode(downloadUrlResponse.body);
+                final downloadUrl = responseData['href'];
+                Logger.d('toRouteModel: Получена ссылка для скачивания: $downloadUrl');
 
                 // Скачиваем файл
                 final fileResponse = await http.get(
@@ -178,26 +189,33 @@ extension RouteAdminMapper on RouteAdminModel {
                   headers: {'User-Agent': 'NotableMoments/1.0'},
                 );
 
+                Logger.d('toRouteModel: Ответ на скачивание файла: ${fileResponse.statusCode}');
+                Logger.d('toRouteModel: Размер скачанного файла: ${fileResponse.bodyBytes.length} байт');
+
                 if (fileResponse.statusCode == 200) {
                   final bytes = fileResponse.bodyBytes;
 
-                  // Создаем директорию, если она не существует
-                  final directory = await getApplicationDocumentsDirectory();
-                  if (!await directory.exists()) {
-                    await directory.create(recursive: true);
+                  // Создаем директорию notable_moments, если она не существует
+                  final notableMomentsDir = io.Directory('${directory.path}/notable_moments');
+                  if (!await notableMomentsDir.exists()) {
+                    await notableMomentsDir.create(recursive: true);
+                    Logger.d('toRouteModel: Создана директория: ${notableMomentsDir.path}');
                   }
 
-                  // Сохраняем файл локально
+                  // Сохраняем файл локально в папку notable_moments
                   await localFile.writeAsBytes(bytes);
                   final fileSize = await localFile.length();
-                  Logger.d('toRouteModel: Фото загружено: $fileName ($fileSize байт)');
+                  Logger.d('toRouteModel: Фото загружено в notable_moments: $fileName ($fileSize байт)');
+                  Logger.d('toRouteModel: Локальный путь: ${localFile.path}');
 
                   localPhotos.add(localFile.path);
                 } else {
                   Logger.e('toRouteModel: Ошибка скачивания файла: ${fileResponse.statusCode}');
+                  Logger.e('toRouteModel: Тело ответа при скачивании: ${fileResponse.body}');
                 }
               } else {
                 Logger.e('toRouteModel: Ошибка получения ссылки для скачивания: ${downloadUrlResponse.statusCode}');
+                Logger.e('toRouteModel: Тело ответа при запросе ссылки: ${downloadUrlResponse.body}');
               }
             } catch (e) {
               Logger.e('toRouteModel: Ошибка загрузки фото: $e');
@@ -207,6 +225,8 @@ extension RouteAdminMapper on RouteAdminModel {
           Logger.e('toRouteModel: Общая ошибка при обработке фото: $e');
         }
       }
+
+      Logger.d('toRouteModel: Точка "${p.title}": обработано ${localPhotos.length} из ${p.photos.length} фото');
 
       routePoints.add(
         RoutePoint(
@@ -229,17 +249,7 @@ extension RouteAdminMapper on RouteAdminModel {
       taskCount: points.length,
     );
 
-    // Сохраняем в кэш
-    RouteAdminModel._routeCache[cacheKey] = routeModel;
-    RouteAdminModel._cacheTimestamps[cacheKey] = now;
-
     return routeModel;
-  }
-
-  // Метод для очистки кэша
-  static void clearCache() {
-    RouteAdminModel._routeCache.clear();
-    RouteAdminModel._cacheTimestamps.clear();
   }
 }
 

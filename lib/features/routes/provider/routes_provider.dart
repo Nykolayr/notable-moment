@@ -14,18 +14,15 @@ final routesProvider = StateNotifierProvider<RoutesNotifier, RoutesState>((ref) 
 // Провайдер для хранения преобразованных маршрутов
 final convertedRoutesProvider = StateProvider<Map<String, RouteModel>>((ref) => {});
 
-// Глобальный провайдер для управления кэшем
-final globalConvertedRoutesProvider = StateProvider<Map<String, RouteModel>>((ref) => {});
-
 // Метод для очистки кэша маршрута
 void clearRouteCache(String routeId) {
   try {
     final container = ProviderContainer();
-    final convertedRoutes = container.read(globalConvertedRoutesProvider);
+    final convertedRoutes = container.read(convertedRoutesProvider);
     if (convertedRoutes.containsKey(routeId)) {
       final updatedConvertedRoutes = Map<String, RouteModel>.from(convertedRoutes);
       updatedConvertedRoutes.remove(routeId);
-      container.read(globalConvertedRoutesProvider.notifier).state = updatedConvertedRoutes;
+      container.read(convertedRoutesProvider.notifier).state = updatedConvertedRoutes;
       Logger.i('clearRouteCache: Кэш для маршрута $routeId очищен');
     }
     container.dispose();
@@ -165,7 +162,7 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
 
       // Очищаем кэш преобразованных маршрутов для этого маршрута
       // чтобы принудительно пересоздать RouteModel с новыми фотографиями
-      clearRouteCache();
+      clearRouteCache(route.id);
     } catch (e) {
       Logger.e('routesProvider updateRoute error: $e');
       // Можно добавить уведомление пользователя об ошибке
@@ -219,17 +216,6 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
     } catch (e) {
       Logger.e('routesProvider clearAllPhotos error: $e');
       // Можно добавить уведомление пользователя об ошибке
-    }
-  }
-
-  // Метод для очистки кэша маршрутов
-  void clearRouteCache() {
-    try {
-      // Вызываем статический метод из расширения
-      RouteAdminMapper.clearCache();
-      Logger.i('routesProvider: Кэш маршрутов очищен');
-    } catch (e) {
-      Logger.e('routesProvider clearRouteCache error: $e');
     }
   }
 }

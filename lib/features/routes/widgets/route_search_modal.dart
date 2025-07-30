@@ -130,21 +130,12 @@ class _RouteSearchModalState extends ConsumerState<RouteSearchModal> {
               child: _RouteCard(
                 route: route,
                 onTap: () async {
-                  // Используем уже преобразованный маршрут из провайдера
                   final convertedRoutes = ref.read(convertedRoutesProvider);
                   RouteModel? routeModel = convertedRoutes[route.id];
 
-                  // Если маршрут еще не был преобразован, делаем это сейчас
                   if (routeModel == null) {
-                    Logger.i('route_search_modal: Маршрут ${route.id} не найден в кэше, преобразуем');
-                    routeModel = await route.toRouteModel();
-
-                    // Сохраняем преобразованный маршрут
-                    final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
-                    updatedRoutes[route.id] = routeModel;
-                    ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
-                  } else {
-                    Logger.i('route_search_modal: Используем кэшированный маршрут ${route.id}');
+                    Logger.w('route_search_modal: Маршрут ${route.id} не найден в кэше');
+                    return;
                   }
 
                   widget.onRouteTap(routeModel);

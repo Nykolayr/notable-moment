@@ -129,7 +129,7 @@ class YandexDiskUploader {
       // Получаем актуальный токен
       final validToken = await getValidToken();
 
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_point_${pointId}_${path.basename(filePath)}';
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${pointId}_${path.basename(filePath)}';
       final remotePath = '/notable_moments/$fileName';
 
       Logger.i('Начинаем загрузку файла: $filePath');

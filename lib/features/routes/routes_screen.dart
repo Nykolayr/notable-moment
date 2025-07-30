@@ -125,17 +125,9 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
               final convertedRoutes = ref.read(convertedRoutesProvider);
               RouteModel? routeModel = convertedRoutes[route.id];
 
-              // Если маршрут еще не был преобразован, делаем это сейчас
               if (routeModel == null) {
-                Logger.i('routes_screen: Маршрут ${route.id} не найден в кэше, преобразуем');
-                routeModel = await toRouteModel(route);
-
-                // Сохраняем преобразованный маршрут
-                final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
-                updatedRoutes[route.id] = routeModel;
-                ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
-              } else {
-                Logger.i('routes_screen: Используем кэшированный маршрут ${route.id}');
+                Logger.w('routes_screen: Маршрут ${route.id} не найден в кэше');
+                return;
               }
 
               ref.read(selectedRouteProvider.notifier).state = routeModel;
@@ -158,17 +150,9 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen>
               final convertedRoutes = ref.read(convertedRoutesProvider);
               RouteModel? routeModel = convertedRoutes[route.id];
 
-              // Если маршрут еще не был преобразован, делаем это сейчас
               if (routeModel == null) {
-                Logger.i('routes_screen: Маршрут ${route.id} не найден в кэше, преобразуем');
-                routeModel = await toRouteModel(route);
-
-                // Сохраняем преобразованный маршрут
-                final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
-                updatedRoutes[route.id] = routeModel;
-                ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
-              } else {
-                Logger.i('routes_screen: Используем кэшированный маршрут ${route.id}');
+                Logger.w('routes_screen: Маршрут ${route.id} не найден в кэше');
+                return;
               }
 
               ref.read(selectedRouteProvider.notifier).state = routeModel;

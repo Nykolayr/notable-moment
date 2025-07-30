@@ -65,10 +65,12 @@ class _EditPointScreenState extends State<EditPointScreen> {
 
       // Инициализируем _pickedPhotos и _currentPhotoPaths с существующими фотографиями
       _currentPhotoPaths = List.from(widget.pointAdmin!.photos);
+      for (var photo in _currentPhotoPaths) {
+        Logger.d('EditPointScreen: Фото на яндекс диске: $photo');
+      }
       _pickedPhotos = _currentPhotoPaths.map((photoPath) => XFile(photoPath)).toList();
-      Logger.d('EditPointScreen: Инициализация с ${_pickedPhotos.length} фотографиями');
       for (var photo in _pickedPhotos) {
-        Logger.d('EditPointScreen: Фото: ${photo.path}');
+        Logger.d('EditPointScreen: Фото на диске: ${photo.path}');
       }
     }
 
@@ -536,6 +538,15 @@ class _EditPointScreenState extends State<EditPointScreen> {
                                   // Копируем файл локально
                                   await File(photoPath).copy(localPath);
                                   Logger.i('Локальная копия сохранена: $localPath');
+
+                                  // Проверяем, что файл действительно создался
+                                  final savedFile = File(localPath);
+                                  if (await savedFile.exists()) {
+                                    final fileSize = await savedFile.length();
+                                    Logger.i('Файл успешно сохранен: $localPath (размер: $fileSize байт)');
+                                  } else {
+                                    Logger.e('Файл не был создан: $localPath');
+                                  }
 
                                   // Используем локальный путь вместо URL
                                   uploadedPhotos.add(localPath);

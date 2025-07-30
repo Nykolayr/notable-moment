@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:either_dart/either.dart';
 import 'package:notable_moments/core/provider/auth_service.dart';
-import 'package:notable_moments/core/provider/auth_state.dart'; // Убедись, что этот файл существует
+import 'package:notable_moments/core/provider/auth_state.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
+import 'package:notable_moments/features/routes/provider/routes_provider.dart';
+import 'package:notable_moments/features/routes/model/route_model.dart';
+import 'package:notable_moments/features/routes/model/route_admin_model.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final authService = ref.watch(authServiceProvider);
@@ -59,6 +62,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         (user) {
           state = state.copyWith(user: user);
           ref.read(profileProvider.notifier).loadProfile();
+
+          // Преобразуем маршруты после авторизации для загрузки фотографий
+          _convertRoutesAfterAuth();
+
           Logger.i('authProvider -- signIn success: ${user?.uid}');
           return Right(user);
         },
@@ -117,6 +124,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       Logger.e('authProvider -- sendPasswordResetEmail exception: $e');
       return Left('Ошибка сброса пароля: ${e.toString()}');
+    }
+  }
+
+  // Метод для преобразования маршрутов после авторизации
+  Future<void> _convertRoutesAfterAuth() async {
+    try {
+      // Получаем маршруты из провайдера
+      final routesState = ref.read(routesProvider);
+      if (routesState.allRoutes.isNotEmpty) {
+        Logger.i('authProvider: Преобразуем маршруты после авторизации');
+
+        final convertedRoutes = ref.read(convertedRoutesProvider);
+
+        // Преобразуем все маршруты и сохраняем их
+        for (final route in routesState.allRoutes) {
+          Logger.i('authProvider: Преобразуем маршрут ${route.id} (${route.title})');
+          final routeModel = await route.toRouteModel();
+
+          // Сохраняем преобразованный маршрут
+          final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
+          updatedRoutes[route.id] = routeModel;
+          ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+        }
+
+        Logger.i('authProvider: Все маршруты преобразованы после авторизации');
+      }
+    } catch (e) {
+      Logger.e('authProvider: Ошибка при преобразовании маршрутов после авторизации: $e');
     }
   }
 }
