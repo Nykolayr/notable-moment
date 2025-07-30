@@ -25,14 +25,6 @@ final selectedRouteProvider = StateProvider<RouteModel?>((ref) => null);
 // Используем метод расширения из route_admin_model.dart
 Future<RouteModel> toRouteModel(RouteAdminModel admin) {
   // Исправлено: если admin.toRouteModel() возвращает Future<RouteModel>, то функция должна быть async и возвращать Future<RouteModel>
-  Logger.i('routes_screen.toRouteModel: Начинаем преобразование RouteAdminModel в RouteModel');
-  Logger.i('routes_screen.toRouteModel: ID маршрута: ${admin.id}');
-  Logger.i('routes_screen.toRouteModel: Название маршрута: ${admin.title}');
-
-  if (admin.points.isNotEmpty && admin.points.first.photos.isNotEmpty) {
-    Logger.i('routes_screen.toRouteModel: Примеры путей фото: ${admin.points.first.photos.first}');
-  }
-
   return admin.toRouteModel();
 }
 

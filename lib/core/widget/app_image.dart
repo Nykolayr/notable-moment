@@ -106,13 +106,11 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
   Future<Widget> _getCachedLocalImage(String filePath) async {
     // Проверяем кэш изображений
     if (_imageCache.containsKey(filePath)) {
-      Logger.d('AppImage: Используем кэшированное изображение: $filePath');
       return _imageCache[filePath]!;
     }
 
     // Проверяем кэш байтов
     if (_imageBytesCache.containsKey(filePath)) {
-      Logger.d('AppImage: Создаем изображение из кэшированных байтов: $filePath');
       final image = Image.memory(
         _imageBytesCache[filePath]!,
         width: widget.width,
@@ -125,7 +123,6 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
     }
 
     // Загружаем новое изображение
-    Logger.d('AppImage: Загружаем новое изображение: $filePath');
     try {
       final file = File(filePath);
       if (await file.exists()) {
@@ -151,7 +148,6 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
           final firstKey = _imageBytesCache.keys.first;
           _imageBytesCache.remove(firstKey);
           _imageCache.remove(firstKey);
-          Logger.d('AppImage: Удален старый элемент из кэша изображений');
         }
 
         return image;

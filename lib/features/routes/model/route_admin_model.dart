@@ -125,7 +125,6 @@ extension RouteAdminMapper on RouteAdminModel {
     if (RouteAdminModel._routeCache.containsKey(cacheKey)) {
       final timestamp = RouteAdminModel._cacheTimestamps[cacheKey];
       if (timestamp != null && now.difference(timestamp) < RouteAdminModel._cacheExpiration) {
-        Logger.i('toRouteModel: Используем кэшированный маршрут $id');
         return RouteAdminModel._routeCache[cacheKey]!;
       } else {
         // Кэш устарел, удаляем
@@ -133,8 +132,6 @@ extension RouteAdminMapper on RouteAdminModel {
         RouteAdminModel._cacheTimestamps.remove(cacheKey);
       }
     }
-
-    Logger.i('toRouteModel: Преобразуем маршрут $id ($title) - ${points.length} точек');
 
     final List<RoutePoint> routePoints = [];
 
@@ -236,7 +233,6 @@ extension RouteAdminMapper on RouteAdminModel {
     RouteAdminModel._routeCache[cacheKey] = routeModel;
     RouteAdminModel._cacheTimestamps[cacheKey] = now;
 
-    Logger.i('toRouteModel: Маршрут $id преобразован и сохранен в кэш');
     return routeModel;
   }
 
@@ -244,7 +240,6 @@ extension RouteAdminMapper on RouteAdminModel {
   static void clearCache() {
     RouteAdminModel._routeCache.clear();
     RouteAdminModel._cacheTimestamps.clear();
-    Logger.i('toRouteModel: Кэш очищен');
   }
 }
 

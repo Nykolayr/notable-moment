@@ -25,7 +25,6 @@ class PlacesScreen extends ConsumerWidget {
     // Преобразуем маршруты, которых нет в кэше
     for (final route in routes) {
       if (!convertedRoutes.containsKey(route.id)) {
-        Logger.i('PlacesScreen: Маршрут ${route.id} не найден в кэше, преобразуем');
         // Запускаем преобразование асинхронно
         Future(() async {
           try {
@@ -34,7 +33,6 @@ class PlacesScreen extends ConsumerWidget {
             final updatedRoutes = Map<String, RouteModel>.from(convertedRoutes);
             updatedRoutes[route.id] = routeModel;
             ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
-            Logger.i('PlacesScreen: Маршрут ${route.id} преобразован и сохранен в кэш');
           } catch (e) {
             Logger.e('PlacesScreen: Ошибка при преобразовании маршрута ${route.id}: $e');
           }

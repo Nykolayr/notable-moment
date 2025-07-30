@@ -3,6 +3,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:notable_moments/core/constants/app_constants.dart';
 import 'package:notable_moments/core/helpers/validator.dart';
 import 'package:notable_moments/core/widget/app_app_bar.dart';
 import 'package:notable_moments/core/widget/app_button.dart';
@@ -21,6 +22,7 @@ import 'package:notable_moments/features/routes/widget/photo_grid_widget.dart';
 import 'package:notable_moments/features/routes/utils/yandex_disk_upload.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
 import 'dart:io'; // Added for File
+import 'package:path_provider/path_provider.dart'; // Added for getApplicationDocumentsDirectory
 
 class EditPointScreen extends StatefulWidget {
   const EditPointScreen({super.key, required this.pointAdmin});
@@ -285,7 +287,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
     }
 
     // Импортируем YandexDiskUploader
-    final yandexDiskToken = 'y0__xCw3KHvARiIlTkgn7LJ9RO08dnTwoc4tJ3uGtIZnzAKFurOAA'; // Токен Яндекс.Диска
+    final yandexDiskToken = AppConstants.yandexDiskToken; // Токен Яндекс.Диска
     final pointId = widget.pointAdmin?.id ?? 'temp-2${DateTime.now().millisecondsSinceEpoch}';
 
     try {
@@ -520,7 +522,29 @@ class _EditPointScreenState extends State<EditPointScreen> {
 
                               if (uploadedPath != null) {
                                 Logger.i('Фото #$photoIndex успешно загружено: $uploadedPath');
-                                uploadedPhotos.add(uploadedPath);
+
+                                // Сохраняем локальную копию с именем файла из Яндекс Диска
+                                try {
+                                  final fileName = uploadedPath.split('/').last;
+                                  final localDir = await getApplicationDocumentsDirectory();
+                                  final localPath = '${localDir.path}/notable_moments/$fileName';
+
+                                  // Создаем директорию если не существует
+                                  final localDirPath = '${localDir.path}/notable_moments';
+                                  await Directory(localDirPath).create(recursive: true);
+
+                                  // Копируем файл локально
+                                  await File(photoPath).copy(localPath);
+                                  Logger.i('Локальная копия сохранена: $localPath');
+
+                                  // Используем локальный путь вместо URL
+                                  uploadedPhotos.add(localPath);
+                                } catch (e) {
+                                  Logger.e('Ошибка сохранения локальной копии: $e');
+                                  // Если не удалось сохранить локально, используем URL
+                                  uploadedPhotos.add(uploadedPath);
+                                }
+
                                 uploadedCount++;
                               } else {
                                 Logger.e('Ошибка загрузки фото #$photoIndex');
@@ -548,6 +572,10 @@ class _EditPointScreenState extends State<EditPointScreen> {
                         setState(() {
                           isUploading = false;
                         });
+
+                        // Обновляем _currentPhotoPaths с локальными путями
+                        _currentPhotoPaths = List.from(uploadedPhotos);
+                        _pickedPhotos = uploadedPhotos.map((path) => XFile(path)).toList();
 
                         Logger.i('Создаем объект PointAdminModel с ${uploadedPhotos.length} фотографиями');
 

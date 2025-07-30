@@ -5,13 +5,12 @@ import 'package:flutter_easylogger/flutter_logger.dart';
 import 'package:http/http.dart' as http;
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as path;
+import 'package:notable_moments/core/constants/app_constants.dart';
 
 class YandexDiskUploader {
-  static const String directToken = 'y0__xCw3KHvARjklzkg4I_N9ROv9a7sI_TuU4lR_RCZchM2mMFcXQ'; // Обновленный токен
-
   // Получение актуального токена
   static Future<String> getValidToken() async {
-    return directToken;
+    return AppConstants.yandexDiskToken;
   }
 
   // Создание и публикация папки
