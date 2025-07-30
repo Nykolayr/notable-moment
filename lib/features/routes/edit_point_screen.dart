@@ -23,6 +23,8 @@ import 'package:notable_moments/features/routes/utils/yandex_disk_upload.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
 import 'dart:io'; // Added for File
 import 'package:path_provider/path_provider.dart'; // Added for getApplicationDocumentsDirectory
+import 'dart:convert'; // Added for json
+import 'package:http/http.dart' as http; // Added for http
 
 class EditPointScreen extends StatefulWidget {
   const EditPointScreen({super.key, required this.pointAdmin});
@@ -63,14 +65,18 @@ class _EditPointScreenState extends State<EditPointScreen> {
       point = widget.pointAdmin?.point;
       tests = widget.pointAdmin!.tests;
 
-      // Инициализируем _pickedPhotos и _currentPhotoPaths с существующими фотографиями
+      // Инициализируем _currentPhotoPaths с путями из PointAdminModel
       _currentPhotoPaths = List.from(widget.pointAdmin!.photos);
-      for (var photo in _currentPhotoPaths) {
-        Logger.d('EditPointScreen: Фото на яндекс диске: $photo');
-      }
+
+      // Сразу создаем _pickedPhotos из путей на Яндекс.Диск (временно)
       _pickedPhotos = _currentPhotoPaths.map((photoPath) => XFile(photoPath)).toList();
-      for (var photo in _pickedPhotos) {
-        Logger.d('EditPointScreen: Фото на диске: ${photo.path}');
+
+      // Конвертируем пути в локальные для отображения
+      _convertPathsToLocal();
+
+      Logger.d('EditPointScreen: Инициализация с ${_currentPhotoPaths.length} фотографиями');
+      for (var photo in _currentPhotoPaths) {
+        Logger.d('EditPointScreen: Фото: $photo');
       }
     }
 
@@ -79,6 +85,81 @@ class _EditPointScreenState extends State<EditPointScreen> {
     urlController.addListener(() => setState(() {}));
     for (var controller in phoneControllers) {
       controller.addListener(() => setState(() {}));
+    }
+  }
+
+  // Метод для конвертации путей в локальные
+  Future<void> _convertPathsToLocal() async {
+    try {
+      final localPaths = <String>[];
+      final yandexDiskToken = AppConstants.yandexDiskToken;
+
+      for (var yandexPath in _currentPhotoPaths) {
+        // Извлекаем имя файла из пути на Яндекс.Диске
+        final fileName = yandexPath.split('/').last;
+        final directory = await getApplicationDocumentsDirectory();
+        final localPath = '${directory.path}/notable_moments/$fileName';
+
+        // Проверяем, существует ли локальный файл
+        final localFile = File(localPath);
+        if (await localFile.exists()) {
+          localPaths.add(localPath);
+          Logger.d('EditPointScreen: Найден локальный файл: $localPath');
+        } else {
+          // Если локального файла нет, скачиваем его с Яндекс.Диска
+          Logger.d('EditPointScreen: Локальный файл не найден, скачиваем с Яндекс.Диска: $fileName');
+
+          try {
+            // Создаем директорию если не существует
+            final localDirPath = '${directory.path}/notable_moments';
+            await Directory(localDirPath).create(recursive: true);
+
+            // Получаем ссылку для скачивания
+            final requestUrl =
+                'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(yandexPath)}';
+            final downloadUrlResponse = await http.get(
+              Uri.parse(requestUrl),
+              headers: {'Authorization': 'OAuth $yandexDiskToken'},
+            );
+
+            if (downloadUrlResponse.statusCode == 200) {
+              final responseData = json.decode(downloadUrlResponse.body);
+              final downloadUrl = responseData['href'];
+
+              // Скачиваем файл
+              final fileResponse = await http.get(Uri.parse(downloadUrl));
+              if (fileResponse.statusCode == 200) {
+                // Сохраняем файл локально
+                await localFile.writeAsBytes(fileResponse.bodyBytes);
+                localPaths.add(localPath);
+                Logger.d('EditPointScreen: Файл успешно скачан и сохранен: $localPath');
+              } else {
+                Logger.e('EditPointScreen: Ошибка скачивания файла: ${fileResponse.statusCode}');
+                // Если не удалось скачать, оставляем путь на Яндекс.Диск
+                localPaths.add(yandexPath);
+              }
+            } else {
+              Logger.e('EditPointScreen: Ошибка получения ссылки для скачивания: ${downloadUrlResponse.statusCode}');
+              // Если не удалось получить ссылку, оставляем путь на Яндекс.Диск
+              localPaths.add(yandexPath);
+            }
+          } catch (e) {
+            Logger.e('EditPointScreen: Ошибка при скачивании файла: $e');
+            // В случае ошибки оставляем путь на Яндекс.Диск
+            localPaths.add(yandexPath);
+          }
+        }
+      }
+
+      // Обновляем пути для отображения - только локальные пути
+      setState(() {
+        _currentPhotoPaths = localPaths;
+        _pickedPhotos = localPaths.map((photoPath) => XFile(photoPath)).toList();
+      });
+
+      Logger.d('EditPointScreen: Конвертация завершена, ${_pickedPhotos.length} фото для отображения');
+    } catch (e) {
+      Logger.e('EditPointScreen: Ошибка при конвертации путей: $e');
     }
   }
 
@@ -499,7 +580,7 @@ class _EditPointScreenState extends State<EditPointScreen> {
                           Logger.i('Проверяем наличие публичной папки на Яндекс.Диске');
                           await YandexDiskUploader.ensurePublicFolder(token);
 
-                          // Загружаем только новые фотографии (локальные пути)
+                          // Загружаем только новые фотографии (не из папки notable_moments)
                           int photoIndex = 0;
                           for (var photoPath in _currentPhotoPaths) {
                             photoIndex++;
@@ -507,15 +588,15 @@ class _EditPointScreenState extends State<EditPointScreen> {
                               uploadingMessage = 'Загрузка фото $photoIndex из $totalPhotos...';
                             });
 
-                            // Проверяем, является ли путь путем на Яндекс.Диск
-                            if (photoPath.contains('/notable_moments/')) {
-                              // Если это уже путь на Яндекс.Диск, добавляем его как есть
-                              Logger.i('Фото #$photoIndex уже на Яндекс.Диске: $photoPath');
+                            // Проверяем, является ли путь путем на Яндекс.Диск или уже из папки notable_moments
+                            if (photoPath.contains('/notable_moments/') || photoPath.startsWith('http')) {
+                              // Если это уже путь на Яндекс.Диск или из папки notable_moments, добавляем его как есть
+                              Logger.i('Фото #$photoIndex уже на Яндекс.Диске или из notable_moments: $photoPath');
                               uploadedPhotos.add(photoPath);
                               uploadedCount++;
-                            } else if (!photoPath.startsWith('http')) {
-                              // Если это локальный файл, загружаем его на Яндекс.Диск
-                              Logger.i('Загружаем фото #$photoIndex: $photoPath');
+                            } else {
+                              // Если это новый локальный файл (не из notable_moments), загружаем его на Яндекс.Диск
+                              Logger.i('Загружаем новое фото #$photoIndex: $photoPath');
                               final uploadedPath = await YandexDiskUploader.uploadPhotoToPublicFolder(
                                 filePath: photoPath,
                                 token: token,
@@ -548,8 +629,8 @@ class _EditPointScreenState extends State<EditPointScreen> {
                                     Logger.e('Файл не был создан: $localPath');
                                   }
 
-                                  // Используем локальный путь вместо URL
-                                  uploadedPhotos.add(localPath);
+                                  // Используем путь на Яндекс.Диск для сохранения в PointAdminModel
+                                  uploadedPhotos.add(uploadedPath);
                                 } catch (e) {
                                   Logger.e('Ошибка сохранения локальной копии: $e');
                                   // Если не удалось сохранить локально, используем URL
@@ -561,11 +642,6 @@ class _EditPointScreenState extends State<EditPointScreen> {
                                 Logger.e('Ошибка загрузки фото #$photoIndex');
                                 failedCount++;
                               }
-                            } else {
-                              // Если это URL, добавляем его как есть
-                              Logger.i('Фото #$photoIndex уже загружено: $photoPath');
-                              uploadedPhotos.add(photoPath);
-                              uploadedCount++;
                             }
                           }
 
