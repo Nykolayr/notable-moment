@@ -10,7 +10,6 @@ import 'package:notable_moments/features/places/functions/show_place_bottom_shee
 import 'package:notable_moments/features/routes/provider/routes_provider.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/model/route_admin_model.dart';
-import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:flutter_easylogger/flutter_logger.dart';
 
 class PlacesScreen extends ConsumerWidget {

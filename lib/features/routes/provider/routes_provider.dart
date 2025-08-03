@@ -101,7 +101,7 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
         }
 
         // Проверяем, добавились ли новые фотографии
-        for (int k = oldPoint.photos.length; k < newPoint.photos.length; k++) {
+        for (int k = oldPoint.photos.length; k < newPoint.photos.length;) {
           return true;
         }
       }

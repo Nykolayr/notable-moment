@@ -14,7 +14,6 @@ import 'package:notable_moments/core/widget/app_edit_button.dart';
 import 'package:notable_moments/core/widget/app_gesture_detector.dart';
 import 'package:notable_moments/features/profile/profile_edit_screen.dart';
 import 'package:notable_moments/features/profile/provider/profile_provider.dart';
-import 'package:notable_moments/features/profile/provider/user_progress_provider.dart';
 import 'package:notable_moments/features/profile/sub_page/profile_faq.dart';
 import 'package:notable_moments/features/profile/sub_page/profile_pdf.dart';
 import 'package:notable_moments/features/profile/widget/feed_suslik_widget.dart';
@@ -28,9 +27,8 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
-    final userProgress = ref.watch(userProgressProvider);
+
     // streak: используем profile.streak если есть, иначе userProgress.daysInARow
-    final streak = profile.streak != 0 ? profile.streak : userProgress.daysInARow;
 
     Widget profileLine(String title, {required VoidCallback onTap}) => AppGestureDetector(
           onTap: onTap,

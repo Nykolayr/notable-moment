@@ -120,8 +120,9 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
 
                   // Удаляем локальный файл, если это локальный путь
                   await _deleteLocalFile(photoPathToDelete);
-
-                  Navigator.of(context).pop();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ),
