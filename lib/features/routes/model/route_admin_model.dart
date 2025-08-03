@@ -9,6 +9,7 @@ import 'package:notable_moments/features/routes/model/point_admin_model.dart';
 import 'package:notable_moments/features/routes/model/route_model.dart';
 import 'package:notable_moments/features/routes/utils/yandex_disk_upload.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
+import 'package:notable_moments/core/constants/app_constants.dart';
 
 class RouteAdminModel {
   final String id;
@@ -125,7 +126,6 @@ extension RouteAdminMapper on RouteAdminModel {
         try {
           // Проверяем, что путь к фото не пустой
           if (photoUrl.isEmpty) {
-            Logger.w('toRouteModel: Пустой путь к фото, пропускаем');
             continue;
           }
 
@@ -133,37 +133,23 @@ extension RouteAdminMapper on RouteAdminModel {
           final fileName = photoUrl.split('/').last;
           final directory = await getApplicationDocumentsDirectory();
 
-          // Проверяем файл в папке notable_moments (где сохраняются локальные копии)
-          final localFile = io.File('${directory.path}/notable_moments/$fileName');
+          // Проверяем файл в папке notable (где сохраняются локальные копии)
+          final localFile = io.File('${directory.path}/notable/$fileName');
 
           // Также проверяем файл в корневой папке (для обратной совместимости)
           final rootFile = io.File('${directory.path}/$fileName');
 
-          Logger.d('toRouteModel: Ищем файл: $fileName');
-          Logger.d('toRouteModel: Путь в notable_moments: ${localFile.path}');
-          Logger.d('toRouteModel: Путь в корневой папке: ${rootFile.path}');
-
           if (await localFile.exists()) {
-            // Если файл существует в папке notable_moments, используем его
-            final fileSize = await localFile.length();
+            // Если файл существует в папке notable, используем его
             localPhotos.add(localFile.path);
-            Logger.d('toRouteModel: Фото найдено в notable_moments: $fileName ($fileSize байт)');
           } else if (await rootFile.exists()) {
             // Если файл существует в корневой папке, используем его
-            final fileSize = await rootFile.length();
             localPhotos.add(rootFile.path);
-            Logger.d('toRouteModel: Фото найдено в корневой папке: $fileName ($fileSize байт)');
           } else {
-            Logger.d('toRouteModel: Файл не найден локально, скачиваем с Яндекс.Диска: $fileName');
-            Logger.d('toRouteModel: Полный путь на Яндекс.Диске: $photoUrl');
             try {
               // Получаем ссылку для скачивания напрямую
-              Logger.d('toRouteModel: Скачиваем фото: $fileName');
-              Logger.d('toRouteModel: Используем токен: ${token.substring(0, 10)}...');
-
               final requestUrl =
                   'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(photoUrl)}';
-              Logger.d('toRouteModel: URL запроса: $requestUrl');
 
               final downloadUrlResponse = await http.get(
                 Uri.parse(requestUrl),
@@ -175,13 +161,9 @@ extension RouteAdminMapper on RouteAdminModel {
                 },
               );
 
-              Logger.d('toRouteModel: Ответ на запрос ссылки для скачивания: ${downloadUrlResponse.statusCode}');
-              Logger.d('toRouteModel: Тело ответа: ${downloadUrlResponse.body}');
-
               if (downloadUrlResponse.statusCode == 200) {
                 final responseData = jsonDecode.jsonDecode(downloadUrlResponse.body);
                 final downloadUrl = responseData['href'];
-                Logger.d('toRouteModel: Получена ссылка для скачивания: $downloadUrl');
 
                 // Скачиваем файл
                 final fileResponse = await http.get(
@@ -189,36 +171,32 @@ extension RouteAdminMapper on RouteAdminModel {
                   headers: {'User-Agent': 'NotableMoments/1.0'},
                 );
 
-                Logger.d('toRouteModel: Ответ на скачивание файла: ${fileResponse.statusCode}');
-                Logger.d('toRouteModel: Размер скачанного файла: ${fileResponse.bodyBytes.length} байт');
-
                 if (fileResponse.statusCode == 200) {
                   final bytes = fileResponse.bodyBytes;
 
-                  // Создаем директорию notable_moments, если она не существует
-                  final notableMomentsDir = io.Directory('${directory.path}/notable_moments');
-                  if (!await notableMomentsDir.exists()) {
-                    await notableMomentsDir.create(recursive: true);
-                    Logger.d('toRouteModel: Создана директория: ${notableMomentsDir.path}');
+                  // Создаем директорию notable, если она не существует
+                  final notableDir = io.Directory('${directory.path}/notable');
+                  if (!await notableDir.exists()) {
+                    await notableDir.create(recursive: true);
                   }
 
-                  // Сохраняем файл локально в папку notable_moments
+                  // Сохраняем файл локально в папку notable
                   await localFile.writeAsBytes(bytes);
-                  final fileSize = await localFile.length();
-                  Logger.d('toRouteModel: Фото загружено в notable_moments: $fileName ($fileSize байт)');
-                  Logger.d('toRouteModel: Локальный путь: ${localFile.path}');
-
                   localPhotos.add(localFile.path);
                 } else {
                   Logger.e('toRouteModel: Ошибка скачивания файла: ${fileResponse.statusCode}');
-                  Logger.e('toRouteModel: Тело ответа при скачивании: ${fileResponse.body}');
+                  // Если не удалось скачать, оставляем путь на Яндекс.Диск
+                  localPhotos.add(photoUrl);
                 }
               } else {
                 Logger.e('toRouteModel: Ошибка получения ссылки для скачивания: ${downloadUrlResponse.statusCode}');
-                Logger.e('toRouteModel: Тело ответа при запросе ссылки: ${downloadUrlResponse.body}');
+                // Если не удалось получить ссылку, оставляем путь на Яндекс.Диск
+                localPhotos.add(photoUrl);
               }
             } catch (e) {
               Logger.e('toRouteModel: Ошибка загрузки фото: $e');
+              // В случае ошибки оставляем путь на Яндекс.Диск
+              localPhotos.add(photoUrl);
             }
           }
         } catch (e) {
@@ -226,14 +204,12 @@ extension RouteAdminMapper on RouteAdminModel {
         }
       }
 
-      Logger.d('toRouteModel: Точка "${p.title}": обработано ${localPhotos.length} из ${p.photos.length} фото');
-
       routePoints.add(
         RoutePoint(
           name: p.title,
           description: p.description,
-          latitude: p.point.latitude,
-          longitude: p.point.longitude,
+          latitude: p.latitude,
+          longitude: p.longitude,
           tests: p.tests,
           photos: localPhotos,
         ),
@@ -250,6 +226,115 @@ extension RouteAdminMapper on RouteAdminModel {
     );
 
     return routeModel;
+  }
+
+  // Быстрое преобразование с путями на Яндекс.Диск
+  RouteModel toRouteModelFast() {
+    return RouteModel(
+      id: id,
+      title: title,
+      description: description,
+      whyThisRoute: whyThisRoute,
+      points: points
+          .map(
+            (p) => RoutePoint(
+              name: p.title,
+              description: p.description,
+              latitude: p.latitude,
+              longitude: p.longitude,
+              tests: p.tests,
+              photos: p.photos, // Оставляем пути на Яндекс.Диск
+            ),
+          )
+          .toList(),
+      taskCount: points.length,
+    );
+  }
+
+  // Асинхронная замена путей на Яндекс.Диск на локальные пути
+  Future<RouteModel> toRouteModelWithLocalPhotos() async {
+    final localPoints = <RoutePoint>[];
+
+    for (final point in points) {
+      final localPhotos = <String>[];
+
+      for (final photoPath in point.photos) {
+        if (photoPath.contains('/notable_moments/')) {
+          // Это путь на Яндекс.Диск, скачиваем файл
+          try {
+            final fileName = photoPath.split('/').last;
+            final directory = await getApplicationDocumentsDirectory();
+            final localPath = '${directory.path}/notable/$fileName';
+
+            final localFile = io.File(localPath);
+            if (await localFile.exists()) {
+              localPhotos.add(localPath);
+            } else {
+              // Скачиваем с Яндекс.Диска
+              final yandexDiskToken = AppConstants.yandexDiskToken;
+              final requestUrl =
+                  'https://cloud-api.yandex.net/v1/disk/resources/download?path=${Uri.encodeComponent(photoPath)}';
+              final downloadUrlResponse = await http.get(
+                Uri.parse(requestUrl),
+                headers: {'Authorization': 'OAuth $yandexDiskToken'},
+              );
+
+              if (downloadUrlResponse.statusCode == 200) {
+                final responseData = jsonDecode.jsonDecode(downloadUrlResponse.body);
+                final downloadUrl = responseData['href'];
+                final fileResponse = await http.get(Uri.parse(downloadUrl));
+
+                if (fileResponse.statusCode == 200) {
+                  // Создаем директорию если не существует
+                  final localDirPath = '${directory.path}/notable';
+                  await io.Directory(localDirPath).create(recursive: true);
+
+                  // Сохраняем файл локально
+                  await localFile.writeAsBytes(fileResponse.bodyBytes);
+                  localPhotos.add(localPath);
+                } else {
+                  // Если не удалось скачать, НЕ добавляем путь в список
+                  Logger.e(
+                    'toRouteModelWithLocalPhotos: Ошибка скачивания: ${fileResponse.statusCode}, пропускаем файл',
+                  );
+                }
+              } else {
+                // Если не удалось получить ссылку, НЕ добавляем путь в список
+                Logger.e(
+                  'toRouteModelWithLocalPhotos: Ошибка получения ссылки: ${downloadUrlResponse.statusCode}, пропускаем файл',
+                );
+              }
+            }
+          } catch (e) {
+            // В случае ошибки НЕ добавляем путь в список
+            Logger.e('toRouteModelWithLocalPhotos: Ошибка обработки фото: $e, пропускаем файл');
+          }
+        } else {
+          // Это уже локальный путь
+          localPhotos.add(photoPath);
+        }
+      }
+
+      localPoints.add(
+        RoutePoint(
+          name: point.title,
+          description: point.description,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          tests: point.tests,
+          photos: localPhotos,
+        ),
+      );
+    }
+
+    return RouteModel(
+      id: id,
+      title: title,
+      description: description,
+      whyThisRoute: whyThisRoute,
+      points: localPoints,
+      taskCount: points.length,
+    );
   }
 }
 

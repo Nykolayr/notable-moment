@@ -28,7 +28,6 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
   void initState() {
     super.initState();
     _photos = List.from(widget.photos);
-    Logger.d('PhotoGridWidget: Инициализация с ${_photos.length} фото');
   }
 
   @override
@@ -74,7 +73,6 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
         final file = File(photoPath);
         if (await file.exists()) {
           await file.delete();
-          Logger.d('PhotoGridWidget: Удален локальный файл: $photoPath');
         }
       }
     } catch (e) {
@@ -85,8 +83,6 @@ class _PhotoGridWidgetState extends State<PhotoGridWidget> {
   void _showPhotoModal(int index) {
     final photoPath = _photos[index].path;
     final localPath = _getLocalPath(photoPath);
-
-    Logger.d('PhotoGridWidget: Показываем фото - оригинальный путь: $photoPath, локальный путь: $localPath');
 
     showDialog(
       context: context,

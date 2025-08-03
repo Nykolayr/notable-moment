@@ -92,29 +92,38 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
 
   bool get isNetwork {
     final url = _currentUrl ?? '';
-
-    // Проверяем, не является ли это локальным файлом в папке notable_moments
-    if (url.contains('/notable_moments/') || url.contains('/app_flutter/notable_moments/')) {
-      Logger.d('isNetwork: Обнаружен локальный файл в папке notable_moments: $url');
+    // Проверяем, не является ли это локальным файлом в папке notable
+    if (url.contains('/notable/') || url.contains('/app_flutter/notable/')) {
       return false; // Считаем, что это локальный файл
     }
 
-    return url.startsWith('http');
+    // Проверяем, является ли это путем на Яндекс.Диск (notable_moments)
+    if (url.contains('/notable_moments/')) {
+      return false; // Показываем заглушку для путей на Яндекс.Диск
+    }
+
+    // Проверяем, не является ли это локальным файлом
+    if (url.startsWith('/') || url.startsWith('file://')) {
+      return false;
+    }
+
+    // Проверяем, не является ли это SVG
+    if (url.toLowerCase().endsWith('.svg')) {
+      return false;
+    }
+
+    return true;
   }
 
   // Метод для получения кэшированного локального изображения
   Future<Widget> _getCachedLocalImage(String filePath) async {
-    Logger.d('AppImage: Ищем локальный файл: $filePath');
-
     // Проверяем кэш изображений
     if (_imageCache.containsKey(filePath)) {
-      Logger.d('AppImage: Файл найден в кэше изображений: $filePath');
       return _imageCache[filePath]!;
     }
 
     // Проверяем кэш байтов
     if (_imageBytesCache.containsKey(filePath)) {
-      Logger.d('AppImage: Файл найден в кэше байтов: $filePath');
       final image = Image.memory(
         _imageBytesCache[filePath]!,
         width: widget.width,
@@ -129,10 +138,7 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
     // Загружаем новое изображение
     try {
       final file = File(filePath);
-      Logger.d('AppImage: Проверяем существование файла: $filePath');
       if (await file.exists()) {
-        final fileSize = await file.length();
-        Logger.d('AppImage: Файл существует, размер: $fileSize байт');
         final bytes = await file.readAsBytes();
 
         // Кэшируем байты
@@ -246,6 +252,11 @@ class _AppImageState extends State<AppImage> with AutomaticKeepAliveClientMixin 
     // Если у нас есть кэшированный виджет, возвращаем его
     if (_cachedWidget != null) {
       return frame(_cachedWidget!);
+    }
+
+    // Показываем заглушку для путей на Яндекс.Диск
+    if (_currentUrl?.contains('/notable_moments/') == true) {
+      return frame(_getErrorImage());
     }
 
     final widget = _hasTimedOut

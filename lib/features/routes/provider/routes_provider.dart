@@ -8,7 +8,7 @@ import 'package:notable_moments/features/routes/service/routes_service.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 final routesProvider = StateNotifierProvider<RoutesNotifier, RoutesState>((ref) {
-  return RoutesNotifier();
+  return RoutesNotifier(ref);
 });
 
 // Провайдер для хранения преобразованных маршрутов
@@ -33,8 +33,9 @@ void clearRouteCache(String routeId) {
 
 class RoutesNotifier extends StateNotifier<RoutesState> {
   final _routesService = RoutesService();
+  final Ref _ref;
 
-  RoutesNotifier() : super(RoutesState.initial()) {
+  RoutesNotifier(this._ref) : super(RoutesState.initial()) {
     state = state.copyWith(isLoading: true);
 
     // Инициализируем сервис
@@ -52,17 +53,30 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
 
         state = state.copyWith(allRoutes: routes, isLoading: false);
 
-        // Преобразуем только первый маршрут для предварительной загрузки фотографий
+        // ПЕРВАЯ ФАЗА: Быстрое преобразование для показа заглушек
         if (routes.isNotEmpty) {
-          Logger.i('routesProvider: Предварительно загружаем фотографии для первого маршрута');
+          Logger.i('routesProvider: Первая фаза - быстрое преобразование для заглушек');
           try {
-            // Преобразуем только первый маршрут для предварительной загрузки
-            final firstRoute = routes.first;
-            await firstRoute.toRouteModel();
-            Logger.i('routesProvider: Предварительная загрузка завершена для маршрута ${firstRoute.id}');
+            for (final route in routes) {
+              // Быстрое преобразование с путями на Яндекс.Диск
+              final routeModel = route.toRouteModelFast();
+
+              // Сохраняем в кэш для немедленного показа
+              final currentConvertedRoutes = _ref.read(convertedRoutesProvider);
+              final updatedRoutes = Map<String, RouteModel>.from(currentConvertedRoutes);
+              updatedRoutes[route.id] = routeModel;
+              _ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+            }
+            Logger.i('routesProvider: Первая фаза завершена - заглушки готовы');
           } catch (e) {
-            Logger.e('routesProvider: Ошибка при предварительной загрузке: $e');
+            Logger.e('routesProvider: Ошибка в первой фазе: $e');
           }
+        }
+
+        // ВТОРАЯ ФАЗА: Загрузка реальных фото в фоне
+        if (routes.isNotEmpty) {
+          Logger.i('routesProvider: Вторая фаза - загрузка реальных фото в фоне');
+          _loadPhotosInBackground(routes);
         }
       },
       onError: (error) {
@@ -216,6 +230,29 @@ class RoutesNotifier extends StateNotifier<RoutesState> {
     } catch (e) {
       Logger.e('routesProvider clearAllPhotos error: $e');
       // Можно добавить уведомление пользователя об ошибке
+    }
+  }
+
+  // Асинхронная загрузка фото в фоне (вторая фаза)
+  Future<void> _loadPhotosInBackground(List<RouteAdminModel> routes) async {
+    for (final route in routes) {
+      try {
+        Logger.i('routesProvider: Загружаем фото для маршрута ${route.id}');
+
+        // Загружаем фото с заменой путей на локальные
+        final routeModelWithLocalPhotos = await route.toRouteModelWithLocalPhotos();
+
+        // Обновляем провайдер с новым маршрутом
+        final currentConvertedRoutes = _ref.read(convertedRoutesProvider);
+        final updatedRoutes = Map<String, RouteModel>.from(currentConvertedRoutes);
+        updatedRoutes[route.id] = routeModelWithLocalPhotos;
+
+        _ref.read(convertedRoutesProvider.notifier).state = updatedRoutes;
+
+        Logger.i('routesProvider: Фото загружены для маршрута ${route.id}');
+      } catch (e) {
+        Logger.e('routesProvider: Ошибка при загрузке фото для маршрута ${route.id}: $e');
+      }
     }
   }
 }
