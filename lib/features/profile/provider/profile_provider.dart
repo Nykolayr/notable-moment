@@ -37,7 +37,15 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
       if (profileMap == null) {
         Logger.i('profileProvider -- loadProfile: профиль не найден');
-        state = state.copyWith(status: Status.loaded);
+        // Для нового пользователя устанавливаем needToFill = true
+        state = state.copyWith(
+          status: Status.loaded,
+          name: null,
+          birthday: null,
+          gender: null,
+          school: null,
+        );
+        Logger.i('profileProvider -- loadProfile: состояние обновлено, needToFill: ${state.needToFill}');
         return;
       }
 

@@ -31,22 +31,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<Either<String, User?>> registerWithEmailAndPassword(String email, String password) async {
     try {
+      // Устанавливаем состояние загрузки
+      state = state.copyWith(isLoading: true);
+
       ref.read(profileProvider.notifier).setRegistrationMode();
 
       final result = await AuthService.registerWithEmailAndPassword(email, password);
       return result.fold(
         (error) {
           Logger.e('authProvider -- register error: $error');
+          // Сбрасываем состояние загрузки при ошибке
+          state = state.copyWith(isLoading: false);
           return Left(error);
         },
         (user) {
-          state = state.copyWith(user: user);
+          state = state.copyWith(user: user, isLoading: false);
+          // Загружаем профиль после регистрации
+          ref.read(profileProvider.notifier).loadProfile();
           Logger.i('authProvider -- register success: ${user?.uid}');
           return Right(user);
         },
       );
     } catch (e) {
       Logger.e('authProvider -- register exception: $e');
+      // Сбрасываем состояние загрузки при исключении
+      state = state.copyWith(isLoading: false);
       return Left('Ошибка регистрации: ${e.toString()}');
     }
   }

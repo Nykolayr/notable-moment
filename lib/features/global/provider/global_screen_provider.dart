@@ -54,13 +54,17 @@ class GlobalScreenNotifier extends StateNotifier<GlobalScreen> {
         }
 
         if (profileState.showLoading) {
+          Logger.i('globalScreenProvider: showLoading = true, переключаемся на loading');
           state = GlobalScreen.loading;
           return;
         }
 
+        Logger.i('globalScreenProvider: проверяем needToFill: ${profileState.needToFill}');
         if (profileState.needToFill) {
+          Logger.i('globalScreenProvider: needToFill = true, переключаемся на fillProfile');
           state = GlobalScreen.fillProfile;
         } else {
+          Logger.i('globalScreenProvider: needToFill = false, переключаемся на main');
           state = GlobalScreen.main;
         }
       },
