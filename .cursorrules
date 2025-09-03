@@ -1,0 +1,125 @@
+# Cursor Rules для Flutter проекта "Родные штрихи"
+
+## Общие правила
+- Всегда отвечай на русском языке
+- Используй современные практики Flutter/Dart
+- Следуй принципам Clean Architecture
+- Приоритет: читаемость кода > производительность > краткость
+- НЕ ВЫЗЫВАЙ команды терминала - только предлагай их пользователю
+
+## Архитектура проекта
+- Используй Riverpod для state management
+- Следуй структуре: features/ -> data/, provider/, widgets/
+- Разделяй UI и бизнес-логику
+- Используй модели данных для типизации
+
+## Стиль кода
+- Используй camelCase для переменных и методов
+- Используй PascalCase для классов
+- Группируй импорты: dart, flutter, packages, local
+- Добавляй комментарии для сложной логики
+- Используй const конструкторы где возможно
+
+## Flutter специфика
+- Предпочитай StatelessWidget если нет состояния
+- Используй ConsumerStatefulWidget с Riverpod
+- Применяй responsive_framework для адаптивности
+- Используй AppScaffold, AppButton и другие кастомные виджеты из core/widget/
+
+## Firebase
+- Используй Firebase Auth для аутентификации
+- Firestore для данных
+- Firebase Storage для файлов
+- Следуй паттерну: Service -> Provider -> State
+
+## UI/UX
+- Используй AppColor, AppStyle для стилизации
+- Применяй AppImages, AppSvg для ресурсов
+- Следуй Material Design принципам
+- Добавляй loading states и error handling
+
+## Безопасность
+- Валидируй все пользовательские данные
+- Используй secure storage для чувствительных данных
+- Не хардкодь API ключи в коде
+
+## Производительность
+- Используй ListView.builder для больших списков
+- Применяй cached_network_image для изображений
+- Оптимизируй rebuilds с помощью const конструкторов
+
+## Тестирование
+- Пиши unit тесты для бизнес-логики
+- Используй widget тесты для UI компонентов
+- Мокай внешние зависимости
+
+## Именование файлов
+- Используй snake_case для файлов
+- Группируй по функциональности: _screen.dart, _widget.dart, _provider.dart
+- Префиксы: app_ для базовых виджетов, _ для приватных
+
+## Импорты
+```dart
+// 1. Dart core
+import 'dart:async';
+
+// 2. Flutter
+import 'package:flutter/material.dart';
+
+// 3. Third party packages
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+// 4. Local imports
+import '../core/theme/app_color.dart';
+import '../features/auth/auth_provider.dart';
+```
+
+## Структура виджета
+```dart
+class ExampleWidget extends ConsumerWidget {
+  const ExampleWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      // implementation
+    );
+  }
+}
+```
+
+## Обработка ошибок
+- Используй Either для обработки ошибок
+- Показывай пользователю понятные сообщения об ошибках
+- Логируй ошибки для отладки
+
+## Комментарии
+- Используй /// для документации классов и методов
+- Добавляй TODO комментарии для будущих улучшений
+- Объясняй сложную бизнес-логику
+
+## Git
+- Используй conventional commits
+- Создавай feature branches
+- Пиши понятные commit messages на русском языке
+
+## Команды терминала
+- НЕ ВЫПОЛНЯЙ команды автоматически
+- ТОЛЬКО ПРЕДЛАГАЙ команды пользователю
+- Объясняй что делает каждая команда
+- Предупреждай о потенциальных рисках
+
+## Специфика проекта
+- Приложение: "Родные штрихи" / "Notable Moments"
+- Bundle ID iOS: com.notable.moments
+- Package name Android: com.notablemoments.app
+- Используй Yandex Maps для карт
+- Поддерживай офлайн режим где возможно
+
+## Примеры предложений команд
+Вместо выполнения команд, предлагай:
+- "Выполните команду: flutter clean"
+- "Попробуйте: flutter pub get"
+- "Рекомендую: flutter build ios --release"
+- "Проверьте: flutter doctor"
