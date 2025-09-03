@@ -6,6 +6,8 @@ version: 1.0.83+83
 # Certificate fingerprints:
 #          SHA1: 98:5C:D1:9E:58:B8:BF:DC:57:A9:8C:E2:1B:2A:A1:CA:F4:A5:1F:AD
 #          SHA256: 0D:F1:A7:7C:67:03:C2:06:86:17:FD:DB:CD:7F:CC:BE:F9:D6:07:FD:4E:3D:9D:53:B4:DB:EE:DB:98:6D:A2:C8
+# андроид com.notablemoments.app
+# ios com.notable.moments
 
 
 environment:
