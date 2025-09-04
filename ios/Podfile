@@ -44,4 +44,15 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end
   end
+  
+  # Исправляем проблему с "Create Symlinks to Header Folders"
+  installer.pods_project.targets.each do |target|
+    target.build_phases.each do |phase|
+      if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+        if phase.name == "Create Symlinks to Header Folders"
+          phase.run_only_for_deployment_postprocessing = true
+        end
+      end
+    end
+  end
 end
