@@ -23,10 +23,8 @@ class ProfilePdf extends StatelessWidget {
       await tempFile.writeAsBytes(
         bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
       );
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(tempFile.path)],
-        ),
+      await Share.shareXFiles(
+        [XFile(tempFile.path)],
       );
     } catch (e) {
       Logger.e('Ошибка при попытке поделиться PDF: $e');

@@ -35,11 +35,14 @@ class _PlaceMapWidgetState extends State<PlaceMapWidget> {
           mapObjects: [
             PlacemarkMapObject(
               mapId: const MapObjectId('place_placemark'),
-              point: Point(latitude: widget.point.latitude!, longitude: widget.point.longitude!),
+              point: Point(
+                  latitude: widget.point.latitude!,
+                  longitude: widget.point.longitude!),
               opacity: 1,
               icon: PlacemarkIcon.single(
                 PlacemarkIconStyle(
-                  image: BitmapDescriptor.fromAssetImage('assets/placemark/opened.png'),
+                  image: BitmapDescriptor.fromAssetImage(
+                      'assets/placemark/opened.png'),
                   scale: 1,
                 ),
               ),
@@ -51,7 +54,9 @@ class _PlaceMapWidgetState extends State<PlaceMapWidget> {
             await controller.moveCamera(
               CameraUpdate.newCameraPosition(
                 CameraPosition(
-                  target: Point(latitude: widget.point.latitude!, longitude: widget.point.longitude!),
+                  target: Point(
+                      latitude: widget.point.latitude!,
+                      longitude: widget.point.longitude!),
                   zoom: 15,
                 ),
               ),
@@ -119,20 +124,20 @@ void showPlaceBottomSheet({
                     // Кастомная карта с кнопками управления
                     PlaceMapWidget(point: point),
                     const SizedBox(height: 12),
-                    Text(point.description ?? '', style: AppStyle.roboto14w400.bgText900),
+                    Text(point.description ?? '',
+                        style: AppStyle.roboto14w400.bgText900),
                     const SizedBox(height: 12),
                     Text('Телефон', style: AppStyle.subheader2.bgText900),
                     const SizedBox(height: 12),
-                    Text('Нет доступных', style: AppStyle.roboto14w400.bgText900),
+                    Text('Нет доступных',
+                        style: AppStyle.roboto14w400.bgText900),
                     const SizedBox(height: 12),
                     AppButton(
                       title: 'Поделиться местом',
                       onTap: () {
                         final name = point.name;
                         final text = 'Родные штрихи\n$name\n';
-                        SharePlus.instance.share(
-                          ShareParams(text: text),
-                        );
+                        Share.share(text);
                       },
                     ),
                     SizedBox(height: context.safeArea.bottom),
