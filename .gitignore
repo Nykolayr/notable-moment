@@ -48,4 +48,4 @@ app.*.map.json
 .fvm/
 
 # Env
-.env
+# .env  # Убрано из gitignore - файл будет в репозитории
