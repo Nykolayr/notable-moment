@@ -1,13 +1,6 @@
 {
-  "dart.flutterSdkPath": ".fvm/versions/3.27.4",
-  "dart.lineLength": 120,
-  "[dart]": {
-    "editor.defaultFormatter": "Dart-Code.dart-code",
-    "editor.formatOnSave": true
-  },
-  "codeium.enableCodeLens": false,
-  "flutterTools.displayGetxContextMenu": false,
-  "flutterTools.displayMobxContextMenu": false,
-  "flutterTools.displayRiverpodContextMenu": true,
-  "flutterTools.displayModularContextMenu": false
+    "flutterTools.displayGetxContextMenu": false,
+    "flutterTools.displayMobxContextMenu": false,
+    "flutterTools.displayRiverpodContextMenu": true,
+    "flutterTools.displayModularContextMenu": false
 }

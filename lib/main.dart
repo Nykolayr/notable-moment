@@ -17,11 +17,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:notable_moments/core/provider/auth_provider.dart';
 import 'package:notable_moments/core/provider/auth_state.dart';
 
-final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +72,8 @@ class _MyAppState extends ConsumerState<MyApp> {
         final authState = ref.watch(authProvider);
         final screen = ref.watch(globalScreenProvider);
 
-        Logger.i('main.dart build: authState.isAuthenticated: ${authState.isAuthenticated}');
+        Logger.i(
+            'main.dart build: authState.isAuthenticated: ${authState.isAuthenticated}');
         Logger.i('main.dart build: screen: ${screen.name}');
         Logger.i('main.dart build: screen.index: ${screen.index}');
 
@@ -86,7 +87,8 @@ class _MyAppState extends ConsumerState<MyApp> {
               colorScheme: ColorScheme.fromSeed(seedColor: AppColor.primary),
               scaffoldBackgroundColor: Colors.white,
             ),
-            builder: (context, child) => ResponsiveScaledBox(width: 360, child: child!),
+            builder: (context, child) =>
+                ResponsiveScaledBox(width: 360, child: child!),
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
